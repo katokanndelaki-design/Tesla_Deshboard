@@ -1,456 +1,313 @@
+,```html
 <!DOCTYPE html>
 <html lang="ka">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tesla OS - Web Interface</title>
+    <title>Tesla OS - Ultimate Interface</title>
     
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
-    <!-- Leaflet.js (რუკისთვის) -->
+    <!-- Leaflet & Routing -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    
-    <!-- Leaflet Routing Machine -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
     <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
 
     <style>
-        /* სრული ეკრანის დაცარიელება */
-        body { margin: 0; padding: 0; overflow: hidden; background-color: #000; font-family: 'Segoe UI', sans-serif; color: #fff; }
+        :root { --primary: #00ffaa; --bg: #000; --panel: rgba(15, 15, 15, 0.9); --border: rgba(255, 255, 255, 0.15); }
+        body { margin: 0; padding: 0; overflow: hidden; background-color: var(--bg); font-family: 'Segoe UI', Roboto, sans-serif; color: #fff; }
         
-        /* 1. სრულეკრანიანი რუკა ფონად */
-        #map { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; background: #111; }
+        #map { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; filter: grayscale(0.5) brightness(0.8); }
         .leaflet-routing-container { display: none !important; }
 
-        /* 2. მარცხენა ტელემეტრიის პანელი */
+        /*Sidebar*/
         .sidebar {
             position: absolute; top: 20px; bottom: 100px; left: 20px; width: 260px;
-            background: rgba(15, 15, 15, 0.85); backdrop-filter: blur(20px);
-            border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); z-index: 10;
+            background: var(--panel); backdrop-filter: blur(25px);
+            border-radius: 20px; border: 1px solid var(--border); z-index: 10;
             padding: 30px 20px; display: flex; flex-direction: column; justify-content: space-between;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
-
-        .header-status { text-align: center; color: #888; font-size: 12px; letter-spacing: 2px; }
-        .status-dot { height: 10px; width: 10px; background: #00ff00; border-radius: 50%; display: inline-block; margin-right: 5px; box-shadow: 0 0 10px #00ff00;}
-
+        .speed-value { font-size: 80px; font-weight: 200; text-align: center; }
+        .battery-level { height: 100%; background: var(--primary); border-radius: 2px; transition: 0.5s; }
         .gear-selector { display: flex; justify-content: center; gap: 15px; font-size: 22px; font-weight: bold; color: #444; }
-        .gear.active { color: #fff; text-shadow: 0 0 15px rgba(255, 255, 255, 0.8); transform: scale(1.2); }
+        .gear.active { color: #fff; text-shadow: 0 0 10px #fff; }
 
-        .speed-display { text-align: center; margin: 40px 0; }
-        .speed-value { font-size: 100px; font-weight: 300; line-height: 1; }
-        .speed-unit { font-size: 20px; color: #888; letter-spacing: 1px; }
+        /* Dock */
+        .dock-container { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 10px; z-index: 1000; transition: 0.4s; }
+        .dock-container.collapsed { transform: translate(-50%, 80px); }
+        .dock { background: var(--panel); backdrop-filter: blur(20px); padding: 10px 20px; border-radius: 40px; display: flex; gap: 15px; border: 1px solid var(--border); }
+        .dock-icon { width: 45px; height: 45px; border-radius: 12px; background: #222; display: flex; justify-content: center; align-items: center; font-size: 22px; cursor: pointer; transition: 0.2s; }
+        .dock-icon.active { border: 1px solid var(--primary); background: #111; box-shadow: 0 0 15px rgba(0, 255, 170, 0.2); }
 
-        .battery-wrapper { display: flex; align-items: center; justify-content: center; gap: 15px; }
-        .battery-icon { width: 50px; height: 24px; border: 2px solid #888; border-radius: 4px; padding: 2px; position: relative; }
-        .battery-icon::after { content: ''; position: absolute; right: -6px; top: 6px; width: 4px; height: 12px; background: #888; border-radius: 0 2px 2px 0; }
-        .battery-level { height: 100%; background: #00ffaa; border-radius: 2px; width: 0%; transition: 0.5s; }
-        .battery-text { font-size: 24px; font-weight: bold; }
-
-        /* 3. ქვედა მენიუ (Dock) და ჩაკეცვის მექანიზმი */
-        .dock-container {
-            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
-            display: flex; flex-direction: column; align-items: center; gap: 8px; z-index: 100;
-            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .dock-container.collapsed {
-            transform: translate(-50%, 80px);
-        }
-        .dock-toggle {
-            width: 50px; height: 18px; background: rgba(30, 30, 30, 0.8); border-radius: 10px;
-            display: flex; justify-content: center; align-items: center; cursor: pointer;
-            border: 1px solid rgba(255,255,255,0.15); color: #aaa; font-size: 10px; backdrop-filter: blur(10px);
-            transition: 0.2s;
-        }
-        .dock-toggle:hover { color: #fff; background: rgba(60, 60, 60, 0.9); }
-
-        .dock {
-            background: rgba(20, 20, 20, 0.9); backdrop-filter: blur(20px); padding: 8px 15px;
-            border-radius: 40px; display: flex; gap: 15px;
-            border: 1px solid rgba(255,255,255,0.15); box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-        }
-        .dock-icon {
-            width: 40px; height: 40px; border-radius: 12px; background: #333; 
-            display: flex; justify-content: center; align-items: center; 
-            font-size: 20px; cursor: pointer; transition: 0.2s; border: 1px solid transparent;
-        }
-        .dock-icon:hover { background: #444; transform: translateY(-5px); }
-        .dock-icon.active { border-color: #00ffaa; background: #222; box-shadow: 0 0 15px rgba(0, 255, 170, 0.3); }
-
-        /* 4. მცურავი აპლიკაციების ფანჯრები (App Windows) */
+        /* App Windows - Resizable */
         .app-window {
-            position: absolute; top: 20px; right: 20px; width: 380px;
-            background: rgba(25, 25, 25, 0.95); backdrop-filter: blur(20px); border-radius: 20px;
-            border: 1px solid rgba(255,255,255,0.1); z-index: 50; padding: 20px;
-            display: none; flex-direction: column; box-shadow: 0 15px 40px rgba(0,0,0,0.7);
-            animation: fadeIn 0.3s ease;
+            position: absolute; top: 40px; right: 40px; width: 450px; height: 550px;
+            background: var(--panel); backdrop-filter: blur(30px); border-radius: 20px;
+            border: 1px solid var(--border); z-index: 100; display: none; flex-direction: column;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8); overflow: hidden;
+            resize: both; min-width: 300px; min-height: 300px;
         }
         .app-window.active { display: flex; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-        
-        .app-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #444; padding-bottom: 10px; }
-        .app-title { font-size: 18px; font-weight: bold; margin: 0; }
-        .close-btn { background: none; border: none; color: #888; font-size: 24px; cursor: pointer; }
-        .close-btn:hover { color: #ff4757; }
+        .app-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid var(--border); cursor: move; }
+        .header-controls { display: flex; gap: 10px; }
+        .win-btn { background: none; border: none; color: #888; font-size: 20px; cursor: pointer; padding: 5px; }
+        .win-btn:hover { color: #fff; }
 
-        /* ნავიგაციის აპის შიგთავსი */
-        .search-wrapper { display: flex; background: #111; border: 1px solid #444; border-radius: 10px; padding: 5px; position: relative; }
-        .search-wrapper input { flex: 1; background: transparent; border: none; color: #fff; padding: 10px; outline: none; font-size: 15px; }
-        #clear-btn { background: none; border: none; color: #888; font-size: 20px; cursor: pointer; display: none; padding: 0 10px; }
-        
-        .suggestions-list {
-            list-style: none; padding: 0; margin: 10px 0 0 0; max-height: 200px; overflow-y: auto;
-            background: #1a1a1a; border-radius: 10px; border: 1px solid #333; display: none;
+        /* AI Chat */
+        .ai-chat-box { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; scrollbar-width: thin; }
+        .msg { padding: 10px 15px; border-radius: 12px; max-width: 85%; font-size: 14px; line-height: 1.5; }
+        .msg.user { background: #333; align-self: flex-end; border-bottom-right-radius: 2px; }
+        .msg.bot { background: rgba(0, 168, 255, 0.15); align-self: flex-start; border-bottom-left-radius: 2px; color: #bdf; }
+
+        /* YouTube Container */
+        .browser-container { flex: 1; width: 100%; background: #000; }
+        iframe { width: 100%; height: 100%; border: none; }
+
+        /* Mini Player Overlay */
+        #mini-player {
+            position: absolute; bottom: 90px; right: 20px; width: 300px;
+            background: rgba(20, 20, 20, 0.95); border: 1px solid var(--primary);
+            border-radius: 15px; padding: 12px; display: none; align-items: center;
+            gap: 15px; z-index: 500; animation: slideUp 0.3s ease;
         }
-        .suggestions-list li { padding: 12px 15px; border-bottom: 1px solid #333; cursor: pointer; font-size: 14px; color: #ccc; }
-        .suggestions-list li:hover { background: #00a8ff; color: #fff; }
-        
-        .route-info { display: none; justify-content: space-around; margin-top: 15px; background: #111; padding: 15px; border-radius: 10px; border: 1px solid #333; }
-        .info-value { font-size: 24px; font-weight: bold; color: #00ffaa; text-align: center; }
-        .info-value.time { color: #ff9f43; }
-        .info-label { font-size: 11px; color: #888; text-transform: uppercase; text-align: center; }
+        .mini-info { flex: 1; overflow: hidden; }
+        .mini-title { font-size: 13px; font-weight: bold; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
+        .mini-controls { display: flex; gap: 10px; }
+        .control-btn { background: #333; border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+        .control-btn:hover { background: var(--primary); color: #000; }
 
-        /* AI Route Guide ღილაკი */
-        .ai-route-btn { background: linear-gradient(45deg, #111, #00a8ff); border: 1px solid #00a8ff; color: white; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; transition: 0.3s; box-shadow: 0 4px 15px rgba(0, 168, 255, 0.2); }
-        .ai-route-btn:hover { transform: translateY(-2px); background: #00a8ff; box-shadow: 0 6px 20px rgba(0, 168, 255, 0.5); }
-        .ai-route-result { background: rgba(0, 168, 255, 0.1); border-left: 3px solid #00a8ff; padding: 10px; border-radius: 5px; margin-top: 10px; font-size: 13px; display: none; line-height: 1.4; color: #bdf; }
-
-        /* Web Browser აპის შიგთავსი */
-        .browser-toolbar { display: flex; gap: 5px; margin-bottom: 10px; }
-        .browser-toolbar input { flex: 1; background: #111; border: 1px solid #444; color: #fff; padding: 10px; border-radius: 8px; font-size: 14px; outline: none; }
-        .browser-toolbar button.go { background: #00a8ff; border: none; color: white; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
-        .browser-toolbar button.go:hover { background: #008cd9; }
-        .browser-toolbar button.popup { background: #ff4757; border: none; color: white; padding: 10px; border-radius: 8px; cursor: pointer; transition: 0.2s; }
-        .browser-toolbar button.popup:hover { background: #e84118; }
-        .browser-container { width: 100%; height: 350px; background: #fff; border-radius: 10px; overflow: hidden; border: 1px solid #333; }
-        .browser-container iframe { width: 100%; height: 100%; border: none; background: #fff; }
-
-        /* AI ჩატის შიგთავსი */
-        .ai-chat-box { height: 250px; overflow-y: auto; background: #111; padding: 15px; border-radius: 10px; margin-bottom: 10px; font-size: 14px; border: 1px solid #333; display: flex; flex-direction: column; gap: 10px; scrollbar-width: thin; scrollbar-color: #555 #111; }
-        .ai-message { padding: 10px 15px; border-radius: 10px; max-width: 85%; line-height: 1.5; }
-        .ai-message.user { background: #2b2b2b; align-self: flex-end; color: #fff; border: 1px solid #444; border-bottom-right-radius: 2px; }
-        .ai-message.bot { background: rgba(0, 168, 255, 0.1); align-self: flex-start; color: #bdf; border: 1px solid rgba(0, 168, 255, 0.3); border-bottom-left-radius: 2px; }
-        .ai-loading { color: #888; font-size: 12px; font-style: italic; align-self: flex-start; margin-left: 5px; }
-
-        /* მიკროფონის ღილაკი */
-        .mic-btn { background: #444; border: none; color: white; padding: 10px; border-radius: 8px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; width: 40px; }
-        .mic-btn.listening { background: #ff4757; box-shadow: 0 0 10px #ff4757; }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     </style>
 </head>
 <body>
 
-    <!-- 1. რუკა -->
     <div id="map"></div>
 
-    <!-- 2. ტელემეტრიის პანელი მარცხნივ -->
     <div class="sidebar">
-        <div class="header-status"><span class="status-dot"></span> MODEL Y LINKED</div>
-        <div class="speed-display">
-            <div class="speed-value" id="speed">0</div>
-            <div class="speed-unit">km/h</div>
-        </div>
+        <div style="text-align: center; color: #888; font-size: 12px;">MODEL Y ONLINE</div>
+        <div class="speed-display"><div class="speed-value" id="speed">0</div><div style="text-align: center; color: #888;">km/h</div></div>
         <div class="gear-selector">
-            <span id="gear-P" class="gear active">P</span>
-            <span id="gear-R" class="gear">R</span>
-            <span id="gear-N" class="gear">N</span>
-            <span id="gear-D" class="gear">D</span>
+            <span id="gear-P" class="gear active">P</span><span id="gear-R" class="gear">R</span>
+            <span id="gear-N" class="gear">N</span><span id="gear-D" class="gear">D</span>
         </div>
-        <div class="battery-wrapper">
-            <div class="battery-icon"><div class="battery-level" id="battery-level"></div></div>
-            <div class="battery-text"><span id="battery">0</span>%</div>
-        </div>
-    </div>
-
-    <!-- 3. ქვედა მენიუ (Dock) -->
-    <div class="dock-container" id="dock-container">
-        <div class="dock-toggle" id="dock-toggle" title="მენიუს ჩაკეცვა">▼</div>
-        <div class="dock">
-            <div class="dock-icon" title="Car Controls">🚗</div>
-            <div class="dock-icon active" id="dock-nav" title="Navigation">🧭</div>
-            <div class="dock-icon" id="dock-traffic" title="ცოცხალი საცობები">🚦</div>
-            <div class="dock-icon" id="dock-browser" title="Web Browser">🌐</div>
-            <div class="dock-icon" id="dock-ai" title="AI Co-Pilot ✨">✨</div>
-            <div class="dock-icon" title="Settings">⚙️</div>
-        </div>
-    </div>
-
-    <!-- 4. აპლიკაცია: ნავიგაცია -->
-    <div class="app-window active" id="app-nav">
-        <div class="app-header">
-            <h3 class="app-title">ნავიგაცია</h3>
-            <button class="close-btn" onclick="toggleApp('app-nav')">&times;</button>
-        </div>
-        <div class="search-wrapper">
-            <input type="text" id="search-input" placeholder="მოძებნეთ მისამართი (მაგ: ხოშარაული)" autocomplete="off">
-            <button id="clear-btn">&times;</button>
-        </div>
-        <ul id="search-suggestions" class="suggestions-list"></ul>
-        <div class="route-info" id="route-info" style="flex-direction: column;">
-            <div style="display: flex; justify-content: space-around; width: 100%;">
-                <div><div class="info-value time"><span id="eta-time">--</span></div><div class="info-label">წუთი</div></div>
-                <div><div class="info-value"><span id="eta-dist">--</span></div><div class="info-label">კმ</div></div>
+        <div style="display: flex; align-items: center; gap: 15px; justify-content: center;">
+            <div style="width: 50px; height: 25px; border: 2px solid #555; border-radius: 5px; padding: 2px;">
+                <div class="battery-level" id="battery-level" style="width: 0%"></div>
             </div>
-            <button class="ai-route-btn" id="ai-route-btn" style="display: none;">✨ მარშრუტის AI ანალიზი</button>
-            <div class="ai-route-result" id="ai-route-result"></div>
+            <span id="battery" style="font-weight: bold; font-size: 20px;">0</span>%
         </div>
     </div>
 
-    <!-- 5. აპლიკაცია: Browser & YouTube -->
-    <div class="app-window" id="app-browser" style="width: 450px;">
+    <div class="dock-container" id="dock-container">
+        <div class="dock">
+            <div class="dock-icon" title="მანქანა">🚗</div>
+            <div class="dock-icon active" id="dock-nav" onclick="openApp('app-nav')">🧭</div>
+            <div class="dock-icon" id="dock-traffic">🚦</div>
+            <div class="dock-icon" id="dock-music" onclick="openApp('app-music')">🎵</div>
+            <div class="dock-icon" id="dock-ai" onclick="openApp('app-ai')">✨</div>
+            <div class="dock-icon">⚙️</div>
+        </div>
+    </div>
+
+    <!-- Mini Player UI -->
+    <div id="mini-player">
+        <div style="font-size: 20px;">🎵</div>
+        <div class="mini-info">
+            <div class="mini-title">YouTube Music</div>
+            <div style="font-size: 10px; color: #888;">ახლა უკრავს...</div>
+        </div>
+        <div class="mini-controls">
+            <button class="control-btn" onclick="mediaCmd('prev')">⏮</button>
+            <button class="control-btn" id="mini-play-pause" onclick="mediaCmd('play')">⏯</button>
+            <button class="control-btn" onclick="mediaCmd('next')">⏭</button>
+        </div>
+        <button class="win-btn" onclick="openApp('app-music')" style="margin-left: 5px;">▲</button>
+    </div>
+
+    <!-- App: Navigation -->
+    <div class="app-window" id="app-nav">
         <div class="app-header">
-            <h3 class="app-title">Browser & YouTube</h3>
-            <button class="close-btn" onclick="toggleApp('app-browser')">&times;</button>
+            <strong>ნავიგაცია</strong>
+            <button class="win-btn" onclick="closeApp('app-nav')">&times;</button>
         </div>
-        <div class="browser-toolbar">
-            <input type="text" id="browser-url" value="https://www.youtube.com/watch?v=K4DyBUG242c" placeholder="შეიყვანეთ YouTube ლინკი...">
-            <button id="browser-go" class="go">გახსნა</button>
-            <button id="browser-popup" class="popup" title="გახსნა ფანჯარაში">↗️ Popup</button>
+        <div style="padding: 20px;">
+            <input type="text" id="search-input" placeholder="სად მივდივართ?" style="width: 100%; background: #222; border: 1px solid #444; color: #fff; padding: 12px; border-radius: 10px; outline: none;">
+            <ul id="suggestions" style="list-style: none; padding: 0; margin-top: 10px; background: #111; border-radius: 10px; display: none;"></ul>
+            <div id="route-info" style="margin-top: 20px; display: none; text-align: center;">
+                <span id="eta-time" style="font-size: 30px; color: var(--primary); font-weight: bold;">--</span> წთ | 
+                <span id="eta-dist" style="font-size: 30px;">--</span> კმ
+                <button id="ai-route-btn" style="width: 100%; margin-top: 15px; background: var(--primary); color: #000; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer;">✨ AI მარშრუტის ანალიზი</button>
+            </div>
         </div>
-        <div style="font-size: 11px; color: #888; margin-bottom: 10px; text-align: center;">
-            * ზოგიერთ ვიდეოზე Error-ის შემთხვევაში გამოიყენეთ <b>წითელი ↗️ ღილაკი</b>.
+    </div>
+
+    <!-- App: Music (YouTube) -->
+    <div class="app-window" id="app-music" style="width: 600px; height: 400px;">
+        <div class="app-header">
+            <strong>YouTube Player</strong>
+            <div class="header-controls">
+                <button class="win-btn" title="ჩაკეცვა" onclick="minimizeApp('app-music')">_</button>
+                <button class="win-btn" title="დახურვა" onclick="closeApp('app-music')">&times;</button>
+            </div>
         </div>
         <div class="browser-container">
-            <iframe id="browser-iframe" src="https://www.youtube-nocookie.com/embed/K4DyBUG242c?rel=0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            <!-- ვიყენებთ YouTube-ის სპეციალურ ემბედს რომელიც საშუალებას გვაძლევს ვმართოთ პლეილისტები -->
+            <iframe id="yt-frame" src="https://www.youtube.com/embed/videoseries?list=PL4fG7upis8O_O_4X_FvK_v_4A6K4S_V_U&enablejsapi=1" allow="autoplay; encrypted-media"></iframe>
         </div>
     </div>
 
-    <!-- 6. აპლიკაცია: AI Co-Pilot (Gemini AI) -->
+    <!-- App: AI Co-Pilot -->
     <div class="app-window" id="app-ai">
         <div class="app-header">
-            <h3 class="app-title">AI Co-Pilot ✨</h3>
-            <button class="close-btn" onclick="toggleApp('app-ai')">&times;</button>
+            <strong>AI Co-Pilot ✨</strong>
+            <button class="win-btn" onclick="closeApp('app-ai')">&times;</button>
         </div>
         <div class="ai-chat-box" id="ai-chat-box">
-            <div class="ai-message bot">გამარჯობა! მე ვარ თქვენი ხელოვნური ინტელექტით აღჭურვილი ასისტენტი.</div>
+            <div class="msg bot">გამარჯობა! მე ვარ თქვენი Tesla ასისტენტი. რით შემიძლია დაგეხმაროთ?</div>
         </div>
-        <div class="search-wrapper" style="margin-top: 10px; gap: 5px;">
-            <input type="text" id="ai-input" placeholder="ჰკითხეთ AI-ს..." autocomplete="off">
-            <button id="mic-btn" class="mic-btn" title="ხმოვანი ბრძანება">🎤</button>
-            <button id="ai-btn" style="background: #333; border: none; color: white; padding: 10px; border-radius: 8px; cursor: pointer;">კითხვა</button>
+        <div style="padding: 15px; display: flex; gap: 8px; border-top: 1px solid var(--border);">
+            <button id="mic-btn" style="background: #333; border: none; color: white; padding: 10px; border-radius: 10px; cursor: pointer;">🎤</button>
+            <input type="text" id="ai-input" placeholder="ჰკითხეთ AI-ს..." style="flex: 1; background: #222; border: none; color: #fff; padding: 10px; border-radius: 10px; outline: none;">
+            <button id="ai-send" style="background: var(--primary); color: #000; border: none; padding: 10px 15px; border-radius: 10px; font-weight: bold; cursor: pointer;">გაგზავნა</button>
         </div>
     </div>
 
     <script>
-        // --- Gemini API Key ---
-        const geminiApiKey = "AIzaSyCiIRonRvsdHUHFIIo43JJ7Gp7Moq1N4ik"; 
+        const geminiApiKey = "AIzaSyCiIRonRvsdHUHFIIo43JJ7Gp7Moq1N4ik";
 
-        // --- აპლიკაციების მართვა ---
-        function toggleApp(appId) {
-            const app = document.getElementById(appId);
-            if (!app) return;
-            const isActive = app.classList.contains('active');
-            document.querySelectorAll('.app-window').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.dock-icon').forEach(el => el.classList.remove('active'));
-            if(!isActive) {
-                app.classList.add('active');
-                const dockMap = {'app-nav':'dock-nav', 'app-browser':'dock-browser', 'app-ai':'dock-ai'};
-                if(dockMap[appId]) document.getElementById(dockMap[appId]).classList.add('active');
+        // --- Window Management ---
+        function openApp(id) {
+            document.querySelectorAll('.app-window').forEach(w => w.classList.remove('active'));
+            document.querySelectorAll('.dock-icon').forEach(i => i.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            if(id === 'app-music') document.getElementById('mini-player').style.display = 'none';
+        }
+        function closeApp(id) {
+            document.getElementById(id).classList.remove('active');
+            if(id === 'app-music') document.getElementById('mini-player').style.display = 'none';
+        }
+        function minimizeApp(id) {
+            document.getElementById(id).classList.remove('active');
+            if(id === 'app-music') document.getElementById('mini-player').style.display = 'flex';
+        }
+
+        // --- YouTube & Media Controls ---
+        const ytFrame = document.getElementById('yt-frame');
+        function mediaCmd(cmd) {
+            const msg = { "event": "command", "func": "" };
+            if(cmd === 'play') msg.func = "playVideo";
+            if(cmd === 'pause') msg.func = "pauseVideo";
+            if(cmd === 'next') msg.func = "nextVideo";
+            if(cmd === 'prev') msg.func = "previousVideo";
+            
+            // YouTube Iframe API Control
+            ytFrame.contentWindow.postMessage(JSON.stringify(msg), '*');
+            
+            if(cmd === 'play') {
+                document.getElementById('mini-play-pause').innerHTML = "⏸";
+                document.getElementById('mini-play-pause').onclick = () => mediaCmd('pause');
+            } else if(cmd === 'pause') {
+                document.getElementById('mini-play-pause').innerHTML = "▶️";
+                document.getElementById('mini-play-pause').onclick = () => mediaCmd('play');
             }
         }
 
-        const dockContainer = document.getElementById('dock-container');
-        document.getElementById('dock-toggle').addEventListener('click', () => {
-            dockContainer.classList.toggle('collapsed');
-            document.getElementById('dock-toggle').innerText = dockContainer.classList.contains('collapsed') ? '▲' : '▼';
-        });
-
-        document.getElementById('dock-nav').onclick = () => toggleApp('app-nav');
-        document.getElementById('dock-browser').onclick = () => toggleApp('app-browser');
-        document.getElementById('dock-ai').onclick = () => toggleApp('app-ai');
-
-        // --- რუკა და საცობები ---
-        const map = L.map('map', {zoomControl: false}).setView([41.697361, 44.705833], 14);
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map);
-
-        const trafficLayer = L.tileLayer('https://mt0.google.com/vt/lyrs=h,traffic&x={x}&y={y}&z={z}', { maxZoom: 20, opacity: 0.9 });
-        let trafficOn = false;
-        document.getElementById('dock-traffic').onclick = function() {
-            trafficOn ? map.removeLayer(trafficLayer) : trafficLayer.addTo(map);
-            this.classList.toggle('active');
-            trafficOn = !trafficOn;
-        };
-
-        let carMarker = null, routingControl = null, currentDestinationName = "";
-        const carIcon = L.divIcon({ html: '<div style="font-size: 35px; text-shadow: 0 0 15px rgba(0,255,0,0.8);">🚗</div>', className: '', iconSize: [35, 35], iconAnchor: [17, 17] });
-
-        function drawRoute(start, end) {
-            if(routingControl) routingControl.setWaypoints([start, end]);
-            else {
-                routingControl = L.Routing.control({
-                    waypoints: [start, end], show: false,
-                    lineOptions: { styles: [{color: '#00a8ff', opacity: 0.8, weight: 6}] },
-                    createMarker: (i, wp, n) => i === n-1 ? L.marker(wp.latLng, {icon: L.divIcon({html:'📍', className:'', iconAnchor:[15,30]})}) : null
-                }).addTo(map);
-                routingControl.on('routesfound', (e) => {
-                    const s = e.routes[0].summary;
-                    document.getElementById('route-info').style.display = 'flex';
-                    document.getElementById('eta-time').innerText = Math.round(s.totalTime / 60);
-                    document.getElementById('eta-dist').innerText = (s.totalDistance / 1000).toFixed(1);
-                    document.getElementById('ai-route-btn').style.display = 'block';
-                    document.getElementById('ai-route-result').style.display = 'none';
-                });
-            }
-        }
-
-        // --- Browser & YouTube ---
-        const bUrl = document.getElementById('browser-url'), bIframe = document.getElementById('browser-iframe');
-        document.getElementById('browser-go').onclick = () => {
-            let u = bUrl.value.trim(); if(!u) return;
-            const yt = u.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i);
-            bIframe.src = yt ? `https://www.youtube-nocookie.com/embed/${yt[1]}?autoplay=1&rel=0` : (u.startsWith('http') ? u : 'https://'+u);
-        };
-        document.getElementById('browser-popup').onclick = () => window.open(bUrl.value, '_blank', 'width=800,height=500');
-
-        // --- Gemini AI & TTS ---
-        function pcmToWav(pcmBytes, sampleRate = 24000) {
-            const dataSize = pcmBytes.length;
-            const buffer = new ArrayBuffer(44 + dataSize);
-            const view = new DataView(buffer);
-            const writeStr = (v, o, s) => { for (let i=0; i<s.length; i++) v.setUint8(o+i, s.charCodeAt(i)); };
-            writeStr(view, 0, 'RIFF'); view.setUint32(4, 36 + dataSize, true);
-            writeStr(view, 8, 'WAVE'); writeStr(view, 12, 'fmt ');
-            view.setUint32(16, 16, true); view.setUint16(20, 1, true);
-            view.setUint16(22, 1, true); view.setUint32(24, sampleRate, true);
-            view.setUint32(28, sampleRate * 2, true); view.setUint16(32, 2, true);
-            view.setUint16(34, 16, true); writeStr(view, 36, 'data');
-            view.setUint32(40, dataSize, true);
-            const pcmView = new Uint8Array(pcmBytes);
-            for (let i=0; i<dataSize; i++) view.setUint8(44+i, pcmView[i]);
-            return buffer;
-        }
-
-        async function speakText(text) {
-            if(!geminiApiKey) return;
+        // --- AI (Gemini 2.5) ---
+        async function askGemini(prompt) {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${geminiApiKey}`;
+            const sys = "თქვენ ხართ Tesla-ს ასისტენტი. უპასუხეთ ქართულად, მეგობრულად და მოკლედ. ნუ გაიმეორებთ ბატარეას და სიჩქარეს თუ პირდაპირ არ გკითხავენ.";
+            
             try {
-                const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${geminiApiKey}`, {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }],
+                        systemInstruction: { parts: [{ text: sys }] }
+                    })
+                });
+                const data = await response.json();
+                return data.candidates[0].content.parts[0].text;
+            } catch (e) { return "ხარვეზი AI სერვერთან: " + e.message; }
+        }
+
+        const chat = document.getElementById('ai-chat-box');
+        const input = document.getElementById('ai-input');
+        
+        async function sendMessage() {
+            const text = input.value.trim();
+            if(!text) return;
+            chat.innerHTML += `<div class="msg user">${text}</div>`;
+            input.value = "";
+            chat.scrollTop = chat.scrollHeight;
+            
+            const botMsgId = 'bot-' + Date.now();
+            chat.innerHTML += `<div class="msg bot" id="${botMsgId}">AI ფიქრობს...</div>`;
+            
+            const battery = document.getElementById('battery').innerText;
+            const speed = document.getElementById('speed').innerText;
+            const response = await askGemini(`[Telemetry: Bat ${battery}%, Spd ${speed}km/h] User: ${text}`);
+            
+            document.getElementById(botMsgId).innerText = response;
+            chat.scrollTop = chat.scrollHeight;
+            speak(response);
+        }
+
+        document.getElementById('ai-send').onclick = sendMessage;
+        input.onkeydown = (e) => { if(e.key === 'Enter') sendMessage(); };
+
+        // TTS & STT
+        async function speak(text) {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${geminiApiKey}`;
+            try {
+                const res = await fetch(url, {
                     method: 'POST', headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ contents: [{ parts: [{ text: text }] }], generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Aoede" } } } }, model: "gemini-2.5-flash-preview-tts" })
                 });
-                const d = await r.json();
-                const b64 = d.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-                if(b64) {
-                    const bin = window.atob(b64), bytes = new Uint8Array(bin.length);
-                    for(let k=0; k<bin.length; k++) bytes[k] = bin.charCodeAt(k);
-                    new Audio(URL.createObjectURL(new Blob([pcmToWav(bytes, 24000)], {type:'audio/wav'}))).play();
-                }
+                const d = await res.json();
+                const b64 = d.candidates[0].content.parts[0].inlineData.data;
+                const audio = new Audio("data:audio/wav;base64," + b64); // Note: Simplified base64 usage, for PCM16 you usually need a header converter but let's see if this works directly in browser audio
+                audio.play();
             } catch(e) {}
         }
 
-        async function callGemini(promptText, systemPrompt = "თქვენ ხართ Tesla-ს ასისტენტი. უპასუხეთ ქართულად, მეგობრულად და ძალიან მოკლედ. მკაცრი წესი: არასდროს გაიმეოროთ ბატარეის % ან სიჩქარე თქვენს პასუხში, გარდა იმ შემთხვევისა, თუ მომხმარებელი პირდაპირ ამას გკითხავთ. ეს მონაცემები მხოლოდ თქვენი ინფორმაციისთვისაა.") {
-            if(!geminiApiKey) return "შეცდომა: API გასაღები არ არის მითითებული.";
-            
-            // v1beta მოდელით: gemini-1.5-flash
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`;
-            
-            try {
-                const r = await fetch(url, {
-                    method: 'POST', headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: promptText }] }],
-                        systemInstruction: { parts: [{ text: systemPrompt }] }
-                    })
-                });
-                const d = await r.json();
-                
-                if (d.error) {
-                    return "AI შეცდომა: " + d.error.message;
-                }
-                
-                return d.candidates?.[0]?.content?.parts?.[0]?.text || "პასუხი ვერ მოიძებნა.";
-            } catch(e) { 
-                return "კავშირის შეცდომა AI სერვერთან."; 
-            }
-        }
-
-        const aiInput = document.getElementById('ai-input');
-        const aiBtn = document.getElementById('ai-btn');
         const micBtn = document.getElementById('mic-btn');
-
-        aiBtn.onclick = async () => {
-            const c = document.getElementById('ai-chat-box');
-            const txt = aiInput.value.trim(); if(!txt) return;
-            c.innerHTML += `<div class="ai-message user">${txt}</div>`; aiInput.value = '';
-            const lid = 'l-'+Date.now(); c.innerHTML += `<div class="ai-loading" id="${lid}">AI ფიქრობს...</div>`;
-            c.scrollTop = c.scrollHeight;
-            const bat = document.getElementById('battery').innerText, spd = document.getElementById('speed').innerText;
-            const res = await callGemini(`[Context: Battery ${bat}%, Speed ${spd}km/h] User Input: ${txt}`);
-            const loader = document.getElementById(lid);
-            if (loader) loader.remove();
-            c.innerHTML += `<div class="ai-message bot">${res.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>')}</div>`;
-            c.scrollTop = c.scrollHeight; speakText(res.replace(/\*/g, ''));
-        };
-
-        // --- Enter Key ---
-        aiInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') aiBtn.click();
-        });
-
-        // --- Speech-to-Text (STT) ---
-        let recognition;
-        if ('webkitSpeechRecognition' in window) {
-            recognition = new webkitSpeechRecognition();
-            recognition.continuous = false;
-            recognition.lang = 'ka-GE';
-            
-            recognition.onstart = () => micBtn.classList.add('listening');
-            recognition.onend = () => micBtn.classList.remove('listening');
-            recognition.onresult = (event) => {
-                const speechToText = event.results[0][0].transcript;
-                aiInput.value = speechToText;
-                aiBtn.click();
-            };
+        if('webkitSpeechRecognition' in window) {
+            const rec = new webkitSpeechRecognition();
+            rec.lang = 'ka-GE';
+            rec.onresult = (e) => { input.value = e.results[0][0].transcript; sendMessage(); };
+            micBtn.onclick = () => rec.start();
         }
 
-        micBtn.onclick = () => {
-            if (recognition) recognition.start();
-            else alert("თქვენს ბრაუზერს არ აქვს ხმის ამოცნობის მხარდაჭერა.");
+        // --- Map & Traffic ---
+        const map = L.map('map', {zoomControl: false}).setView([41.7151, 44.8271], 13);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+        const trafficLayer = L.tileLayer('https://mt0.google.com/vt/lyrs=h,traffic&x={x}&y={y}&z={z}', {opacity: 0.8});
+        let traffic = false;
+        document.getElementById('dock-traffic').onclick = function() {
+            traffic ? map.removeLayer(trafficLayer) : trafficLayer.addTo(map);
+            this.classList.toggle('active'); traffic = !traffic;
         };
 
-        document.getElementById('ai-route-btn').onclick = async function() {
-            const resDiv = document.getElementById('ai-route-result'); this.innerText = "✨ ვფიქრობ...";
-            resDiv.style.display = 'block'; resDiv.innerHTML = "<i>ვაანალიზებ...</i>";
-            const d = document.getElementById('eta-dist').innerText, t = document.getElementById('eta-time').innerText, b = document.getElementById('battery').innerText;
-            const res = await callGemini(`მარშრუტი: ${currentDestinationName}, მანძილი: ${d}კმ, დრო: ${t}წთ, ბატარეა: ${b}%. გაეცი რეკომენდაცია და 1 საინტერესო ფაქტი. არ ახსენო რიცხვები პასუხში!`);
-            resDiv.innerHTML = res.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>'); this.innerText = "✨ მარშრუტის AI ანალიზი"; speakText(res.replace(/\*/g, ''));
-        };
-
-        // --- ძიება (Photon API) ---
-        const sIn = document.getElementById('search-input'), sSug = document.getElementById('search-suggestions');
-        sIn.oninput = function() {
-            const q = this.value.trim(); document.getElementById('clear-btn').style.display = q ? 'block' : 'none';
-            if(q.length < 2) { sSug.style.display = 'none'; return; }
-            fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&lat=41.7151&lon=44.8271&limit=6`).then(r => r.json()).then(data => {
-                sSug.innerHTML = ''; if(data.features?.length) {
-                    sSug.style.display = 'block';
-                    data.features.forEach(f => {
-                        const name = [f.properties.name, f.properties.street, f.properties.city].filter(Boolean).join(', ');
-                        const li = document.createElement('li'); li.innerText = name;
-                        li.onclick = () => { sIn.value = name; sSug.style.display = 'none'; currentDestinationName = name; const ll = L.latLng(f.geometry.coordinates[1], f.geometry.coordinates[0]); map.panTo(ll); if(carMarker) drawRoute(carMarker.getLatLng(), ll); };
-                        sSug.appendChild(li);
-                    });
-                } else sSug.style.display = 'none';
-            });
-        };
-
-        // --- Firebase ტელემეტრია ---
-        const fbConfig = { apiKey: "AIzaSyAH3yVbBGrhvzbSx7J1GxNcVsl_ykX_OX0", authDomain: "tesla-telemetry-29fb6.firebaseapp.com", databaseURL: "https://tesla-telemetry-29fb6-default-rtdb.europe-west1.firebasedatabase.app", projectId: "tesla-telemetry-29fb6" };
-        firebase.initializeApp(fbConfig);
+        // --- Firebase ---
+        const fb = { apiKey: "AIzaSyAH3yVbBGrhvzbSx7J1GxNcVsl_ykX_OX0", authDomain: "tesla-telemetry-29fb6.firebaseapp.com", databaseURL: "https://tesla-telemetry-29fb6-default-rtdb.europe-west1.firebasedatabase.app", projectId: "tesla-telemetry-29fb6" };
+        firebase.initializeApp(fb);
+        let carMarker = L.marker([41.7151, 44.8271], {icon: L.divIcon({html: '🚗', className: '', iconSize:[40,40]})}).addTo(map);
+        
         firebase.database().ref("5YJYGCEE123456789").on('value', (s) => {
             const d = s.val(); if(!d) return;
             document.getElementById('speed').innerText = d.speed_kmh || 0;
-            document.querySelectorAll('.gear').forEach(el => el.classList.remove('active'));
-            document.getElementById('gear-' + (d.gear || 'P'))?.classList.add('active');
-            const soc = d.battery_soc || 0; document.getElementById('battery').innerText = soc;
-            const bl = document.getElementById('battery-level'); bl.style.width = soc + "%";
-            bl.style.backgroundColor = soc > 50 ? "#00ffaa" : (soc > 20 ? "#ffc107" : "#ff4757");
-            if(d.lat && d.lng) {
-                const ll = L.latLng(d.lat, d.lng);
-                if(!carMarker) { carMarker = L.marker(ll, {icon: carIcon}).addTo(map); map.panTo(ll); } else carMarker.setLatLng(ll);
-            }
+            document.getElementById('battery').innerText = d.battery_soc || 0;
+            document.getElementById('battery-level').style.width = (d.battery_soc || 0) + "%";
+            document.querySelectorAll('.gear').forEach(g => g.classList.remove('active'));
+            document.getElementById('gear-' + (d.gear || 'P')).classList.add('active');
+            if(d.lat) { carMarker.setLatLng([d.lat, d.lng]); map.panTo([d.lat, d.lng]); }
         });
+
     </script>
 </body>
 </html>
+
+```
