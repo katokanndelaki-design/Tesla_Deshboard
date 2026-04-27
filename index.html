@@ -320,10 +320,10 @@
         async function speakText(text) {
             if(!geminiApiKey) return;
             try {
-                // მოდელის სახელი განახლებულია უფრო სტაბილური ვერსიით ონლაინ გარემოსთვის
-                const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`, {
+                // მოდელის სახელი და პრეფიქსი გასწორებულია v1beta API-სთვის
+                const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${geminiApiKey}`, {
                     method: 'POST', headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ contents: [{ parts: [{ text: "Say this clearly: " + text }] }], generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Aoede" } } } } })
+                    body: JSON.stringify({ contents: [{ parts: [{ text: text }] }], generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Aoede" } } } } })
                 });
                 const d = await r.json();
                 const b64 = d.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
@@ -338,8 +338,8 @@
         async function callGemini(promptText) {
             if(!geminiApiKey) return "შეცდომა: API გასაღები არ არის მითითებული.";
             try {
-                // მოდელის სახელი განახლებულია gemini-1.5-flash-ზე მეტი სტაბილურობისთვის ონლაინ
-                const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`, {
+                // მოდელის სახელი განახლებულია gemini-2.5-flash-preview-09-2025-ზე
+                const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${geminiApiKey}`, {
                     method: 'POST', headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
                         contents: [{ parts: [{ text: promptText }] }],
@@ -348,7 +348,6 @@
                 });
                 const d = await r.json();
                 
-                // შეცდომის დეტალური დამუშავება
                 if (d.error) {
                     console.error("Gemini Error:", d.error);
                     return "AI შეცდომა: " + (d.error.message || "უცნობი ხარვეზი.");
@@ -368,7 +367,6 @@
             const lid = 'l-'+Date.now(); c.innerHTML += `<div class="ai-loading" id="${lid}">AI ფიქრობს...</div>`;
             c.scrollTop = c.scrollHeight;
             const bat = document.getElementById('battery').innerText, spd = document.getElementById('speed').innerText;
-            // მონაცემები იგზავნება ფარულად
             const res = await callGemini(`[Context: Battery ${bat}%, Speed ${spd}km/h] User Input: ${txt}`);
             const loader = document.getElementById(lid);
             if (loader) loader.remove();
