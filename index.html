@@ -134,6 +134,11 @@
         .ai-message.user { background: #2b2b2b; align-self: flex-end; color: #fff; border: 1px solid #444; border-bottom-right-radius: 2px; }
         .ai-message.bot { background: rgba(0, 168, 255, 0.1); align-self: flex-start; color: #bdf; border: 1px solid rgba(0, 168, 255, 0.3); border-bottom-left-radius: 2px; }
         .ai-loading { color: #888; font-size: 12px; font-style: italic; align-self: flex-start; margin-left: 5px; }
+
+        /* მიკროფონის ღილაკი */
+        .mic-btn { background: #444; border: none; color: white; padding: 10px; border-radius: 8px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; }
+        .mic-btn.listening { background: #ff4757; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); box-shadow: 0 0 10px #ff4757; } 100% { transform: scale(1); } }
     </style>
 </head>
 <body>
@@ -222,8 +227,9 @@
         <div class="ai-chat-box" id="ai-chat-box">
             <div class="ai-message bot">გამარჯობა! მე ვარ თქვენი ხელოვნური ინტელექტით აღჭურვილი ასისტენტი.</div>
         </div>
-        <div class="search-wrapper" style="margin-top: 10px;">
+        <div class="search-wrapper" style="margin-top: 10px; gap: 5px;">
             <input type="text" id="ai-input" placeholder="ჰკითხეთ AI-ს..." autocomplete="off">
+            <button id="mic-btn" class="mic-btn" title="ხმოვანი ბრძანება">🎤</button>
             <button id="ai-btn" style="background: #333; border: none; color: white; padding: 10px; border-radius: 8px; cursor: pointer;">კითხვა</button>
         </div>
     </div>
@@ -319,51 +325,51 @@
 
         async function speakText(text) {
             if(!geminiApiKey) return;
-            const retryDelays = [1000, 2000, 4000, 8000, 16000];
-            for (let i = 0; i < 5; i++) {
-                try {
-                    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${geminiApiKey}`, {
-                        method: 'POST', headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({ contents: [{ parts: [{ text: "Say this clearly: " + text }] }], generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Aoede" } } } }, model: "gemini-2.5-flash-preview-tts" })
-                    });
-                    const d = await r.json();
-                    const b64 = d.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-                    if(b64) {
-                        const bin = window.atob(b64), bytes = new Uint8Array(bin.length);
-                        for(let k=0; k<bin.length; k++) bytes[k] = bin.charCodeAt(k);
-                        new Audio(URL.createObjectURL(new Blob([pcmToWav(bytes, 24000)], {type:'audio/wav'}))).play();
-                        break;
-                    }
-                } catch(e) { if(i === 4) console.error("TTS failed"); else await new Promise(res => setTimeout(res, retryDelays[i])); }
-            }
+            try {
+                // v1beta tts ენდფოინთი
+                const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${geminiApiKey}`, {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ contents: [{ parts: [{ text: text }] }], generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Aoede" } } } }, model: "gemini-2.5-flash-preview-tts" })
+                });
+                const d = await r.json();
+                const b64 = d.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+                if(b64) {
+                    const bin = window.atob(b64), bytes = new Uint8Array(bin.length);
+                    for(let k=0; k<bin.length; k++) bytes[k] = bin.charCodeAt(k);
+                    new Audio(URL.createObjectURL(new Blob([pcmToWav(bytes, 24000)], {type:'audio/wav'}))).play();
+                }
+            } catch(e) { console.error("TTS failed", e); }
         }
 
         async function callGemini(promptText, systemPrompt = "თქვენ ხართ Tesla-ს ასისტენტი. უპასუხეთ ქართულად, მეგობრულად და ძალიან მოკლედ. მკაცრი წესი: არასდროს გაიმეოროთ ბატარეის % ან სიჩქარე თქვენს პასუხში, გარდა იმ შემთხვევისა, თუ მომხმარებელი პირდაპირ ამას გკითხავთ. ეს მონაცემები მხოლოდ თქვენი ინფორმაციისთვისაა.") {
             if(!geminiApiKey) return "შეცდომა: API გასაღები არ არის მითითებული.";
-            const retryDelays = [1000, 2000, 4000, 8000, 16000];
-            for (let i = 0; i < 5; i++) {
-                try {
-                    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${geminiApiKey}`, {
-                        method: 'POST', headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({
-                            contents: [{ parts: [{ text: promptText }] }],
-                            systemInstruction: { parts: [{ text: systemPrompt }] }
-                        })
-                    });
-                    const d = await r.json();
-                    if (d.error) throw new Error(d.error.message);
-                    return d.candidates?.[0]?.content?.parts?.[0]?.text || "პასუხი ვერ მოიძებნა.";
-                } catch(e) { 
-                    if(i === 4) return "AI შეცდომა: " + e.message;
-                    await new Promise(res => setTimeout(res, retryDelays[i]));
-                }
+            
+            // ვცვლით v1beta-დან v1-ზე და ვიყენებთ სტაბილურ მოდელს ონლაინ რეჟიმისთვის
+            const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`;
+            
+            try {
+                const r = await fetch(url, {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: promptText }] }],
+                        systemInstruction: { parts: [{ text: systemPrompt }] }
+                    })
+                });
+                const d = await r.json();
+                if (d.error) throw new Error(d.error.message);
+                return d.candidates?.[0]?.content?.parts?.[0]?.text || "პასუხი ვერ მოიძებნა.";
+            } catch(e) { 
+                return "AI შეცდომა: " + e.message;
             }
         }
 
-        document.getElementById('ai-btn').onclick = async () => {
-            const i = document.getElementById('ai-input'), c = document.getElementById('ai-chat-box');
-            const txt = i.value.trim(); if(!txt) return;
-            c.innerHTML += `<div class="ai-message user">${txt}</div>`; i.value = '';
+        const aiInput = document.getElementById('ai-input');
+        const aiBtn = document.getElementById('ai-btn');
+
+        aiBtn.onclick = async () => {
+            const c = document.getElementById('ai-chat-box');
+            const txt = aiInput.value.trim(); if(!txt) return;
+            c.innerHTML += `<div class="ai-message user">${txt}</div>`; aiInput.value = '';
             const lid = 'l-'+Date.now(); c.innerHTML += `<div class="ai-loading" id="${lid}">AI ფიქრობს...</div>`;
             c.scrollTop = c.scrollHeight;
             const bat = document.getElementById('battery').innerText, spd = document.getElementById('speed').innerText;
@@ -373,10 +379,34 @@
             c.scrollTop = c.scrollHeight; speakText(res.replace(/\*/g, ''));
         };
 
-        // --- "Enter" ღილაკის მხარდაჭერა AI ჩატისთვის ---
-        document.getElementById('ai-input').addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') document.getElementById('ai-btn').click();
+        // --- Enter Key ---
+        aiInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') aiBtn.click();
         });
+
+        // --- ხმის ამოცნობა (STT) ---
+        const micBtn = document.getElementById('mic-btn');
+        let recognition;
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.lang = 'ka-GE';
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+
+            recognition.onstart = () => { micBtn.classList.add('listening'); };
+            recognition.onend = () => { micBtn.classList.remove('listening'); };
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                aiInput.value = transcript;
+                setTimeout(() => aiBtn.click(), 500);
+            };
+            recognition.onerror = (event) => { micBtn.classList.remove('listening'); console.error("Speech Recognition Error", event.error); };
+
+            micBtn.onclick = () => { recognition.start(); };
+        } else {
+            micBtn.style.display = 'none';
+        }
 
         document.getElementById('ai-route-btn').onclick = async function() {
             const resDiv = document.getElementById('ai-route-result'); this.innerText = "✨ ვფიქრობ...";
