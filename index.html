@@ -320,9 +320,10 @@
         async function speakText(text) {
             if(!geminiApiKey) return;
             try {
-                const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${geminiApiKey}`, {
+                // მოდელის სახელი განახლებულია უფრო სტაბილური ვერსიით ონლაინ გარემოსთვის
+                const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`, {
                     method: 'POST', headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ contents: [{ parts: [{ text: text }] }], generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Aoede" } } } } })
+                    body: JSON.stringify({ contents: [{ parts: [{ text: "Say this clearly: " + text }] }], generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Aoede" } } } } })
                 });
                 const d = await r.json();
                 const b64 = d.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
@@ -337,16 +338,27 @@
         async function callGemini(promptText) {
             if(!geminiApiKey) return "შეცდომა: API გასაღები არ არის მითითებული.";
             try {
-                const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${geminiApiKey}`, {
+                // მოდელის სახელი განახლებულია gemini-1.5-flash-ზე მეტი სტაბილურობისთვის ონლაინ
+                const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`, {
                     method: 'POST', headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
                         contents: [{ parts: [{ text: promptText }] }],
-                        systemInstruction: { parts: [{ text: "თქვენ ხართ Tesla-ს ასისტენტი. უპასუხეთ ქართულად, მოკლედ. მკაცრი წესი: არ გაიმეოროთ ბატარეის % და სიჩქარე, თუ პირდაპირ არ გკითხავენ! მხოლოდ გაითვალისწინეთ ეს მონაცემები პასუხისას." }] }
+                        systemInstruction: { parts: [{ text: "თქვენ ხართ Tesla-ს ასისტენტი. უპასუხეთ ქართულად, მეგობრულად და ძალიან მოკლედ. მკაცრი წესი: არასდროს გაიმეოროთ ბატარეის % ან სიჩქარე თქვენს პასუხში, გარდა იმ შემთხვევისა, თუ მომხმარებელი პირდაპირ ამას გკითხავთ. ეს მონაცემები მხოლოდ თქვენი ინფორმაციისთვისაა." }] }
                     })
                 });
                 const d = await r.json();
+                
+                // შეცდომის დეტალური დამუშავება
+                if (d.error) {
+                    console.error("Gemini Error:", d.error);
+                    return "AI შეცდომა: " + (d.error.message || "უცნობი ხარვეზი.");
+                }
+                
                 return d.candidates?.[0]?.content?.parts?.[0]?.text || "პასუხი ვერ მოიძებნა.";
-            } catch(e) { return "კავშირის შეცდომა AI სერვერთან."; }
+            } catch(e) { 
+                console.error("Fetch Error:", e);
+                return "კავშირის შეცდომა AI სერვერთან."; 
+            }
         }
 
         document.getElementById('ai-btn').onclick = async () => {
@@ -356,8 +368,10 @@
             const lid = 'l-'+Date.now(); c.innerHTML += `<div class="ai-loading" id="${lid}">AI ფიქრობს...</div>`;
             c.scrollTop = c.scrollHeight;
             const bat = document.getElementById('battery').innerText, spd = document.getElementById('speed').innerText;
-            const res = await callGemini(`[Telemetry -> Bat: ${bat}%, Spd: ${spd}km/h] User: ${txt}`);
-            document.getElementById(lid).remove();
+            // მონაცემები იგზავნება ფარულად
+            const res = await callGemini(`[Context: Battery ${bat}%, Speed ${spd}km/h] User Input: ${txt}`);
+            const loader = document.getElementById(lid);
+            if (loader) loader.remove();
             c.innerHTML += `<div class="ai-message bot">${res.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>')}</div>`;
             c.scrollTop = c.scrollHeight; speakText(res.replace(/\*/g, ''));
         };
@@ -366,7 +380,7 @@
             const resDiv = document.getElementById('ai-route-result'); this.innerText = "✨ ვფიქრობ...";
             resDiv.style.display = 'block'; resDiv.innerHTML = "<i>ვაანალიზებ...</i>";
             const d = document.getElementById('eta-dist').innerText, t = document.getElementById('eta-time').innerText, b = document.getElementById('battery').innerText;
-            const res = await callGemini(`მარშრუტი: ${currentDestinationName}, მანძილი: ${d}კმ, დრო: ${t}წთ, ბატარეა: ${b}%. გაეცი რეკომენდაცია და საინტერესო ფაქტი. არ გაიმეორო ციფრები!`);
+            const res = await callGemini(`მარშრუტი: ${currentDestinationName}, მანძილი: ${d}კმ, დრო: ${t}წთ, ბატარეა: ${b}%. გაეცი რეკომენდაცია და 1 საინტერესო ფაქტი. არ ახსენო რიცხვები პასუხში!`);
             resDiv.innerHTML = res.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>'); this.innerText = "✨ მარშრუტის AI ანალიზი"; speakText(res.replace(/\*/g, ''));
         };
 
