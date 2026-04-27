@@ -344,8 +344,8 @@
         async function callGemini(promptText, systemPrompt = "თქვენ ხართ Tesla-ს ასისტენტი. უპასუხეთ ქართულად, მეგობრულად და ძალიან მოკლედ. მკაცრი წესი: არასდროს გაიმეოროთ ბატარეის % ან სიჩქარე თქვენს პასუხში, გარდა იმ შემთხვევისა, თუ მომხმარებელი პირდაპირ ამას გკითხავთ. ეს მონაცემები მხოლოდ თქვენი ინფორმაციისთვისაა.") {
             if(!geminiApiKey) return "შეცდომა: API გასაღები არ არის მითითებული.";
             
-            // ვცვლით v1beta-დან v1-ზე და ვიყენებთ სტაბილურ მოდელს ონლაინ რეჟიმისთვის
-            const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`;
+            // ვიყენებთ v1beta-ს რადგან v1-ს არ ესმის "systemInstruction"
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`;
             
             try {
                 const r = await fetch(url, {
