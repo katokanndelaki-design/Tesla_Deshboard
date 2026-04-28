@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tesla OS - Multimedia System</title>
+    <title>Tesla OS - Pro Multimedia</title>
     
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -24,16 +24,14 @@
         /* ტელემეტრიის პანელი */
         .sidebar {
             position: absolute; top: 20px; left: 20px; width: 260px;
-            background: rgba(15, 15, 15, 0.85); backdrop-filter: blur(20px);
+            background: rgba(15, 15, 15, 0.85); backdrop-filter: blur(25px);
             border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); z-index: 10;
             padding: 30px 20px; display: flex; flex-direction: column; gap: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
         }
         .header-status { text-align: center; color: #888; font-size: 11px; letter-spacing: 2px; }
         .status-dot { height: 10px; width: 10px; background: #00ffaa; border-radius: 50%; display: inline-block; margin-right: 5px; box-shadow: 0 0 10px #00ffaa;}
         .speed-value { font-size: 80px; font-weight: 300; line-height: 1; text-align: center; }
-        .gear-selector { display: flex; justify-content: center; gap: 15px; font-size: 20px; font-weight: bold; color: #444; }
-        .gear.active { color: #fff; text-shadow: 0 0 15px rgba(255, 255, 255, 0.8); }
         .battery-icon { width: 100%; height: 12px; border: 1px solid #444; border-radius: 3px; padding: 2px; }
         .battery-level { height: 100%; background: #00ffaa; width: 0%; transition: 0.5s; }
 
@@ -54,57 +52,59 @@
             border-radius: 40px; display: flex; gap: 15px; border: 1px solid rgba(255,255,255,0.1);
         }
         .dock-icon {
-            width: 40px; height: 40px; border-radius: 12px; background: #222; 
+            width: 44px; height: 44px; border-radius: 12px; background: #222; 
             display: flex; justify-content: center; align-items: center; 
-            font-size: 20px; cursor: pointer; transition: 0.2s; border: 1px solid transparent;
+            font-size: 22px; cursor: pointer; transition: 0.2s; border: 1px solid transparent;
         }
-        .dock-icon.active { border-color: #00ffaa; box-shadow: 0 0 15px rgba(0, 255, 170, 0.2); }
+        .dock-icon.active { border-color: #00ffaa; box-shadow: 0 0 15px rgba(0, 255, 170, 0.3); background: #111; }
 
         /* აპლიკაციების ფანჯრები */
         .app-window {
-            position: absolute; top: 50px; left: 300px; width: 450px; height: auto;
-            background: rgba(20, 20, 20, 0.98); backdrop-filter: blur(30px); border-radius: 24px;
+            position: absolute; top: 60px; left: 300px; width: 500px; min-width: 400px;
+            background: rgba(18, 18, 18, 0.98); backdrop-filter: blur(35px); border-radius: 28px;
             border: 1px solid rgba(255,255,255,0.1); z-index: 500;
-            display: none; flex-direction: column; box-shadow: 0 30px 60px rgba(0,0,0,0.8);
+            display: none; flex-direction: column; box-shadow: 0 40px 80px rgba(0,0,0,0.9);
             resize: both; overflow: hidden;
         }
         .app-window.active { display: flex; }
-        .app-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; cursor: move; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .app-title { font-size: 14px; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
-        .win-btn { width: 30px; height: 30px; border-radius: 50%; border: none; background: rgba(255,255,255,0.05); color: #fff; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; }
-        .win-btn:hover { background: rgba(255,255,255,0.1); }
+        .app-header { display: flex; justify-content: space-between; align-items: center; padding: 18px 24px; cursor: move; background: rgba(255,255,255,0.03); }
+        .app-title { font-size: 13px; color: #777; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; }
+        .app-controls { display: flex; gap: 10px; }
+        .win-btn { width: 32px; height: 32px; border-radius: 50%; border: none; background: rgba(255,255,255,0.05); color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; transition: 0.2s; }
+        .win-btn:hover { background: rgba(255,255,255,0.15); }
         .win-btn.close:hover { background: #ff4757; }
 
-        .app-content { padding: 20px; flex: 1; display: flex; flex-direction: column; }
+        .app-content { padding: 0; flex: 1; display: flex; flex-direction: column; }
 
-        /* YouTube Music Style Search */
-        .search-bar { display: flex; background: #111; border-radius: 12px; padding: 5px; gap: 5px; margin-bottom: 15px; border: 1px solid #333; }
-        .search-bar input { flex: 1; background: transparent; border: none; color: #fff; padding: 10px; outline: none; font-size: 14px; }
-        .search-bar button { background: #ff0000; border: none; color: #fff; padding: 0 15px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
-        .search-bar button:hover { background: #cc0000; }
+        /* YouTube Browser */
+        .browser-toolbar { display: flex; padding: 15px; background: #111; gap: 10px; border-bottom: 1px solid #222; }
+        .browser-toolbar input { flex: 1; background: #000; border: 1px solid #333; border-radius: 12px; color: #fff; padding: 12px 15px; outline: none; font-size: 14px; }
+        .browser-toolbar button { background: #ff0000; border: none; color: #fff; padding: 0 20px; border-radius: 10px; cursor: pointer; font-weight: bold; }
 
-        .video-container { width: 100%; aspect-ratio: 16/9; background: #000; border-radius: 12px; overflow: hidden; }
+        .video-wrapper { width: 100%; flex: 1; background: #000; position: relative; min-height: 300px; }
+        #yt-player { width: 100%; height: 100%; position: absolute; top: 0; left: 0; }
 
-        /* მინი-პლეერი კონტროლებით */
+        /* მინი-პლეერი */
         .mini-player {
-            position: absolute; bottom: 100px; left: 50%; transform: translateX(-50%);
-            width: 340px; background: rgba(25, 25, 25, 0.95); backdrop-filter: blur(20px);
-            border-radius: 20px; border: 1px solid rgba(0, 255, 170, 0.3);
-            display: none; flex-direction: column; padding: 12px 15px; gap: 10px;
-            box-shadow: 0 15px 40px rgba(0,0,0,0.6); z-index: 900;
+            position: absolute; bottom: 90px; left: 50%; transform: translateX(-50%);
+            width: 360px; background: rgba(20, 20, 20, 0.95); backdrop-filter: blur(25px);
+            border-radius: 22px; border: 1px solid rgba(0, 255, 170, 0.2);
+            display: none; flex-direction: column; padding: 15px 20px; gap: 12px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.7); z-index: 900;
         }
         .mini-player.visible { display: flex; }
-        .mini-track-info { display: flex; align-items: center; gap: 10px; cursor: pointer; }
-        .mini-title { font-size: 13px; font-weight: bold; color: #00ffaa; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
-        .mini-controls { display: flex; justify-content: center; align-items: center; gap: 20px; }
-        .ctrl-btn { background: none; border: none; color: #fff; font-size: 20px; cursor: pointer; transition: 0.2s; }
-        .ctrl-btn:hover { color: #00ffaa; transform: scale(1.1); }
-        .play-pause { font-size: 28px; color: #00ffaa; }
+        .mini-info { display: flex; align-items: center; gap: 12px; cursor: pointer; }
+        .mini-title { font-size: 14px; font-weight: bold; color: #00ffaa; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
+        .mini-controls { display: flex; justify-content: center; align-items: center; gap: 25px; }
+        .ctrl-btn { background: none; border: none; color: #fff; font-size: 24px; cursor: pointer; transition: 0.2s; opacity: 0.8; }
+        .ctrl-btn:hover { color: #00ffaa; opacity: 1; transform: scale(1.1); }
+        .play-pause { font-size: 32px; color: #00ffaa; }
 
         /* ნავიგაციის სტილი */
-        .suggestions-list { list-style: none; padding: 0; margin: 10px 0; background: #111; border-radius: 10px; overflow: hidden; display: none; }
-        .suggestions-list li { padding: 12px; border-bottom: 1px solid #222; cursor: pointer; font-size: 13px; }
-        .suggestions-list li:hover { background: #00a8ff; }
+        .nav-content { padding: 20px; }
+        .suggestions-list { list-style: none; padding: 0; margin: 10px 0; background: #111; border-radius: 12px; overflow: hidden; display: none; border: 1px solid #222; }
+        .suggestions-list li { padding: 14px; border-bottom: 1px solid #222; cursor: pointer; font-size: 14px; }
+        .suggestions-list li:hover { background: #00a8ff; color: #fff; }
     </style>
 </head>
 <body>
@@ -113,9 +113,9 @@
 
     <!-- ტელემეტრია -->
     <div class="sidebar">
-        <div class="header-status"><span class="status-dot"></span> MODEL Y ACTIVE</div>
+        <div class="header-status"><span class="status-dot"></span> MODEL Y ONLINE</div>
         <div class="speed-value" id="speed">0</div>
-        <div style="text-align: center; font-size: 12px; color: #666; margin-top: -10px;">km/h</div>
+        <div style="text-align: center; font-size: 12px; color: #555; margin-top: -10px; font-weight: bold;">KM/H</div>
         <div class="gear-selector">
             <span id="gear-P" class="gear active">P</span>
             <span id="gear-R" class="gear">R</span>
@@ -125,11 +125,11 @@
         <div class="battery-icon"><div class="battery-level" id="battery-level"></div></div>
     </div>
 
-    <!-- მინი პლეერი -->
+    <!-- მინი პლეერი (ჩაკეცილი) -->
     <div class="mini-player" id="mini-player">
-        <div class="mini-track-info" onclick="restoreBrowser()">
-            <span style="font-size: 20px;">🎵</span>
-            <div class="mini-title" id="mini-title">მუსიკა არ არის ჩართული</div>
+        <div class="mini-info" onclick="restoreBrowser()">
+            <div style="font-size: 24px;">💿</div>
+            <div class="mini-title" id="mini-title">YouTube Media</div>
             <span style="font-size: 12px; color: #444;">▲</span>
         </div>
         <div class="mini-controls">
@@ -139,81 +139,79 @@
         </div>
     </div>
 
-    <!-- Dock მენიუ -->
+    <!-- Dock -->
     <div class="dock-container" id="dock-container">
         <div class="dock-toggle" id="dock-toggle">▼</div>
         <div class="dock">
-            <div class="dock-icon" title="მანქანა">🚗</div>
+            <div class="dock-icon" title="ავტომობილი">🚗</div>
             <div class="dock-icon" id="dock-nav" title="ნავიგაცია">🧭</div>
             <div class="dock-icon" id="dock-traffic" title="საცობები">🚦</div>
-            <div class="dock-icon" id="dock-browser" title="YouTube Music">🎵</div>
+            <div class="dock-icon" id="dock-browser" title="YouTube">🎞️</div>
             <div class="dock-icon" title="პარამეტრები">⚙️</div>
         </div>
     </div>
 
-    <!-- ნავიგაციის ფანჯარა -->
+    <!-- ნავიგაცია -->
     <div class="app-window" id="app-nav">
         <div class="app-header">
             <h3 class="app-title">🧭 ნავიგაცია</h3>
             <button class="win-btn close" onclick="toggleApp('app-nav')">&times;</button>
         </div>
-        <div class="app-content">
-            <div class="search-bar" style="background: #111;">
+        <div class="app-content nav-content">
+            <div class="browser-toolbar" style="padding: 0; background: transparent; border: none;">
                 <input type="text" id="search-input" placeholder="შეიყვანეთ მისამართი..." autocomplete="off">
             </div>
             <ul id="suggestions" class="suggestions-list"></ul>
-            <div id="route-info" style="display:none; justify-content:space-around; background:#111; padding:15px; border-radius:15px; margin-top:10px;">
-                <div style="text-align:center;"><div style="font-size:22px; color:#00ffaa;" id="eta-time">--</div><div style="font-size:10px; color:#666;">წთ</div></div>
-                <div style="text-align:center;"><div style="font-size:22px; color:#00ffaa;" id="eta-dist">--</div><div style="font-size:10px; color:#666;">კმ</div></div>
+            <div id="route-info" style="display:none; justify-content:space-around; background:#111; padding:20px; border-radius:18px; margin-top:15px; border: 1px solid #222;">
+                <div style="text-align:center;"><div style="font-size:26px; color:#00ffaa; font-weight: 300;" id="eta-time">--</div><div style="font-size:11px; color:#555; text-transform: uppercase;">წთ</div></div>
+                <div style="text-align:center;"><div style="font-size:26px; color:#00ffaa; font-weight: 300;" id="eta-dist">--</div><div style="font-size:11px; color:#555; text-transform: uppercase;">კმ</div></div>
             </div>
         </div>
     </div>
 
-    <!-- მედია ფანჯარა -->
+    <!-- მედია ბრაუზერი -->
     <div class="app-window" id="app-browser">
         <div class="app-header">
-            <h3 class="app-title">🎵 YouTube Music</h3>
-            <div style="display: flex; gap: 8px;">
+            <h3 class="app-title">🎞️ YouTube Browser</h3>
+            <div class="app-controls">
                 <button class="win-btn" onclick="collapseToMini()" title="ჩაკეცვა">_</button>
                 <button class="win-btn close" onclick="toggleApp('app-browser')">&times;</button>
             </div>
         </div>
         <div class="app-content">
-            <div class="search-bar">
-                <input type="text" id="yt-search" placeholder="მოძებნეთ სიმღერა ან მომღერალი...">
-                <button onclick="loadYouTube()">ძიება</button>
+            <div class="browser-toolbar">
+                <input type="text" id="yt-search" placeholder="მოძებნეთ სიმღერა ან მომღერალი YouTube-ზე...">
+                <button onclick="loadYouTube()">ძებნა</button>
             </div>
-            <div class="video-container" id="player-wrapper">
+            <div class="video-wrapper">
                 <div id="yt-player"></div>
             </div>
-            <p style="font-size: 11px; color: #555; margin-top: 10px; text-align: center;">
-                * ძიებისას ავტომატურად შეიქმნება სიმღერების რიგი.
-            </p>
         </div>
     </div>
 
-    <!-- YouTube IFrame API -->
     <script src="https://www.youtube.com/iframe_api"></script>
 
     <script>
-        // --- YouTube Player-ის ლოგიკა ---
         let player;
         let isPlaying = false;
 
+        // --- YouTube API Setup ---
         function onYouTubeIframeAPIReady() {
             player = new YT.Player('yt-player', {
                 height: '100%',
                 width: '100%',
-                videoId: 'jfKfPfyJRdk', // Lofi Default
+                // საწყისად ვტვირთავთ YouTube-ის საძიებო ინტერფეისს (Radio Mode)
                 playerVars: { 
                     'autoplay': 0, 
                     'controls': 1, 
                     'rel': 0, 
                     'enablejsapi': 1,
-                    'origin': window.location.origin
+                    'listType': 'search',
+                    'list': 'Tesla Music Mix'
                 },
                 events: {
-                    'onStateChange': onPlayerStateChange
+                    'onStateChange': onPlayerStateChange,
+                    'onReady': () => { console.log("Player Ready"); }
                 }
             });
         }
@@ -223,72 +221,56 @@
             if (event.data == YT.PlayerState.PLAYING) {
                 isPlaying = true;
                 btn.innerText = "⏸";
-                updateMiniTitle();
-            } else if (event.data == YT.PlayerState.PAUSED || event.data == YT.PlayerState.ENDED) {
+                updateStatus();
+            } else {
                 isPlaying = false;
                 btn.innerText = "▶";
             }
         }
 
         function loadYouTube() {
-            const input = document.getElementById('yt-search').value.trim();
-            if(!input) return;
-
-            // ვამოწმებთ არის თუ არა პირდაპირი ლინკი
-            const linkMatch = input.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
+            const query = document.getElementById('yt-search').value.trim();
+            if(!query) return;
             
-            if(linkMatch) {
-                player.loadVideoById(linkMatch[1]);
-            } else {
-                // თუ ტექსტია - ვტვირთავთ საძიებო სიას (Queue)
-                player.loadPlaylist({
-                    listType: 'search',
-                    list: input,
-                    index: 0
-                });
-            }
-            updateMiniTitle();
+            // ვტვირთავთ ძიების შედეგების სრულ ფლეილისტს
+            player.loadPlaylist({
+                listType: 'search',
+                list: query,
+                index: 0
+            });
+            updateStatus();
         }
 
-        // Enter-ზე ძიება
         document.getElementById('yt-search').onkeypress = (e) => { if(e.key === 'Enter') loadYouTube(); };
 
         function mediaControl(action) {
             if(!player) return;
-            try {
-                if(action === 'toggle') {
-                    isPlaying ? player.pauseVideo() : player.playVideo();
-                } else if(action === 'next') {
-                    player.nextVideo();
-                } else if(action === 'prev') {
-                    player.previousVideo();
-                }
-            } catch(e) { console.log("Media action error:", e); }
+            if(action === 'toggle') isPlaying ? player.pauseVideo() : player.playVideo();
+            else if(action === 'next') player.nextVideo();
+            else if(action === 'prev') player.previousVideo();
         }
 
-        function updateMiniTitle() {
+        function updateStatus() {
             setTimeout(() => {
-                try {
-                    const data = player.getVideoData();
-                    if(data && data.title) {
-                        document.getElementById('mini-title').innerText = data.title;
-                    }
-                } catch(e) {}
+                const data = player.getVideoData();
+                if(data && data.title) {
+                    document.getElementById('mini-title').innerText = data.title;
+                }
             }, 1000);
         }
 
-        // --- აპლიკაციების მართვა ---
+        // --- UI Logic ---
         function toggleApp(id) {
             const win = document.getElementById(id);
-            const wasActive = win.style.display === 'flex';
+            const isActive = win.style.display === 'flex';
             
+            // ვხურავთ სხვებს
             document.querySelectorAll('.app-window').forEach(w => w.style.display = 'none');
             document.querySelectorAll('.dock-icon').forEach(i => i.classList.remove('active'));
 
-            if(!wasActive) {
+            if(!isActive) {
                 win.style.display = 'flex';
-                const iconId = 'dock-' + id.split('-')[1];
-                document.getElementById(iconId)?.classList.add('active');
+                document.getElementById('dock-' + id.split('-')[1])?.classList.add('active');
                 if(id === 'app-browser') document.getElementById('mini-player').classList.remove('visible');
             }
         }
@@ -297,7 +279,7 @@
             document.getElementById('app-browser').style.display = 'none';
             document.getElementById('dock-browser').classList.remove('active');
             document.getElementById('mini-player').classList.add('visible');
-            updateMiniTitle();
+            updateStatus();
         }
 
         function restoreBrowser() {
@@ -308,7 +290,7 @@
         document.getElementById('dock-nav').onclick = () => toggleApp('app-nav');
         document.getElementById('dock-browser').onclick = () => toggleApp('app-browser');
 
-        // --- ფანჯრების გადაადგილება ---
+        // --- Dragging ---
         let activeWin = null, offset = {x:0, y:0};
         document.querySelectorAll('.app-header').forEach(h => {
             h.onmousedown = (e) => {
@@ -328,7 +310,7 @@
             document.getElementById('dock-toggle').innerText = dc.classList.contains('collapsed') ? '▲' : '▼';
         };
 
-        // --- რუკა და ტელემეტრია ---
+        // --- Map & Telemetry ---
         const map = L.map('map', {zoomControl:false}).setView([41.71, 44.82], 13);
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
 
