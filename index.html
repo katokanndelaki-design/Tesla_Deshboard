@@ -61,7 +61,7 @@
         }
         .dock-icon.active { border-color: #00ffaa; box-shadow: 0 0 15px rgba(0, 255, 170, 0.3); background: #111; }
 
-        /* ფანჯრები */
+        /* ფანჯრები - ძირითადი კლასი */
         .app-window {
             position: absolute; top: 20px; left: 300px; width: 400px; height: 400px;
             background: rgba(18, 18, 18, 0.98); backdrop-filter: blur(35px); border-radius: 28px;
@@ -178,15 +178,15 @@
         </div>
     </div>
 
-    <!-- AI Co-Pilot -->
-    <div class="app-window" id="app-ai">
+    <!-- AI Co-Pilot (მარჯვენა მხარეს დაფიქსირებული, როგორც ფოტოზეა) -->
+    <div class="app-window" id="app-ai" style="left: auto; right: 20px; top: 20px; width: 380px; height: calc(100vh - 120px);">
         <div class="app-header">
             <h3 class="app-title">✨ AI Co-Pilot</h3>
             <button class="win-btn close" onclick="toggleApp('app-ai')">&times;</button>
         </div>
         <div class="app-content" style="background: #111;">
             <div class="ai-chat-box" id="ai-chat">
-                <div class="msg bot">გამარჯობა! მე ვარ თქვენი Tesla ასისტენტი. რით შემიძლია დაგეხმაროთ?</div>
+                <div class="msg bot">გამარჯობა! მე ვარ თქვენი ხელოვნური ინტელექტით აღჭურვილი ასისტენტი.</div>
             </div>
             <div class="browser-toolbar">
                 <input type="text" id="ai-input" placeholder="ჰკითხეთ AI-ს...">
@@ -216,17 +216,20 @@
     </div>
 
     <script>
-        const geminiApiKey = ""; // API key is handled by the environment
+        // ყურადღება! საიტის თქვენს სერვერზე ატვირთვისას, აუცილებლად ჩასვით 
+        // თქვენი Gemini API გასაღები ბრჭყალებში (მაგ: "AIzaSy..."). 
+        // სანამ Canvas-ში ხართ, ეს ცარიელი უნდა იყოს.
+        const apiKey = ""; 
+        
         let trafficOn = false;
         let trafficLayer = L.tileLayer('https://mt0.google.com/vt/lyrs=h,traffic&x={x}&y={y}&z={z}', { maxZoom: 20, opacity: 0.8 });
         let carMarker = null;
         let routingControl = null;
         let currentDestination = "";
         
-        // Storage for AI responses to avoid escaping issues in HTML attributes
         const aiResponseStorage = {};
-        const aiAudioCache = {}; // ხმების შენახვა ლოკალურად
-        let currentAudio = null; // ამჟამად ჩართული აუდიო
+        const aiAudioCache = {}; 
+        let currentAudio = null; 
 
         // --- Helper for Gemini API Retries ---
         async function fetchGemini(url, payload) {
@@ -238,7 +241,10 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)
                     });
-                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error?.message || `HTTP error! status: ${response.status}`);
+                    }
                     return await response.json();
                 } catch (e) {
                     if (i === 4) throw e;
@@ -274,7 +280,9 @@
 
         // --- AI ლოგიკა ---
         async function callGemini(text, systemPrompt = "თქვენ ხართ Tesla-ს ასისტენტი. უპასუხეთ ქართულად, მეგობრულად. არ ახსენოთ ბატარეა და სიჩქარე თუ არ გკითხეს.") {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${geminiApiKey}`;
+            if(!apiKey) return "შეცდომა: API გასაღები აკლია! თუ საიტი საკუთარ სერვერზე ატვირთეთ, აუცილებლად შეიყვანეთ API Key კოდში (ცვლადი: apiKey).";
+            
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
             const payload = {
                 contents: [{ parts: [{ text: text }] }],
                 systemInstruction: { parts: [{ text: systemPrompt }] }
@@ -284,12 +292,13 @@
                 return data.candidates?.[0]?.content?.parts?.[0]?.text || "ბოდიში, პასუხის მიღება ვერ მოხერხდა.";
             } catch(e) { 
                 console.error(e);
-                return "შეცდომა: კავშირი ვერ დამყარდა."; 
+                return `შეცდომა კავშირისას: ${e.message}`; 
             }
         }
 
         async function fetchAndCreateAudio(text) {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${geminiApiKey}`;
+            if(!apiKey) return null;
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
             const payload = {
                 contents: [{ parts: [{ text: text }] }],
                 generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Aoede" } } } },
@@ -311,20 +320,15 @@
         }
 
         async function speakFromStorage(id, btnElement) {
-            // წინა აუდიოს გაჩერება
             if (currentAudio) {
                 currentAudio.pause();
                 currentAudio.currentTime = 0;
             }
-
-            // თუ ხმა უკვე გენერირებულია, ვრთავთ პირდაპირ
             if (aiAudioCache[id]) {
                 currentAudio = aiAudioCache[id];
                 currentAudio.play();
                 return;
             }
-
-            // ახალი ხმის გენერირება
             if (aiResponseStorage[id]) {
                 const originalText = btnElement.innerText;
                 btnElement.innerText = "⏳";
@@ -335,6 +339,8 @@
                     aiAudioCache[id] = audioObj;
                     currentAudio = audioObj;
                     currentAudio.play();
+                } else if(!apiKey) {
+                    alert("TTS შეცდომა: API გასაღები არ არის მითითებული.");
                 }
                 
                 btnElement.innerText = originalText;
@@ -360,7 +366,7 @@
             await appendBotMessage(chat, res);
         }
 
-        // ✨ New Feature: Smart Vehicle Status
+        // ✨ Smart Vehicle Status
         async function getAIStatus() {
             const speed = document.getElementById('speed').innerText;
             const battery = document.getElementById('battery-text').innerText;
@@ -372,7 +378,7 @@
             await appendBotMessage(chat, res);
         }
 
-        // ✨ New Feature: AI Route Analysis
+        // ✨ AI Route Analysis
         async function getAIRouteAnalysis() {
             const dist = document.getElementById('eta-dist').innerText;
             const time = document.getElementById('eta-time').innerText;
