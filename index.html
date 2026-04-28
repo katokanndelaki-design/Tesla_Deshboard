@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tesla OS - Multimedia Center</title>
+    <title>Tesla OS - Gemini AI Stable Edition</title>
     
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -12,18 +12,23 @@
     <!-- Leaflet.js -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Leaflet Routing Machine -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
+    <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
 
     <style>
         body { margin: 0; padding: 0; overflow: hidden; background-color: #000; font-family: 'Segoe UI', sans-serif; color: #fff; user-select: none; }
         
         #map { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; background: #111; }
+        .leaflet-routing-container { display: none !important; }
 
-        /* Telemetry Panel */
+        /* ტელემეტრიის პანელი */
         .sidebar {
             position: absolute; top: 20px; left: 20px; width: 260px;
             background: rgba(15, 15, 15, 0.9); backdrop-filter: blur(25px);
             border-radius: 24px; border: 1px solid rgba(255,255,255,0.1); z-index: 10;
-            padding: 30px 20px; display: flex; flex-direction: column; gap: 20px;
+            padding: 30px 20px; display: flex; flex-direction: column; gap: 15px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.5);
         }
         .header-status { text-align: center; color: #888; font-size: 11px; letter-spacing: 2px; }
@@ -32,7 +37,15 @@
         .battery-icon { width: 100%; height: 12px; border: 1px solid #444; border-radius: 3px; padding: 2px; }
         .battery-level { height: 100%; background: #00ffaa; width: 0%; transition: 0.5s; }
 
-        /* Dock Menu */
+        /* AI Status Button */
+        .ai-status-btn {
+            background: rgba(0, 168, 255, 0.2); border: 1px solid #00a8ff; color: #fff;
+            padding: 8px; border-radius: 12px; cursor: pointer; font-size: 11px;
+            text-align: center; transition: 0.2s;
+        }
+        .ai-status-btn:hover { background: rgba(0, 168, 255, 0.4); }
+
+        /* Dock */
         .dock-container {
             position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
             display: flex; flex-direction: column; align-items: center; gap: 8px; z-index: 1000;
@@ -48,9 +61,9 @@
         }
         .dock-icon.active { border-color: #00ffaa; box-shadow: 0 0 15px rgba(0, 255, 170, 0.3); background: #111; }
 
-        /* App Windows */
+        /* ფანჯრები */
         .app-window {
-            position: absolute; top: 60px; left: 300px; width: 700px; height: 550px; min-width: 350px; min-height: 300px;
+            position: absolute; top: 20px; left: 300px; width: 400px; height: 400px;
             background: rgba(18, 18, 18, 0.98); backdrop-filter: blur(35px); border-radius: 28px;
             border: 1px solid rgba(255,255,255,0.1); z-index: 500;
             display: none; flex-direction: column; box-shadow: 0 40px 80px rgba(0,0,0,0.9);
@@ -60,164 +73,352 @@
         .app-header { display: flex; justify-content: space-between; align-items: center; padding: 18px 24px; cursor: move; background: rgba(255,255,255,0.03); border-bottom: 1px solid rgba(255,255,255,0.05); }
         .app-title { font-size: 13px; color: #777; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; pointer-events: none; }
         .win-btn { width: 32px; height: 32px; border-radius: 50%; border: none; background: rgba(255,255,255,0.05); color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+        .win-btn:hover { background: rgba(255,255,255,0.15); }
         .win-btn.close:hover { background: #ff4757; }
 
-        .app-content { padding: 0; flex: 1; display: flex; flex-direction: column; overflow: hidden; background: #fff; }
+        .app-content { padding: 0; flex: 1; display: flex; flex-direction: column; overflow-y: auto; }
 
-        /* Browser Toolbar (Chrome Style) */
+        /* AI Chat Box */
+        .ai-chat-box { flex: 1; padding: 15px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
+        .msg { padding: 12px 16px; border-radius: 15px; max-width: 85%; font-size: 14px; line-height: 1.5; position: relative; }
+        .msg.user { background: #333; align-self: flex-end; border-bottom-right-radius: 2px; }
+        .msg.bot { background: rgba(0, 168, 255, 0.15); border: 1px solid rgba(0, 168, 255, 0.3); align-self: flex-start; border-bottom-left-radius: 2px; }
+        .speak-btn { background: none; border: none; color: #00a8ff; cursor: pointer; font-size: 16px; margin-left: 10px; vertical-align: middle; }
+
+        /* Input Bar */
         .browser-toolbar { display: flex; padding: 12px; background: #1a1a1a; gap: 8px; align-items: center; }
         .browser-toolbar input { flex: 1; background: #000; border: 1px solid #333; border-radius: 12px; color: #fff; padding: 10px 15px; outline: none; font-size: 14px; }
         .browser-toolbar button { background: #333; border: none; color: #fff; padding: 8px 15px; border-radius: 10px; cursor: pointer; font-size: 13px; }
-        .browser-toolbar button:hover { background: #444; }
 
-        .browser-frame-container { width: 100%; flex: 1; background: #fff; }
-        #web-browser-iframe { width: 100%; height: 100%; border: none; }
-
-        /* Mini-Player (Floating) */
+        /* მინი პლეერი */
         .mini-player {
-            position: absolute; bottom: 100px; left: 50%; transform: translateX(-50%);
-            width: 340px; background: rgba(20, 20, 20, 0.95); backdrop-filter: blur(25px);
+            position: absolute; bottom: 90px; left: 50%; transform: translateX(-50%);
+            width: 360px; background: rgba(20, 20, 20, 0.95); backdrop-filter: blur(25px);
             border-radius: 22px; border: 1px solid rgba(0, 255, 170, 0.2);
-            display: none; flex-direction: column; padding: 15px 20px; gap: 10px;
+            display: none; flex-direction: column; padding: 15px 20px; gap: 12px;
             box-shadow: 0 20px 50px rgba(0,0,0,0.7); z-index: 900;
         }
         .mini-player.active-session { display: flex; }
-        .mini-info { display: flex; align-items: center; gap: 12px; cursor: pointer; }
-        .mini-title { font-size: 14px; font-weight: bold; color: #00ffaa; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
-        .mini-controls { display: flex; justify-content: center; align-items: center; gap: 25px; }
-        .ctrl-btn { background: none; border: none; color: #fff; font-size: 24px; cursor: pointer; opacity: 0.8; }
-        .ctrl-btn:hover { color: #00ffaa; opacity: 1; }
+
+        /* ნავიგაციის სტილები */
+        .suggestions-list { list-style: none; padding: 0; margin: 10px 0; background: #111; border-radius: 12px; overflow: hidden; display: none; border: 1px solid #222; }
+        .suggestions-list li { padding: 14px; border-bottom: 1px solid #222; cursor: pointer; font-size: 14px; color: #ccc; }
+        .suggestions-list li:hover { background: #00a8ff; color: #fff; }
+
+        /* AI Route Button */
+        .route-ai-btn {
+            background: linear-gradient(45deg, #00a8ff, #00ffaa);
+            border: none; color: #000; font-weight: bold; padding: 10px;
+            border-radius: 12px; cursor: pointer; margin-top: 10px; font-size: 12px;
+            display: none;
+        }
     </style>
 </head>
 <body>
 
     <div id="map"></div>
 
-    <!-- Sidebar -->
+    <!-- ტელემეტრია -->
     <div class="sidebar">
-        <div class="header-status"><span class="status-dot"></span> MODEL Y ACTIVE</div>
+        <div class="header-status"><span class="status-dot"></span> MODEL Y ONLINE</div>
         <div class="speed-value" id="speed">0</div>
         <div style="text-align: center; font-size: 12px; color: #555; margin-top: -10px; font-weight: bold;">KM/H</div>
         <div style="display:flex; justify-content:center; gap:12px; font-weight:bold; color:#444; font-size:18px;">
             <span>P</span><span>R</span><span>N</span><span style="color:#fff;">D</span>
         </div>
         <div class="battery-icon"><div class="battery-level" id="battery-level"></div></div>
+        <div id="battery-text" style="text-align: center; font-size: 12px; color: #888;">--%</div>
+        <button class="ai-status-btn" onclick="getAIStatus()">✨ ჭკვიანი სტატუსი</button>
     </div>
 
-    <!-- Mini Toolbar (Visible when collapsed) -->
+    <!-- მინი-კონტროლი -->
     <div class="mini-player" id="mini-player">
-        <div class="mini-info" onclick="restoreBrowser()">
+        <div style="display:flex; align-items:center; gap:12px; cursor:pointer;" onclick="restoreBrowser()">
             <div style="font-size: 20px;">🌐</div>
-            <div class="mini-title" id="mini-title">ბრაუზერი</div>
+            <div style="font-size: 14px; font-weight: bold; color: #00ffaa; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" id="mini-title">ბრაუზერი</div>
             <span style="font-size: 12px; color: #444;">▲</span>
         </div>
-        <div class="mini-controls">
-            <button class="ctrl-btn" onclick="browserNav('home')">🏠</button>
-            <button class="ctrl-btn" onclick="browserNav('reload')">🔄</button>
-            <button class="ctrl-btn" onclick="window.open(currentUrl, '_blank')">↗️</button>
+        <div style="display:flex; justify-content:center; gap:25px;">
+            <button style="background:none; border:none; color:#fff; font-size:24px; cursor:pointer;" onclick="browserNav('back')">⏮</button>
+            <button style="background:none; border:none; color:#fff; font-size:24px; cursor:pointer;" onclick="browserNav('reload')">🔄</button>
+            <button style="background:none; border:none; color:#fff; font-size:24px; cursor:pointer;" onclick="browserNav('forward')">⏭</button>
         </div>
     </div>
 
     <!-- Dock -->
-    <div class="dock-container" id="dock-container">
+    <div class="dock-container">
         <div class="dock">
-            <div class="dock-icon" title="მანქანა">🚗</div>
+            <div class="dock-icon" id="dock-car" title="მანქანა">🚗</div>
             <div class="dock-icon" id="dock-nav" title="ნავიგაცია">🧭</div>
             <div class="dock-icon" id="dock-traffic" title="საცობები">🚦</div>
-            <div class="dock-icon" id="dock-browser" title="ინტერნეტი">🌐</div>
-            <div class="dock-icon" title="პარამეტრები">⚙️</div>
+            <div class="dock-icon" id="dock-browser" title="ბრაუზერი">🌐</div>
+            <div class="dock-icon" id="dock-ai" title="AI ასისტენტი">✨</div>
+            <div class="dock-icon" id="dock-settings" title="პარამეტრები">⚙️</div>
         </div>
     </div>
 
     <!-- ნავიგაცია -->
-    <div class="app-window" id="app-nav">
+    <div class="app-window" id="app-nav" style="width: 550px; height: 450px;">
         <div class="app-header">
             <h3 class="app-title">🧭 ნავიგაცია</h3>
             <button class="win-btn close" onclick="toggleApp('app-nav')">&times;</button>
         </div>
-        <div class="app-content" style="background:#111; padding: 20px;">
+        <div class="app-content" style="padding: 20px; background: #111;">
             <div class="browser-toolbar" style="padding: 0; background: transparent;">
-                <input type="text" id="search-input" placeholder="ჩაწერეთ მისამართი..." autocomplete="off">
+                <input type="text" id="search-input" placeholder="შეიყვანეთ მისამართი..." autocomplete="off">
             </div>
-            <ul id="suggestions" style="list-style:none; padding:0; background:#111; margin-top:10px;"></ul>
+            <ul id="suggestions" class="suggestions-list"></ul>
+            <div id="route-info" style="display:none; flex-direction: column; background:#000; padding:15px; border-radius:18px; margin-top:15px; border: 1px solid #222;">
+                <div style="display: flex; justify-content: space-around;">
+                    <div style="text-align:center;"><div style="font-size:22px; color:#00ffaa;" id="eta-time">--</div><div style="font-size:10px; color:#555;">წუთი</div></div>
+                    <div style="text-align:center;"><div style="font-size:22px; color:#00ffaa;" id="eta-dist">--</div><div style="font-size:10px; color:#555;">კმ</div></div>
+                </div>
+                <button id="ai-route-btn" class="route-ai-btn" onclick="getAIRouteAnalysis()">✨ მარშრუტის AI ანალიზი</button>
+            </div>
         </div>
     </div>
 
-    <!-- ბრაუზერი (The Solution) -->
-    <div class="app-window" id="app-browser">
+    <!-- AI Co-Pilot -->
+    <div class="app-window" id="app-ai">
         <div class="app-header">
-            <h3 class="app-title">🌐 ვებ-ბრაუზერი</h3>
-            <div class="app-controls">
+            <h3 class="app-title">✨ AI Co-Pilot</h3>
+            <button class="win-btn close" onclick="toggleApp('app-ai')">&times;</button>
+        </div>
+        <div class="app-content" style="background: #111;">
+            <div class="ai-chat-box" id="ai-chat">
+                <div class="msg bot">გამარჯობა! მე ვარ თქვენი Tesla ასისტენტი. რით შემიძლია დაგეხმაროთ?</div>
+            </div>
+            <div class="browser-toolbar">
+                <input type="text" id="ai-input" placeholder="ჰკითხეთ AI-ს...">
+                <button style="background: #444;" id="mic-btn">🎤</button>
+                <button onclick="sendToAI()">გაგზავნა</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ბრაუზერი -->
+    <div class="app-window" id="app-browser" style="width: 700px; height: 550px;">
+        <div class="app-header">
+            <h3 class="app-title">🌐 ბრაუზერი</h3>
+            <div style="display: flex; gap: 8px;">
                 <button class="win-btn" onclick="collapseToMini()" title="ჩაკეცვა">_</button>
                 <button class="win-btn close" onclick="toggleApp('app-browser')">&times;</button>
             </div>
         </div>
         <div class="app-content">
             <div class="browser-toolbar">
-                <input type="text" id="browser-url-input" placeholder="მოძებნეთ ინტერნეტში ან ჩაწერეთ URL...">
+                <input type="text" id="url-input" placeholder="ჩაწერეთ საიტი ან ძიება...">
                 <button onclick="navigateBrowser()">გადასვლა</button>
-                <button style="background: #ff4757;" onclick="openExternal()" title="გარე ფანჯარაში გახსნა">↗️</button>
+                <button style="background: #ff4757;" onclick="openExternal()">↗️</button>
             </div>
-            <div class="browser-frame-container">
-                <!-- DuckDuckGo არის ერთადერთი, რომელიც უშვებს ჩაშენებას და მუშაობს როგორც Google -->
-                <iframe id="web-browser-iframe" src="https://duckduckgo.com/?kae=d&kh=-1"></iframe>
-            </div>
-            <div style="background: #111; color: #666; font-size: 11px; padding: 10px; text-align: center; border-top: 1px solid #222;">
-                * ზოგიერთი საიტი ბლოკავს შიდა ჩვენებას. გამოიყენეთ <b>წითელი ღილაკი</b> მათ სრულად გასახსნელად.
-            </div>
+            <iframe id="browser-iframe" src="about:blank" style="width: 100%; flex: 1; border: none; background: #fff;"></iframe>
         </div>
     </div>
 
     <script>
-        let currentUrl = "https://duckduckgo.com";
+        const geminiApiKey = ""; // API key is handled by the environment
+        let trafficOn = false;
+        let trafficLayer = L.tileLayer('https://mt0.google.com/vt/lyrs=h,traffic&x={x}&y={y}&z={z}', { maxZoom: 20, opacity: 0.8 });
+        let carMarker = null;
+        let routingControl = null;
+        let currentDestination = "";
+        
+        // Storage for AI responses to avoid escaping issues in HTML attributes
+        const aiResponseStorage = {};
+        const aiAudioCache = {}; // ხმების შენახვა ლოკალურად
+        let currentAudio = null; // ამჟამად ჩართული აუდიო
 
-        // --- ბრაუზერის ლოგიკა ---
-        function navigateBrowser() {
-            const input = document.getElementById('browser-url-input');
-            let val = input.value.trim();
-            if (!val) return;
+        // --- Helper for Gemini API Retries ---
+        async function fetchGemini(url, payload) {
+            const retryDelays = [1000, 2000, 4000, 8000, 16000];
+            for (let i = 0; i < 5; i++) {
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    return await response.json();
+                } catch (e) {
+                    if (i === 4) throw e;
+                    await new Promise(resolve => setTimeout(resolve, retryDelays[i]));
+                }
+            }
+        }
 
-            // Omnibox: ვამოწმებთ არის თუ არა URL
-            const isUrl = val.includes('.') && !val.includes(' ');
-            let target = "";
-            
-            if (isUrl) {
-                target = val.startsWith('http') ? val : 'https://' + val;
-            } else {
-                // თუ სიტყვაა, ვეძებთ DuckDuckGo-ში (რომელიც არ ბლოკავს Iframe-ს)
-                target = 'https://duckduckgo.com/?q=' + encodeURIComponent(val) + '&kae=d';
+        // --- PCM to WAV conversion for TTS ---
+        function pcmToWav(pcmData, sampleRate = 24000) {
+            const buffer = new ArrayBuffer(44 + pcmData.length);
+            const view = new DataView(buffer);
+            const writeString = (offset, string) => {
+                for (let i = 0; i < string.length; i++) view.setUint8(offset + i, string.charCodeAt(i));
+            };
+            writeString(0, 'RIFF');
+            view.setUint32(4, 32 + pcmData.length, true);
+            writeString(8, 'WAVE');
+            writeString(12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true);
+            view.setUint16(22, 1, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * 2, true);
+            view.setUint16(32, 2, true);
+            view.setUint16(34, 16, true);
+            writeString(36, 'data');
+            view.setUint32(40, pcmData.length, true);
+            const pcmUint8 = new Uint8Array(pcmData);
+            for (let i = 0; i < pcmData.length; i++) view.setUint8(44 + i, pcmUint8[i]);
+            return buffer;
+        }
+
+        // --- AI ლოგიკა ---
+        async function callGemini(text, systemPrompt = "თქვენ ხართ Tesla-ს ასისტენტი. უპასუხეთ ქართულად, მეგობრულად. არ ახსენოთ ბატარეა და სიჩქარე თუ არ გკითხეს.") {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${geminiApiKey}`;
+            const payload = {
+                contents: [{ parts: [{ text: text }] }],
+                systemInstruction: { parts: [{ text: systemPrompt }] }
+            };
+            try {
+                const data = await fetchGemini(url, payload);
+                return data.candidates?.[0]?.content?.parts?.[0]?.text || "ბოდიში, პასუხის მიღება ვერ მოხერხდა.";
+            } catch(e) { 
+                console.error(e);
+                return "შეცდომა: კავშირი ვერ დამყარდა."; 
+            }
+        }
+
+        async function fetchAndCreateAudio(text) {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${geminiApiKey}`;
+            const payload = {
+                contents: [{ parts: [{ text: text }] }],
+                generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Aoede" } } } },
+                model: "gemini-2.5-flash-preview-tts"
+            };
+            try {
+                const data = await fetchGemini(url, payload);
+                const base64Data = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+                if (base64Data) {
+                    const binaryString = atob(base64Data);
+                    const pcmData = new Uint8Array(binaryString.length);
+                    for (let i = 0; i < binaryString.length; i++) pcmData[i] = binaryString.charCodeAt(i);
+                    const wavBuffer = pcmToWav(pcmData);
+                    const blob = new Blob([wavBuffer], { type: 'audio/wav' });
+                    return new Audio(URL.createObjectURL(blob));
+                }
+            } catch(e) { console.error("TTS Error:", e); }
+            return null;
+        }
+
+        async function speakFromStorage(id, btnElement) {
+            // წინა აუდიოს გაჩერება
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
             }
 
-            const iframe = document.getElementById('web-browser-iframe');
-            iframe.src = target;
-            currentUrl = target;
+            // თუ ხმა უკვე გენერირებულია, ვრთავთ პირდაპირ
+            if (aiAudioCache[id]) {
+                currentAudio = aiAudioCache[id];
+                currentAudio.play();
+                return;
+            }
+
+            // ახალი ხმის გენერირება
+            if (aiResponseStorage[id]) {
+                const originalText = btnElement.innerText;
+                btnElement.innerText = "⏳";
+                btnElement.disabled = true;
+
+                const audioObj = await fetchAndCreateAudio(aiResponseStorage[id]);
+                if (audioObj) {
+                    aiAudioCache[id] = audioObj;
+                    currentAudio = audioObj;
+                    currentAudio.play();
+                }
+                
+                btnElement.innerText = originalText;
+                btnElement.disabled = false;
+            }
+        }
+
+        async function appendBotMessage(chat, res) {
+            const msgId = 'bot-' + Date.now();
+            aiResponseStorage[msgId] = res;
+            chat.innerHTML += `<div class="msg bot" id="${msgId}">${res.replace(/\n/g, '<br>')} <button class="speak-btn" onclick="speakFromStorage('${msgId}', this)">🔊</button></div>`;
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        async function sendToAI() {
+            const input = document.getElementById('ai-input');
+            const chat = document.getElementById('ai-chat');
+            const text = input.value.trim(); if(!text) return;
+            chat.innerHTML += `<div class="msg user">${text}</div>`;
+            input.value = ''; chat.scrollTop = chat.scrollHeight;
+
+            const res = await callGemini(text);
+            await appendBotMessage(chat, res);
+        }
+
+        // ✨ New Feature: Smart Vehicle Status
+        async function getAIStatus() {
+            const speed = document.getElementById('speed').innerText;
+            const battery = document.getElementById('battery-text').innerText;
+            const prompt = `ჩემი ავტომობილის სიჩქარეა ${speed} კმ/სთ, ბატარეა: ${battery}. გააკეთე მოკლე და მეგობრული შეფასება ქართულად.`;
+            toggleApp('app-ai');
+            const chat = document.getElementById('ai-chat');
+            chat.innerHTML += `<div class="msg user">როგორია ჩემი ავტომობილის მდგომარეობა?</div>`;
+            const res = await callGemini(prompt, "თქვენ ხართ Tesla-ს ექსპერტი ასისტენტი. მოუყევით მძღოლს რამდენიმე საინტერესო ფაქტი Tesla-ზე და შეაფასეთ მონაცემები.");
+            await appendBotMessage(chat, res);
+        }
+
+        // ✨ New Feature: AI Route Analysis
+        async function getAIRouteAnalysis() {
+            const dist = document.getElementById('eta-dist').innerText;
+            const time = document.getElementById('eta-time').innerText;
+            const prompt = `მივდივარ აქ: ${currentDestination}. მანძილი ${dist} კმ, სავარაუდო დრო ${time} წუთი. მომიყევი რამე საინტერესო ამ ადგილზე ან გზაზე ქართულად.`;
+            toggleApp('app-ai');
+            const chat = document.getElementById('ai-chat');
+            chat.innerHTML += `<div class="msg user">მომიყევი მარშრუტის შესახებ (${currentDestination}).</div>`;
+            const res = await callGemini(prompt, "თქვენ ხართ გიდი ასისტენტი. მოუყევით მძღოლს საინტერესო ფაქტები დანიშნულების ადგილის შესახებ.");
+            await appendBotMessage(chat, res);
+        }
+
+        document.getElementById('ai-input').onkeypress = (e) => { if(e.key === 'Enter') sendToAI(); };
+
+        // --- რუკა ---
+        const map = L.map('map', {zoomControl:false}).setView([41.71, 44.82], 13);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+
+        document.getElementById('dock-traffic').onclick = function() {
+            if(trafficOn) map.removeLayer(trafficLayer); else trafficLayer.addTo(map);
+            trafficOn = !trafficOn;
+            this.classList.toggle('active');
+        };
+
+        // --- ბრაუზერი ---
+        function navigateBrowser() {
+            const input = document.getElementById('url-input');
+            let val = input.value.trim(); if(!val) return;
+            const isUrl = val.includes('.') && !val.includes(' ');
+            const target = isUrl ? (val.startsWith('http') ? val : 'https://' + val) : 'https://duckduckgo.com/?q=' + encodeURIComponent(val) + '&kae=d';
+            document.getElementById('browser-iframe').src = target;
             document.getElementById('mini-title').innerText = val;
         }
 
-        document.getElementById('browser-url-input').onkeypress = (e) => { if (e.key === 'Enter') navigateBrowser(); };
+        function openExternal() { window.open(document.getElementById('browser-iframe').src, '_blank'); }
 
-        function openExternal() {
-            let val = document.getElementById('browser-url-input').value;
-            if(!val) val = currentUrl;
-            const isUrl = val.includes('.') && !val.includes(' ');
-            let target = isUrl ? (val.startsWith('http') ? val : 'https://' + val) : 'https://www.google.com/search?q=' + encodeURIComponent(val);
-            window.open(target, '_blank');
-        }
-
-        function browserNav(action) {
-            const iframe = document.getElementById('web-browser-iframe');
-            if(action === 'reload') iframe.src = iframe.src;
-            else if(action === 'home') iframe.src = "https://duckduckgo.com/?kae=d&kh=-1";
-        }
-
-        // --- App Logic ---
+        // --- მენეჯმენტი ---
         function toggleApp(id) {
             const win = document.getElementById(id);
-            const isActive = win.style.display === 'flex';
+            if (!win) return;
+            
+            const wasActive = win.style.display === 'flex';
+            
             document.querySelectorAll('.app-window').forEach(w => w.style.display = 'none');
             document.querySelectorAll('.dock-icon').forEach(i => i.classList.remove('active'));
-
-            if(!isActive) {
+            
+            if(!wasActive) {
                 win.style.display = 'flex';
                 document.getElementById('dock-' + id.split('-')[1])?.classList.add('active');
                 if(id === 'app-browser') document.getElementById('mini-player').classList.remove('active-session');
@@ -235,8 +436,16 @@
             toggleApp('app-browser');
         }
 
+        function browserNav(action) {
+            const ifr = document.getElementById('browser-iframe');
+            if(action === 'reload') ifr.src = ifr.src;
+            else if(action === 'back') window.history.back();
+            else if(action === 'forward') window.history.forward();
+        }
+
         document.getElementById('dock-nav').onclick = () => toggleApp('app-nav');
         document.getElementById('dock-browser').onclick = () => toggleApp('app-browser');
+        document.getElementById('dock-ai').onclick = () => toggleApp('app-ai');
 
         // --- Drag & Resize ---
         let activeWin = null, offsetX, offsetY;
@@ -249,19 +458,65 @@
                 activeWin.style.zIndex = 1000;
             };
         });
-        window.onmousemove = (e) => { if(activeWin) { activeWin.style.left = (e.clientX - offsetX) + 'px'; activeWin.style.top = (e.clientY - offsetY) + 'px'; } };
+        window.onmousemove = (e) => { if(activeWin) { activeWin.style.left = (e.clientX-offsetX)+'px'; activeWin.style.top = (e.clientY-offsetY)+'px'; } };
         window.onmouseup = () => activeWin = null;
 
-        // --- Map & Telemetry ---
-        const map = L.map('map', {zoomControl:false}).setView([41.71, 44.82], 13);
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+        // --- ნავიგაცია ---
+        const sIn = document.getElementById('search-input'), sSug = document.getElementById('suggestions');
+        sIn.oninput = function() {
+            const q = this.value.trim(); if(q.length < 2) { sSug.style.display = 'none'; return; }
+            fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=5`).then(r => r.json()).then(data => {
+                sSug.innerHTML = '';
+                if(data.features?.length) {
+                    sSug.style.display = 'block';
+                    data.features.forEach(f => {
+                        const name = [f.properties.name, f.properties.city].filter(Boolean).join(', ');
+                        const li = document.createElement('li'); li.innerText = name;
+                        li.onclick = () => {
+                            sIn.value = name; sSug.style.display = 'none';
+                            currentDestination = name;
+                            const ll = L.latLng(f.geometry.coordinates[1], f.geometry.coordinates[0]);
+                            map.panTo(ll); drawRoute(ll);
+                        };
+                        sSug.appendChild(li);
+                    });
+                }
+            });
+        };
 
+        function drawRoute(end) {
+            const start = carMarker ? carMarker.getLatLng() : map.getCenter();
+            if(routingControl) routingControl.setWaypoints([start, end]);
+            else {
+                routingControl = L.Routing.control({
+                    waypoints: [start, end], show: false,
+                    lineOptions: { styles: [{color: '#00a8ff', opacity: 0.8, weight: 6}] },
+                    createMarker: () => null
+                }).addTo(map);
+                routingControl.on('routesfound', e => {
+                    const s = e.routes[0].summary;
+                    document.getElementById('route-info').style.display = 'flex';
+                    document.getElementById('eta-time').innerText = Math.round(s.totalTime/60);
+                    document.getElementById('eta-dist').innerText = (s.totalDistance/1000).toFixed(1);
+                    document.getElementById('ai-route-btn').style.display = 'block';
+                });
+            }
+        }
+
+        // --- Firebase & Mock Data ---
         const fbConfig = { apiKey: "AIzaSyAH3yVbBGrhvzbSx7J1GxNcVsl_ykX_OX0", authDomain: "tesla-telemetry-29fb6.firebaseapp.com", databaseURL: "https://tesla-telemetry-29fb6-default-rtdb.europe-west1.firebasedatabase.app", projectId: "tesla-telemetry-29fb6" };
         firebase.initializeApp(fbConfig);
         firebase.database().ref("5YJYGCEE123456789").on('value', (s) => {
             const d = s.val(); if(!d) return;
             document.getElementById('speed').innerText = d.speed_kmh || 0;
-            document.getElementById('battery-level').style.width = (d.battery_soc || 0) + "%";
+            const battery = d.battery_soc || 99;
+            document.getElementById('battery-level').style.width = battery + "%";
+            document.getElementById('battery-text').innerText = battery + "%";
+            if(d.lat && d.lng) {
+                const ll = L.latLng(d.lat, d.lng);
+                if(!carMarker) carMarker = L.marker(ll, {icon: L.divIcon({html:'🚗', className:'', iconSize:[30,30]})}).addTo(map);
+                else carMarker.setLatLng(ll);
+            }
         });
     </script>
 </body>
