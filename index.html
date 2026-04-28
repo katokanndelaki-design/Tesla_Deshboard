@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tesla OS - Web Interface</title>
+    <title>Tesla OS - Multimedia System</title>
     
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -14,14 +14,12 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
     <!-- Leaflet Routing Machine -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
     <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
 
     <style>
         body { margin: 0; padding: 0; overflow: hidden; background-color: #000; font-family: 'Segoe UI', sans-serif; color: #fff; user-select: none; }
         
         #map { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; background: #111; }
-        .leaflet-routing-container { display: none !important; }
 
         /* ტელემეტრიის პანელი */
         .sidebar {
@@ -31,11 +29,9 @@
             padding: 30px 20px; display: flex; flex-direction: column; gap: 20px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
-        .header-status { text-align: center; color: #888; font-size: 12px; letter-spacing: 2px; }
-        .status-dot { height: 10px; width: 10px; background: #00ff00; border-radius: 50%; display: inline-block; margin-right: 5px; box-shadow: 0 0 10px #00ff00;}
-        .speed-display { text-align: center; }
-        .speed-value { font-size: 80px; font-weight: 300; line-height: 1; }
-        .speed-unit { font-size: 18px; color: #888; }
+        .header-status { text-align: center; color: #888; font-size: 11px; letter-spacing: 2px; }
+        .status-dot { height: 10px; width: 10px; background: #00ffaa; border-radius: 50%; display: inline-block; margin-right: 5px; box-shadow: 0 0 10px #00ffaa;}
+        .speed-value { font-size: 80px; font-weight: 300; line-height: 1; text-align: center; }
         .gear-selector { display: flex; justify-content: center; gap: 15px; font-size: 20px; font-weight: bold; color: #444; }
         .gear.active { color: #fff; text-shadow: 0 0 15px rgba(255, 255, 255, 0.8); }
         .battery-icon { width: 100%; height: 12px; border: 1px solid #444; border-radius: 3px; padding: 2px; }
@@ -66,7 +62,7 @@
 
         /* აპლიკაციების ფანჯრები */
         .app-window {
-            position: absolute; top: 50px; left: 300px; width: 420px; height: auto;
+            position: absolute; top: 50px; left: 300px; width: 450px; height: auto;
             background: rgba(20, 20, 20, 0.98); backdrop-filter: blur(30px); border-radius: 24px;
             border: 1px solid rgba(255,255,255,0.1); z-index: 500;
             display: none; flex-direction: column; box-shadow: 0 30px 60px rgba(0,0,0,0.8);
@@ -74,38 +70,40 @@
         }
         .app-window.active { display: flex; }
         .app-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; cursor: move; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .app-title { font-size: 15px; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
-        .app-controls { display: flex; gap: 8px; }
-        .win-btn { width: 30px; height: 30px; border-radius: 50%; border: none; background: rgba(255,255,255,0.05); color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+        .app-title { font-size: 14px; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+        .win-btn { width: 30px; height: 30px; border-radius: 50%; border: none; background: rgba(255,255,255,0.05); color: #fff; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; }
         .win-btn:hover { background: rgba(255,255,255,0.1); }
         .win-btn.close:hover { background: #ff4757; }
 
-        .app-content { padding: 20px; flex: 1; display: flex; flex-direction: column; overflow-y: auto; }
+        .app-content { padding: 20px; flex: 1; display: flex; flex-direction: column; }
 
-        /* მინი-პლეერი */
+        /* YouTube Browser */
+        .search-bar { display: flex; background: #111; border-radius: 12px; padding: 5px; gap: 5px; margin-bottom: 15px; border: 1px solid #333; }
+        .search-bar input { flex: 1; background: transparent; border: none; color: #fff; padding: 10px; outline: none; font-size: 14px; }
+        .search-bar button { background: #00a8ff; border: none; color: #fff; padding: 0 15px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+
+        .video-container { width: 100%; aspect-ratio: 16/9; background: #000; border-radius: 12px; overflow: hidden; }
+
+        /* მინი-პლეერი კონტროლებით */
         .mini-player {
             position: absolute; bottom: 100px; left: 50%; transform: translateX(-50%);
-            width: 300px; background: rgba(25, 25, 25, 0.9); backdrop-filter: blur(20px);
-            border-radius: 15px; border: 1px solid rgba(0, 255, 170, 0.3);
-            display: none; align-items: center; padding: 10px 15px; gap: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 900; cursor: pointer;
+            width: 320px; background: rgba(25, 25, 25, 0.95); backdrop-filter: blur(20px);
+            border-radius: 20px; border: 1px solid rgba(0, 255, 170, 0.3);
+            display: none; flex-direction: column; padding: 12px 15px; gap: 10px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.6); z-index: 900;
         }
         .mini-player.visible { display: flex; }
-        .mini-info { flex: 1; overflow: hidden; }
-        .mini-title { font-size: 13px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #00ffaa; }
-        .mini-status { font-size: 10px; color: #666; text-transform: uppercase; }
+        .mini-track-info { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+        .mini-title { font-size: 13px; font-weight: bold; color: #00ffaa; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
+        .mini-controls { display: flex; justify-content: center; align-items: center; gap: 20px; }
+        .ctrl-btn { background: none; border: none; color: #fff; font-size: 20px; cursor: pointer; transition: 0.2s; }
+        .ctrl-btn:hover { color: #00ffaa; transform: scale(1.1); }
+        .play-pause { font-size: 28px; color: #00ffaa; }
 
-        /* საძიებო და AI სტილები */
-        .input-group { display: flex; background: #111; border: 1px solid #333; border-radius: 12px; padding: 5px; gap: 5px; margin-bottom: 10px; }
-        .input-group input { flex: 1; background: transparent; border: none; color: #fff; padding: 10px; outline: none; font-size: 14px; }
-        .btn-action { background: #00a8ff; border: none; color: #fff; padding: 0 15px; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        
-        .ai-chat-box { height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px; padding: 5px; }
-        .msg { padding: 10px 15px; border-radius: 12px; max-width: 85%; font-size: 14px; line-height: 1.4; }
-        .msg.user { background: #333; align-self: flex-end; border-bottom-right-radius: 2px; }
-        .msg.bot { background: rgba(0, 168, 255, 0.1); border: 1px solid rgba(0,168,255,0.2); align-self: flex-start; border-bottom-left-radius: 2px; }
-
-        iframe { border-radius: 10px; width: 100%; height: 250px; background: #000; border: none; }
+        /* ნავიგაციის სტილი */
+        .suggestions-list { list-style: none; padding: 0; margin: 10px 0; background: #111; border-radius: 10px; overflow: hidden; display: none; }
+        .suggestions-list li { padding: 12px; border-bottom: 1px solid #222; cursor: pointer; font-size: 13px; }
+        .suggestions-list li:hover { background: #00a8ff; }
     </style>
 </head>
 <body>
@@ -114,31 +112,30 @@
 
     <!-- Telemetry -->
     <div class="sidebar">
-        <div class="header-status"><span class="status-dot"></span> MODEL Y LINKED</div>
-        <div class="speed-display">
-            <div class="speed-value" id="speed">0</div>
-            <div class="speed-unit">km/h</div>
-        </div>
+        <div class="header-status"><span class="status-dot"></span> MODEL Y ACTIVE</div>
+        <div class="speed-value" id="speed">0</div>
+        <div style="text-align: center; font-size: 12px; color: #666; margin-top: -10px;">km/h</div>
         <div class="gear-selector">
             <span id="gear-P" class="gear active">P</span>
             <span id="gear-R" class="gear">R</span>
             <span id="gear-N" class="gear">N</span>
             <span id="gear-D" class="gear">D</span>
         </div>
-        <div>
-            <div class="battery-icon"><div class="battery-level" id="battery-level"></div></div>
-            <div style="text-align: right; font-size: 14px; margin-top: 5px;"><span id="battery">0</span>%</div>
-        </div>
+        <div class="battery-icon"><div class="battery-level" id="battery-level"></div></div>
     </div>
 
-    <!-- Mini Player (ჩაკეცილი პლეერი) -->
-    <div class="mini-player" id="mini-player" onclick="restoreBrowser()">
-        <div style="font-size: 24px;">🎵</div>
-        <div class="mini-info">
-            <div class="mini-title" id="mini-video-title">YouTube მედია</div>
-            <div class="mini-status">ახლა იკვრება</div>
+    <!-- Mini Player -->
+    <div class="mini-player" id="mini-player">
+        <div class="mini-track-info" onclick="restoreBrowser()">
+            <span style="font-size: 20px;">🎵</span>
+            <div class="mini-title" id="mini-title">მუსიკა არ არის ჩართული</div>
+            <span style="font-size: 12px; color: #444;">▲</span>
         </div>
-        <div style="color: #00ffaa;">▲</div>
+        <div class="mini-controls">
+            <button class="ctrl-btn" onclick="mediaControl('prev')">⏮</button>
+            <button class="ctrl-btn play-pause" id="mini-play-btn" onclick="mediaControl('toggle')">▶</button>
+            <button class="ctrl-btn" onclick="mediaControl('next')">⏭</button>
+        </div>
     </div>
 
     <!-- Dock -->
@@ -149,71 +146,151 @@
             <div class="dock-icon" id="dock-nav" title="ნავიგაცია">🧭</div>
             <div class="dock-icon" id="dock-traffic" title="საცობები">🚦</div>
             <div class="dock-icon" id="dock-browser" title="მედია">🌐</div>
-            <div class="dock-icon" id="dock-ai" title="AI ასისტენტი">✨</div>
             <div class="dock-icon" title="პარამეტრები">⚙️</div>
         </div>
     </div>
 
-    <!-- Windows -->
+    <!-- ნავიგაცია -->
     <div class="app-window" id="app-nav">
         <div class="app-header">
             <h3 class="app-title">🧭 ნავიგაცია</h3>
-            <div class="app-controls">
-                <button class="win-btn close" onclick="toggleApp('app-nav')">&times;</button>
-            </div>
+            <button class="win-btn close" onclick="toggleApp('app-nav')">&times;</button>
         </div>
         <div class="app-content">
-            <div class="input-group">
-                <input type="text" id="search-input" placeholder="მისამართი..." autocomplete="off">
+            <div class="search-bar">
+                <input type="text" id="search-input" placeholder="შეიყვანეთ მისამართი..." autocomplete="off">
             </div>
-            <ul id="suggestions" class="suggestions-list" style="list-style:none; padding:0; background:#111; border-radius:10px; overflow:hidden;"></ul>
-            <div id="route-info" style="display:none; margin-top:15px; justify-content:space-around; background:#111; padding:15px; border-radius:12px;">
-                <div style="text-align:center;"><div style="font-size:24px; color:#00ffaa;" id="eta-time">--</div><div style="font-size:10px; color:#666;">წთ</div></div>
-                <div style="text-align:center;"><div style="font-size:24px; color:#00ffaa;" id="eta-dist">--</div><div style="font-size:10px; color:#666;">კმ</div></div>
+            <ul id="suggestions" class="suggestions-list"></ul>
+            <div id="route-info" style="display:none; justify-content:space-around; background:#111; padding:15px; border-radius:15px; margin-top:10px;">
+                <div style="text-align:center;"><div style="font-size:22px; color:#00ffaa;" id="eta-time">--</div><div style="font-size:10px; color:#666;">წთ</div></div>
+                <div style="text-align:center;"><div style="font-size:22px; color:#00ffaa;" id="eta-dist">--</div><div style="font-size:10px; color:#666;">კმ</div></div>
             </div>
         </div>
     </div>
 
+    <!-- ბრაუზერი / YouTube -->
     <div class="app-window" id="app-browser">
         <div class="app-header">
-            <h3 class="app-title">🌐 მულტიმედია</h3>
-            <div class="app-controls">
+            <h3 class="app-title">🌐 YouTube მედია</h3>
+            <div style="display: flex; gap: 8px;">
                 <button class="win-btn" onclick="collapseToMini()" title="ჩაკეცვა">_</button>
                 <button class="win-btn close" onclick="toggleApp('app-browser')">&times;</button>
             </div>
         </div>
         <div class="app-content">
-            <div class="input-group">
-                <input type="text" id="yt-url" value="https://www.youtube.com/watch?v=K4DyBUG242c">
-                <button class="btn-action" onclick="loadYT()">ჩართვა</button>
-                <button class="btn-action" style="background:#ff4757;" onclick="window.open(document.getElementById('yt-url').value, '_blank')">↗️</button>
+            <div class="search-bar">
+                <input type="text" id="yt-search" placeholder="მოძებნეთ სიმღერა ან ჩასვით ლინკი...">
+                <button onclick="loadYouTube()">გახსნა</button>
             </div>
-            <iframe id="yt-frame" src="" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+            <div class="video-container" id="player-wrapper">
+                <div id="yt-player"></div>
+            </div>
+            <p style="font-size: 11px; color: #555; margin-top: 10px; text-align: center;">
+                * გამოიყენეთ ჩაკეცვის ღილაკი (_) მინი-პლეერზე გადასასვლელად.
+            </p>
         </div>
     </div>
 
-    <div class="app-window" id="app-ai">
-        <div class="app-header">
-            <h3 class="app-title">✨ AI Co-Pilot</h3>
-            <div class="app-controls">
-                <button class="win-btn close" onclick="toggleApp('app-ai')">&times;</button>
-            </div>
-        </div>
-        <div class="app-content">
-            <div class="ai-chat-box" id="ai-chat">
-                <div class="msg bot">გამარჯობა! მე ვარ თქვენი Tesla ასისტენტი.</div>
-            </div>
-            <div class="input-group">
-                <input type="text" id="ai-input" placeholder="ჰკითხეთ AI-ს...">
-                <button class="btn-action" style="background:#444;" id="mic-btn">🎤</button>
-                <button class="btn-action" onclick="sendToAI()">გაგზავნა</button>
-            </div>
-        </div>
-    </div>
+    <!-- YouTube IFrame API -->
+    <script src="https://www.youtube.com/iframe_api"></script>
 
     <script>
-        const geminiApiKey = "AIzaSyCiIRonRvsdHUHFIIo43JJ7Gp7Moq1N4ik"; 
-        let lastVideoUrl = "https://www.youtube.com/watch?v=K4DyBUG242c";
+        // --- YouTube Player Logic ---
+        let player;
+        let isPlaying = false;
+
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('yt-player', {
+                height: '100%',
+                width: '100%',
+                videoId: 'K4DyBUG242c', // Default
+                playerVars: { 'autoplay': 0, 'controls': 1, 'rel': 0, 'enablejsapi': 1 },
+                events: {
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+        }
+
+        function onPlayerStateChange(event) {
+            const btn = document.getElementById('mini-play-btn');
+            if (event.data == YT.PlayerState.PLAYING) {
+                isPlaying = true;
+                btn.innerText = "⏸";
+                updateMiniTitle();
+            } else {
+                isPlaying = false;
+                btn.innerText = "▶";
+            }
+        }
+
+        function loadYouTube() {
+            const input = document.getElementById('yt-search').value.trim();
+            if(!input) return;
+
+            // თუ ლინკია
+            const match = input.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
+            if(match) {
+                player.loadVideoById(match[1]);
+            } else {
+                // თუ ტექსტია - ვეძებთ ფლეილისტს
+                player.loadPlaylist({
+                    listType: 'search',
+                    list: input,
+                    index: 0
+                });
+            }
+            updateMiniTitle();
+        }
+
+        function mediaControl(action) {
+            if(!player) return;
+            if(action === 'toggle') {
+                isPlaying ? player.pauseVideo() : player.playVideo();
+            } else if(action === 'next') {
+                player.nextVideo();
+            } else if(action === 'prev') {
+                player.previousVideo();
+            }
+        }
+
+        function updateMiniTitle() {
+            setTimeout(() => {
+                const data = player.getVideoData();
+                if(data && data.title) {
+                    document.getElementById('mini-title').innerText = data.title;
+                }
+            }, 1000);
+        }
+
+        // --- UI Management ---
+        function toggleApp(id) {
+            const win = document.getElementById(id);
+            const isActive = win.style.display === 'flex';
+            document.querySelectorAll('.app-window').forEach(w => w.style.display = 'none');
+            document.querySelectorAll('.dock-icon').forEach(i => i.classList.remove('active'));
+
+            if(!isActive) {
+                win.style.display = 'flex';
+                const iconId = 'dock-' + id.split('-')[1];
+                document.getElementById(iconId)?.classList.add('active');
+                if(id === 'app-browser') document.getElementById('mini-player').classList.remove('visible');
+            }
+        }
+
+        function collapseToMini() {
+            document.getElementById('app-browser').style.display = 'none';
+            document.getElementById('dock-browser').classList.remove('active');
+            document.getElementById('mini-player').classList.add('visible');
+            updateMiniTitle();
+        }
+
+        function restoreBrowser() {
+            document.getElementById('mini-player').classList.remove('visible');
+            toggleApp('app-browser');
+        }
+
+        document.getElementById('dock-nav').onclick = () => toggleApp('app-nav');
+        document.getElementById('dock-browser').onclick = () => toggleApp('app-browser');
 
         // --- Drag Logic ---
         let activeWin = null, offset = {x:0, y:0};
@@ -229,132 +306,16 @@
         window.onmousemove = (e) => { if(activeWin) { activeWin.style.left = (e.clientX-offset.x)+'px'; activeWin.style.top = (e.clientY-offset.y)+'px'; } };
         window.onmouseup = () => activeWin = null;
 
-        // --- App Management ---
-        function toggleApp(id) {
-            const win = document.getElementById(id);
-            const icon = document.getElementById('dock-'+id.split('-')[1]);
-            const wasActive = win.style.display === 'flex';
-            
-            document.querySelectorAll('.app-window').forEach(w => w.style.display = 'none');
-            document.querySelectorAll('.dock-icon').forEach(i => i.classList.remove('active'));
-
-            if(!wasActive) {
-                win.style.display = 'flex';
-                if(icon) icon.classList.add('active');
-                if(id === 'app-browser') document.getElementById('mini-player').classList.remove('visible');
-            }
-        }
-
-        document.getElementById('dock-nav').onclick = () => toggleApp('app-nav');
-        document.getElementById('dock-browser').onclick = () => toggleApp('app-browser');
-        document.getElementById('dock-ai').onclick = () => toggleApp('app-ai');
-
         document.getElementById('dock-toggle').onclick = () => {
             const dc = document.getElementById('dock-container');
             dc.classList.toggle('collapsed');
             document.getElementById('dock-toggle').innerText = dc.classList.contains('collapsed') ? '▲' : '▼';
         };
 
-        // --- Mini Player Logic ---
-        function collapseToMini() {
-            document.getElementById('app-browser').style.display = 'none';
-            document.getElementById('dock-browser').classList.remove('active');
-            document.getElementById('mini-player').classList.add('visible');
-        }
-
-        function restoreBrowser() {
-            document.getElementById('mini-player').classList.remove('visible');
-            toggleApp('app-browser');
-        }
-
-        function loadYT() {
-            const url = document.getElementById('yt-url').value;
-            const match = url.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
-            if(match) {
-                lastVideoUrl = url;
-                document.getElementById('yt-frame').src = `https://www.youtube-nocookie.com/embed/${match[1]}?autoplay=1&rel=0`;
-                document.getElementById('mini-video-title').innerText = "YouTube Video";
-            }
-        }
-
-        // --- AI & TTS ---
-        async function callGemini(text) {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${geminiApiKey}`;
-            const bat = document.getElementById('battery').innerText;
-            const spd = document.getElementById('speed').innerText;
-            
-            const payload = {
-                contents: [{ parts: [{ text: `[System Context: Battery ${bat}%, Speed ${spd}km/h] User: ${text}` }] }],
-                systemInstruction: { parts: [{ text: "თქვენ ხართ Tesla-ს ასისტენტი. უპასუხეთ ქართულად, მეგობრულად. არ გაიმეოროთ ბატარეა და სიჩქარე თუ არ გკითხეს." }] }
-            };
-
-            try {
-                const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
-                const data = await res.json();
-                return data.candidates?.[0]?.content?.parts?.[0]?.text || "ბოდიში, კავშირი გაწყდა.";
-            } catch(e) { return "AI შეცდომა: " + e.message; }
-        }
-
-        async function speak(text) {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${geminiApiKey}`;
-            const payload = {
-                contents: [{ parts: [{ text: text }] }],
-                generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Aoede" } } } },
-                model: "gemini-2.5-flash-preview-tts"
-            };
-            try {
-                const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
-                const data = await res.json();
-                const b64 = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-                if(b64) {
-                    const bin = atob(b64);
-                    const bytes = new Uint8Array(bin.length);
-                    for(let i=0; i<bin.length; i++) bytes[i] = bin.charCodeAt(i);
-                    const audio = new Audio(URL.createObjectURL(new Blob([bytes], {type:'audio/wav'})));
-                    audio.play();
-                }
-            } catch(e) {}
-        }
-
-        async function sendToAI() {
-            const input = document.getElementById('ai-input');
-            const chat = document.getElementById('ai-chat');
-            const text = input.value.trim(); if(!text) return;
-            
-            chat.innerHTML += `<div class="msg user">${text}</div>`;
-            input.value = '';
-            chat.scrollTop = chat.scrollHeight;
-
-            const response = await callGemini(text);
-            chat.innerHTML += `<div class="msg bot">${response.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')}</div>`;
-            chat.scrollTop = chat.scrollHeight;
-            speak(response.replace(/\*/g, ''));
-        }
-
-        document.getElementById('ai-input').onkeypress = (e) => { if(e.key === 'Enter') sendToAI(); };
-
-        // --- STT (Mic) ---
-        const mic = document.getElementById('mic-btn');
-        if('webkitSpeechRecognition' in window) {
-            const rec = new webkitSpeechRecognition();
-            rec.lang = 'ka-GE';
-            rec.onstart = () => mic.classList.add('listening');
-            rec.onend = () => mic.classList.remove('listening');
-            rec.onresult = (e) => { document.getElementById('ai-input').value = e.results[0][0].transcript; sendToAI(); };
-            mic.onclick = () => rec.start();
-        } else mic.style.display = 'none';
-
-        // --- Map & Traffic ---
+        // --- Map & Telemetry ---
         const map = L.map('map', {zoomControl:false}).setView([41.71, 44.82], 13);
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
-        const traffic = L.tileLayer('https://mt0.google.com/vt/lyrs=h,traffic&x={x}&y={y}&z={z}', {opacity:0.8});
-        let trafficOn = false;
-        document.getElementById('dock-traffic').onclick = function() {
-            trafficOn ? map.removeLayer(traffic) : traffic.addTo(map);
-            this.classList.toggle('active'); trafficOn = !trafficOn;
-        };
 
-        // --- Telemetry ---
         const fbConfig = { apiKey: "AIzaSyAH3yVbBGrhvzbSx7J1GxNcVsl_ykX_OX0", authDomain: "tesla-telemetry-29fb6.firebaseapp.com", databaseURL: "https://tesla-telemetry-29fb6-default-rtdb.europe-west1.firebasedatabase.app", projectId: "tesla-telemetry-29fb6" };
         firebase.initializeApp(fbConfig);
         firebase.database().ref("5YJYGCEE123456789").on('value', (s) => {
@@ -362,9 +323,7 @@
             document.getElementById('speed').innerText = d.speed_kmh || 0;
             document.querySelectorAll('.gear').forEach(g => g.classList.remove('active'));
             document.getElementById('gear-'+(d.gear||'P'))?.classList.add('active');
-            const soc = d.battery_soc || 0;
-            document.getElementById('battery').innerText = soc;
-            document.getElementById('battery-level').style.width = soc + "%";
+            document.getElementById('battery-level').style.width = (d.battery_soc || 0) + "%";
         });
     </script>
 </body>
