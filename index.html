@@ -77,17 +77,18 @@
 
         .app-content { padding: 20px; flex: 1; display: flex; flex-direction: column; }
 
-        /* YouTube Browser */
+        /* YouTube Music Style Search */
         .search-bar { display: flex; background: #111; border-radius: 12px; padding: 5px; gap: 5px; margin-bottom: 15px; border: 1px solid #333; }
         .search-bar input { flex: 1; background: transparent; border: none; color: #fff; padding: 10px; outline: none; font-size: 14px; }
-        .search-bar button { background: #00a8ff; border: none; color: #fff; padding: 0 15px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .search-bar button { background: #ff0000; border: none; color: #fff; padding: 0 15px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .search-bar button:hover { background: #cc0000; }
 
         .video-container { width: 100%; aspect-ratio: 16/9; background: #000; border-radius: 12px; overflow: hidden; }
 
         /* მინი-პლეერი კონტროლებით */
         .mini-player {
             position: absolute; bottom: 100px; left: 50%; transform: translateX(-50%);
-            width: 320px; background: rgba(25, 25, 25, 0.95); backdrop-filter: blur(20px);
+            width: 340px; background: rgba(25, 25, 25, 0.95); backdrop-filter: blur(20px);
             border-radius: 20px; border: 1px solid rgba(0, 255, 170, 0.3);
             display: none; flex-direction: column; padding: 12px 15px; gap: 10px;
             box-shadow: 0 15px 40px rgba(0,0,0,0.6); z-index: 900;
@@ -110,7 +111,7 @@
 
     <div id="map"></div>
 
-    <!-- Telemetry -->
+    <!-- ტელემეტრია -->
     <div class="sidebar">
         <div class="header-status"><span class="status-dot"></span> MODEL Y ACTIVE</div>
         <div class="speed-value" id="speed">0</div>
@@ -124,7 +125,7 @@
         <div class="battery-icon"><div class="battery-level" id="battery-level"></div></div>
     </div>
 
-    <!-- Mini Player -->
+    <!-- მინი პლეერი -->
     <div class="mini-player" id="mini-player">
         <div class="mini-track-info" onclick="restoreBrowser()">
             <span style="font-size: 20px;">🎵</span>
@@ -138,26 +139,26 @@
         </div>
     </div>
 
-    <!-- Dock -->
+    <!-- Dock მენიუ -->
     <div class="dock-container" id="dock-container">
         <div class="dock-toggle" id="dock-toggle">▼</div>
         <div class="dock">
             <div class="dock-icon" title="მანქანა">🚗</div>
             <div class="dock-icon" id="dock-nav" title="ნავიგაცია">🧭</div>
             <div class="dock-icon" id="dock-traffic" title="საცობები">🚦</div>
-            <div class="dock-icon" id="dock-browser" title="მედია">🌐</div>
+            <div class="dock-icon" id="dock-browser" title="YouTube Music">🎵</div>
             <div class="dock-icon" title="პარამეტრები">⚙️</div>
         </div>
     </div>
 
-    <!-- ნავიგაცია -->
+    <!-- ნავიგაციის ფანჯარა -->
     <div class="app-window" id="app-nav">
         <div class="app-header">
             <h3 class="app-title">🧭 ნავიგაცია</h3>
             <button class="win-btn close" onclick="toggleApp('app-nav')">&times;</button>
         </div>
         <div class="app-content">
-            <div class="search-bar">
+            <div class="search-bar" style="background: #111;">
                 <input type="text" id="search-input" placeholder="შეიყვანეთ მისამართი..." autocomplete="off">
             </div>
             <ul id="suggestions" class="suggestions-list"></ul>
@@ -168,10 +169,10 @@
         </div>
     </div>
 
-    <!-- ბრაუზერი / YouTube -->
+    <!-- მედია ფანჯარა -->
     <div class="app-window" id="app-browser">
         <div class="app-header">
-            <h3 class="app-title">🌐 YouTube მედია</h3>
+            <h3 class="app-title">🎵 YouTube Music</h3>
             <div style="display: flex; gap: 8px;">
                 <button class="win-btn" onclick="collapseToMini()" title="ჩაკეცვა">_</button>
                 <button class="win-btn close" onclick="toggleApp('app-browser')">&times;</button>
@@ -179,14 +180,14 @@
         </div>
         <div class="app-content">
             <div class="search-bar">
-                <input type="text" id="yt-search" placeholder="მოძებნეთ სიმღერა ან ჩასვით ლინკი...">
-                <button onclick="loadYouTube()">გახსნა</button>
+                <input type="text" id="yt-search" placeholder="მოძებნეთ სიმღერა ან მომღერალი...">
+                <button onclick="loadYouTube()">ძიება</button>
             </div>
             <div class="video-container" id="player-wrapper">
                 <div id="yt-player"></div>
             </div>
             <p style="font-size: 11px; color: #555; margin-top: 10px; text-align: center;">
-                * გამოიყენეთ ჩაკეცვის ღილაკი (_) მინი-პლეერზე გადასასვლელად.
+                * ძიებისას ავტომატურად შეიქმნება სიმღერების რიგი.
             </p>
         </div>
     </div>
@@ -195,7 +196,7 @@
     <script src="https://www.youtube.com/iframe_api"></script>
 
     <script>
-        // --- YouTube Player Logic ---
+        // --- YouTube Player-ის ლოგიკა ---
         let player;
         let isPlaying = false;
 
@@ -203,8 +204,14 @@
             player = new YT.Player('yt-player', {
                 height: '100%',
                 width: '100%',
-                videoId: 'K4DyBUG242c', // Default
-                playerVars: { 'autoplay': 0, 'controls': 1, 'rel': 0, 'enablejsapi': 1 },
+                videoId: 'jfKfPfyJRdk', // Lofi Default
+                playerVars: { 
+                    'autoplay': 0, 
+                    'controls': 1, 
+                    'rel': 0, 
+                    'enablejsapi': 1,
+                    'origin': window.location.origin
+                },
                 events: {
                     'onStateChange': onPlayerStateChange
                 }
@@ -217,7 +224,7 @@
                 isPlaying = true;
                 btn.innerText = "⏸";
                 updateMiniTitle();
-            } else {
+            } else if (event.data == YT.PlayerState.PAUSED || event.data == YT.PlayerState.ENDED) {
                 isPlaying = false;
                 btn.innerText = "▶";
             }
@@ -227,12 +234,13 @@
             const input = document.getElementById('yt-search').value.trim();
             if(!input) return;
 
-            // თუ ლინკია
-            const match = input.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
-            if(match) {
-                player.loadVideoById(match[1]);
+            // ვამოწმებთ არის თუ არა პირდაპირი ლინკი
+            const linkMatch = input.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
+            
+            if(linkMatch) {
+                player.loadVideoById(linkMatch[1]);
             } else {
-                // თუ ტექსტია - ვეძებთ ფლეილისტს
+                // თუ ტექსტია - ვტვირთავთ საძიებო სიას (Queue)
                 player.loadPlaylist({
                     listType: 'search',
                     list: input,
@@ -242,34 +250,42 @@
             updateMiniTitle();
         }
 
+        // Enter-ზე ძიება
+        document.getElementById('yt-search').onkeypress = (e) => { if(e.key === 'Enter') loadYouTube(); };
+
         function mediaControl(action) {
             if(!player) return;
-            if(action === 'toggle') {
-                isPlaying ? player.pauseVideo() : player.playVideo();
-            } else if(action === 'next') {
-                player.nextVideo();
-            } else if(action === 'prev') {
-                player.previousVideo();
-            }
+            try {
+                if(action === 'toggle') {
+                    isPlaying ? player.pauseVideo() : player.playVideo();
+                } else if(action === 'next') {
+                    player.nextVideo();
+                } else if(action === 'prev') {
+                    player.previousVideo();
+                }
+            } catch(e) { console.log("Media action error:", e); }
         }
 
         function updateMiniTitle() {
             setTimeout(() => {
-                const data = player.getVideoData();
-                if(data && data.title) {
-                    document.getElementById('mini-title').innerText = data.title;
-                }
+                try {
+                    const data = player.getVideoData();
+                    if(data && data.title) {
+                        document.getElementById('mini-title').innerText = data.title;
+                    }
+                } catch(e) {}
             }, 1000);
         }
 
-        // --- UI Management ---
+        // --- აპლიკაციების მართვა ---
         function toggleApp(id) {
             const win = document.getElementById(id);
-            const isActive = win.style.display === 'flex';
+            const wasActive = win.style.display === 'flex';
+            
             document.querySelectorAll('.app-window').forEach(w => w.style.display = 'none');
             document.querySelectorAll('.dock-icon').forEach(i => i.classList.remove('active'));
 
-            if(!isActive) {
+            if(!wasActive) {
                 win.style.display = 'flex';
                 const iconId = 'dock-' + id.split('-')[1];
                 document.getElementById(iconId)?.classList.add('active');
@@ -292,7 +308,7 @@
         document.getElementById('dock-nav').onclick = () => toggleApp('app-nav');
         document.getElementById('dock-browser').onclick = () => toggleApp('app-browser');
 
-        // --- Drag Logic ---
+        // --- ფანჯრების გადაადგილება ---
         let activeWin = null, offset = {x:0, y:0};
         document.querySelectorAll('.app-header').forEach(h => {
             h.onmousedown = (e) => {
@@ -312,7 +328,7 @@
             document.getElementById('dock-toggle').innerText = dc.classList.contains('collapsed') ? '▲' : '▼';
         };
 
-        // --- Map & Telemetry ---
+        // --- რუკა და ტელემეტრია ---
         const map = L.map('map', {zoomControl:false}).setView([41.71, 44.82], 13);
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
 
