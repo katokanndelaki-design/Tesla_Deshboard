@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tesla MCU1 Media Player</title>
+    
+    <!-- ძველი ვერსიის Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <style>
+        body { background-color: #000; color: #fff; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; margin: 0; padding: 20px; user-select: none; }
+        .container { max-width: 900px; margin: 0 auto; background-color: #111; padding: 30px; border-radius: 15px; border: 1px solid #333; }
+        
+        h1 { text-align: center; color: #fff; font-size: 32px; font-weight: normal; margin-top: 0; border-bottom: 1px solid #333; padding-bottom: 20px; }
+        
+        /* ხილული YouTube ფლეერი */
+        #yt-player-container { 
+            width: 100%; 
+            height: 350px; 
+            background: #000; 
+            border-radius: 12px; 
+            overflow: hidden; 
+            margin-bottom: 20px; 
+            border: 1px solid #444; 
+            position: relative;
+        }
+
+        .now-playing { text-align: center; margin-bottom: 20px; padding: 20px; background-color: #1a1a1a; border-radius: 12px; border: 1px solid #333; }
+        .now-playing-label { color: #888; font-size: 16px; margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 2px; }
+        #track-title { font-size: 26px; font-weight: bold; color: #00ffaa; margin: 0 0 20px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        .progress-container { display: flex; align-items: center; justify-content: center; gap: 15px; margin-top: 15px; }
+        .time-text { font-size: 18px; color: #aaa; width: 60px; text-align: center; }
+        input[type="range"] { -webkit-appearance: none; width: 70%; height: 8px; background: #444; border-radius: 4px; outline: none; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 24px; height: 24px; border-radius: 50%; background: #ff0000; cursor: pointer; }
+        
+        .controls { display: flex; justify-content: center; gap: 20px; margin-bottom: 30px; }
+        button { background-color: #222; color: #fff; border: 1px solid #444; padding: 15px 35px; font-size: 22px; border-radius: 12px; cursor: pointer; }
+        button:active { background-color: #444; }
+        #play-btn { background-color: #ff0000; font-weight: bold; width: 140px; border-color: #cc0000; }
+        
+        .playlist-header { font-size: 22px; color: #888; margin-bottom: 15px; padding-left: 10px; }
+        
+        .playlist { list-style: none; padding: 0; margin: 0; border-top: 1px solid #333; }
+        .playlist li { padding: 20px; border-bottom: 1px solid #222; font-size: 22px; cursor: pointer; color: #ccc; }
+        .playlist li.active { background-color: #1a1a1a; color: #00ffaa; border-left: 6px solid #00ffaa; padding-left: 14px; font-weight: bold; }
+        
+        #status-msg { text-align: center; color: #ff4757; margin-top: 20px; font-size: 16px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>🎵 მედია პლეერი (Lite)</h1>
+        
+        <div id="yt-player-container">
+            <div id="yt-player"></div>
+        </div>
+        
+        <div class="now-playing">
+            <p class="now-playing-label">ახლა უკრავს</p>
+            <p id="track-title">იტვირთება...</p>
+            
+            <div class="progress-container">
+                <span id="time-current" class="time-text">0:00</span>
+                <input type="range" id="progress-bar" min="0" max="100" value="0" oninput="onProgressDrag()" onchange="onProgressDrop()">
+                <span id="time-total" class="time-text">0:00</span>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button onclick="prevTrack()">⏮</button>
+            <button id="play-btn" onclick="togglePlay()">▶</button>
+            <button onclick="nextTrack()">⏭</button>
+        </div>
+
+        <div class="playlist-header">ჩემი პლეილისტი</div>
+        <ul class="playlist" id="playlist-container">
+            <li style="text-align: center; color: #555;">იტვირთება ლისტი ბაზიდან...</li>
+        </ul>
+        
+        <div id="status-msg">სისტემა მზად არის</div>
+    </div>
+
+    <!-- YouTube IFrame API -->
+    <script src="https://www.youtube.com/iframe_api"></script>
+
+    <script>
+        var fbConfig = { 
+            apiKey: "AIzaSyAH3yVbBGrhvzbSx7J1GxNcVsl_ykX_OX0", 
+            authDomain: "tesla-telemetry-29fb6.firebaseapp.com", 
+            databaseURL: "https://tesla-telemetry-29fb6-default-rtdb.europe-west1.firebasedatabase.app", 
+            projectId: "tesla-telemetry-29fb6" 
+        };
+        firebase.initializeApp(fbConfig);
+        
+        var dbSettings = firebase.database().ref("5YJYGCEE123456789/settings");
+
+        var tracks = [];
+        var currentTrackIdx = 0;
+        
+        var ytPlayer;
+        var ytPlayerReady = false;
+        var isDraggingProgress = false;
+
+        function setStatus(msg) {
+            document.getElementById('status-msg').innerHTML = msg;
+            setTimeout(function() {
+                if (document.getElementById('status-msg').innerHTML === msg) {
+                    document.getElementById('status-msg').innerHTML = "";
+                }
+            }, 6000);
+        }
+
+        function formatTime(seconds) {
+            if (!seconds || isNaN(seconds) || seconds < 0) return "0:00";
+            seconds = Math.floor(seconds);
+            var m = Math.floor(seconds / 60);
+            var s = seconds % 60;
+            return m + ":" + (s < 10 ? "0" : "") + s;
+        }
+
+        function onYouTubeIframeAPIReady() {
+            // დომენის ამოცნობა შეცდომების თავიდან ასაცილებლად
+            var originUrl = (window.location.protocol.indexOf('http') === 0) ? (window.location.protocol + "//" + window.location.host) : 'https://www.youtube.com';
+            
+            ytPlayer = new YT.Player('yt-player', {
+                height: '100%', 
+                width: '100%',
+                videoId: '', 
+                playerVars: { 
+                    'autoplay': 0, 
+                    'controls': 1, 
+                    'showinfo': 0, 
+                    'rel': 0,
+                    'origin': originUrl,
+                    'enablejsapi': 1
+                },
+                events: { 
+                    'onReady': onPlayerReady, 
+                    'onStateChange': onPlayerStateChange,
+                    'onError': onPlayerError
+                }
+            });
+        }
+
+        function onPlayerReady(event) {
+            ytPlayerReady = true;
+            if (tracks.length > 0) {
+                loadTrack(currentTrackIdx, false);
+            }
+            setInterval(updateProgressBar, 1000);
+        }
+
+        function updateProgressBar() {
+            if (!ytPlayerReady || isDraggingProgress) return;
+            
+            var state = ytPlayer.getPlayerState();
+            if (state === YT.PlayerState.PLAYING) {
+                var currentT = ytPlayer.getCurrentTime();
+                var totalT = ytPlayer.getDuration();
+                
+                if (totalT > 0) {
+                    var bar = document.getElementById('progress-bar');
+                    bar.max = totalT;
+                    bar.value = currentT;
+                    
+                    document.getElementById('time-current').innerHTML = formatTime(currentT);
+                    document.getElementById('time-total').innerHTML = formatTime(totalT);
+                }
+            }
+        }
+
+        function onProgressDrag() {
+            isDraggingProgress = true;
+            var bar = document.getElementById('progress-bar');
+            document.getElementById('time-current').innerHTML = formatTime(bar.value);
+        }
+
+        function onProgressDrop() {
+            if (!ytPlayerReady) return;
+            var bar = document.getElementById('progress-bar');
+            ytPlayer.seekTo(bar.value, true);
+            isDraggingProgress = false;
+        }
+
+        function onPlayerStateChange(event) {
+            var playBtn = document.getElementById('play-btn');
+            if (event.data == YT.PlayerState.PLAYING) {
+                playBtn.innerHTML = "⏸";
+                dbSettings.update({ mediaPlaying: true });
+            } else if (event.data == YT.PlayerState.PAUSED) {
+                playBtn.innerHTML = "▶";
+                dbSettings.update({ mediaPlaying: false });
+            } else if (event.data == YT.PlayerState.ENDED) {
+                nextTrack();
+            }
+        }
+
+        function onPlayerError(event) {
+            var err = event.data;
+            var playBtn = document.getElementById('play-btn');
+            playBtn.innerHTML = "▶";
+            
+            if (err === 101 || err === 150 || err === 153) {
+                setStatus("⚠️ სიმღერა დაბლოკილია ავტორის მიერ. ვრთავ შემდეგს...");
+            } else {
+                setStatus("⚠️ კავშირის შეცდომა (" + err + "). ვრთავ შემდეგს...");
+            }
+            
+            // გადართვა 3 წამში
+            setTimeout(function() {
+                nextTrack();
+            }, 3000);
+        }
+
+        dbSettings.on('value', function(snapshot) {
+            var data = snapshot.val();
+            if (data && data.stations && data.stations.length > 0) {
+                tracks = data.stations;
+            } else {
+                tracks = [{ title: "პლეილისტი ცარიელია", ytId: "", type: "video" }];
+            }
+            
+            var newIdx = (data && data.mediaTrack !== undefined) ? data.mediaTrack : 0;
+            if (newIdx >= tracks.length) newIdx = 0;
+            
+            renderPlaylist(newIdx);
+            
+            if (newIdx !== currentTrackIdx || document.getElementById('track-title').innerHTML === "იტვირთება...") {
+                currentTrackIdx = newIdx;
+                if (ytPlayerReady && tracks[currentTrackIdx].ytId !== "") {
+                    loadTrack(currentTrackIdx, false);
+                } else {
+                    document.getElementById('track-title').innerHTML = tracks[currentTrackIdx].title;
+                }
+            }
+        });
+
+        function renderPlaylist(activeIdx) {
+            var container = document.getElementById('playlist-container');
+            container.innerHTML = '';
+            
+            if (activeIdx === undefined) activeIdx = currentTrackIdx;
+            
+            for (var i = 0; i < tracks.length; i++) {
+                var li = document.createElement('li');
+                var isPlaying = (i === activeIdx);
+                
+                li.innerHTML = (isPlaying ? "▶ " : "") + tracks[i].title;
+                if (isPlaying) li.className = "active";
+                
+                (function(index) {
+                    li.onclick = function() { loadTrack(index, true); };
+                })(i);
+                
+                container.appendChild(li);
+            }
+        }
+
+        function loadTrack(idx, play) {
+            if (tracks.length === 0 || !ytPlayerReady || tracks[idx].ytId === "") return;
+            
+            currentTrackIdx = idx;
+            var track = tracks[idx];
+            
+            document.getElementById('track-title').innerHTML = track.title;
+            renderPlaylist(idx);
+            
+            document.getElementById('progress-bar').value = 0;
+            document.getElementById('time-current').innerHTML = "0:00";
+            
+            dbSettings.update({ mediaTrack: idx });
+            
+            if (track.type === 'playlist') {
+                ytPlayer.loadPlaylist({ list: track.ytId, listType: 'playlist', index: 0 });
+                if (!play) {
+                    setTimeout(function() { ytPlayer.pauseVideo(); }, 1000);
+                }
+            } else {
+                if (play) {
+                    ytPlayer.loadVideoById(track.ytId);
+                } else {
+                    ytPlayer.cueVideoById(track.ytId);
+                }
+            }
+            
+            document.getElementById('play-btn').innerHTML = play ? "⏸" : "▶";
+        }
+
+        function togglePlay() {
+            if (!ytPlayerReady || tracks.length === 0 || tracks[currentTrackIdx].ytId === "") return;
+            var state = ytPlayer.getPlayerState();
+            if (state === YT.PlayerState.PLAYING) {
+                ytPlayer.pauseVideo();
+            } else {
+                ytPlayer.playVideo();
+            }
+        }
+
+        function nextTrack() {
+            if (tracks.length === 0 || tracks[0].ytId === "") return;
+            var nextIdx = (currentTrackIdx + 1) % tracks.length;
+            loadTrack(nextIdx, true);
+        }
+
+        function prevTrack() {
+            if (tracks.length === 0 || tracks[0].ytId === "") return;
+            var prevIdx = currentTrackIdx - 1;
+            if (prevIdx < 0) prevIdx = tracks.length - 1;
+            loadTrack(prevIdx, true);
+        }
+
+    </script>
+</body>
+</html>
