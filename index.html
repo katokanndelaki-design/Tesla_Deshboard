@@ -24,78 +24,51 @@
         #map { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; background: #111; }
         .leaflet-routing-container, .leaflet-routing-alternatives-container { display: none !important; }
 
-        .top-bar {
-            position: absolute; top: 20px; right: 20px; z-index: 10;
-            background: rgba(15, 15, 15, 0.8); backdrop-filter: blur(15px);
-            padding: 10px 20px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1);
-            font-size: 16px; font-weight: bold; display: flex; align-items: center; gap: 10px;
-        }
+        /* ზედა პანელი */
+        .top-bar { position: absolute; top: 20px; right: 20px; z-index: 10; background: rgba(15, 15, 15, 0.8); backdrop-filter: blur(15px); padding: 10px 20px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); font-size: 16px; font-weight: bold; display: flex; align-items: center; gap: 10px; }
 
-        .sidebar {
-            position: absolute; top: 20px; left: 20px; width: 260px;
-            background: rgba(15, 15, 15, 0.9); backdrop-filter: blur(25px);
-            border-radius: 24px; border: 1px solid rgba(255,255,255,0.1); z-index: 10;
-            padding: 30px 20px; display: flex; flex-direction: column; gap: 15px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-        }
+        /* ტელემეტრიის პანელი */
+        .sidebar { position: absolute; top: 20px; left: 20px; width: 260px; background: rgba(15, 15, 15, 0.9); backdrop-filter: blur(25px); border-radius: 24px; border: 1px solid rgba(255,255,255,0.1); z-index: 10; padding: 30px 20px; display: flex; flex-direction: column; gap: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
         .header-status { text-align: center; color: #888; font-size: 11px; letter-spacing: 2px; }
         .status-dot { height: 10px; width: 10px; background: #00ffaa; border-radius: 50%; display: inline-block; margin-right: 5px; box-shadow: 0 0 10px #00ffaa;}
         .speed-value { font-size: 80px; font-weight: 300; line-height: 1; text-align: center; }
-        
-        /* დინამიური ბატარეა */
         .battery-icon { width: 100%; height: 12px; border: 1px solid #444; border-radius: 3px; padding: 2px; }
         .battery-level { height: 100%; background: #00ffaa; width: 0%; transition: background 0.5s, width 0.5s; }
         #battery-text { text-align: center; font-size: 16px; font-weight: bold; margin-bottom: -5px; transition: color 0.5s; }
         #range-text { text-align: center; font-size: 16px; font-weight: bold; color: #fff; }
-
-        .ai-status-btn {
-            background: rgba(0, 168, 255, 0.2); border: 1px solid #00a8ff; color: #fff;
-            padding: 8px; border-radius: 12px; cursor: pointer; font-size: 11px;
-            text-align: center; transition: 0.2s;
-        }
+        .ai-status-btn { background: rgba(0, 168, 255, 0.2); border: 1px solid #00a8ff; color: #fff; padding: 8px; border-radius: 12px; cursor: pointer; font-size: 11px; text-align: center; transition: 0.2s; }
         .ai-status-btn:hover { background: rgba(0, 168, 255, 0.4); }
 
-        .dock-container {
-            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
-            display: flex; flex-direction: column; align-items: center; gap: 10px; z-index: 1000;
-        }
-        .climate-panel {
-            background: rgba(20, 20, 20, 0.85); backdrop-filter: blur(20px);
-            padding: 8px 25px; border-radius: 30px; display: flex; align-items: center; gap: 20px;
-            border: 1px solid rgba(255,255,255,0.1); font-size: 24px; font-weight: 300;
-        }
+        /* Dock და კლიმატი */
+        .dock-container { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 10px; z-index: 1000; }
+        .climate-panel { background: rgba(20, 20, 20, 0.85); backdrop-filter: blur(20px); padding: 8px 25px; border-radius: 30px; display: flex; align-items: center; gap: 20px; border: 1px solid rgba(255,255,255,0.1); font-size: 24px; font-weight: 300; }
         .climate-btn { background: none; border: none; color: #aaa; font-size: 28px; cursor: pointer; transition: 0.2s; padding: 0 10px; }
         .climate-btn:hover { color: #fff; }
-        
-        .dock {
-            background: rgba(20, 20, 20, 0.95); backdrop-filter: blur(20px); padding: 10px 18px;
-            border-radius: 40px; display: flex; gap: 15px; border: 1px solid rgba(255,255,255,0.1);
-        }
-        .dock-icon {
-            width: 44px; height: 44px; border-radius: 12px; background: #222; 
-            display: flex; justify-content: center; align-items: center; 
-            font-size: 22px; cursor: pointer; transition: 0.2s; border: 1px solid transparent;
-        }
+        .dock { background: rgba(20, 20, 20, 0.95); backdrop-filter: blur(20px); padding: 10px 18px; border-radius: 40px; display: flex; gap: 15px; border: 1px solid rgba(255,255,255,0.1); }
+        .dock-icon { width: 44px; height: 44px; border-radius: 12px; background: #222; display: flex; justify-content: center; align-items: center; font-size: 22px; cursor: pointer; transition: 0.2s; border: 1px solid transparent; }
         .dock-icon.active { border-color: #00ffaa; box-shadow: 0 0 15px rgba(0, 255, 170, 0.3); background: #111; }
         .dock-icon.heat-active { background: rgba(255, 71, 87, 0.2); color: #ff4757; border-color: #ff4757; }
 
-        .app-window {
-            position: absolute; top: 20px; left: auto; right: 20px; width: 420px; height: calc(100vh - 120px);
-            background: rgba(18, 18, 18, 0.98); backdrop-filter: blur(35px); border-radius: 28px;
-            border: 1px solid rgba(255,255,255,0.1); z-index: 500;
-            display: none; flex-direction: column; box-shadow: -10px 20px 50px rgba(0,0,0,0.8);
-            resize: both; overflow: hidden;
-        }
+        /* აპლიკაციის ფანჯრები */
+        .app-window { position: absolute; top: 20px; left: auto; right: 20px; width: 420px; height: calc(100vh - 120px); background: rgba(18, 18, 18, 0.98); backdrop-filter: blur(35px); border-radius: 28px; border: 1px solid rgba(255,255,255,0.1); z-index: 500; display: none; flex-direction: column; box-shadow: -10px 20px 50px rgba(0,0,0,0.8); resize: both; overflow: hidden; }
         .app-window.active { display: flex; }
         .app-header { display: flex; justify-content: space-between; align-items: center; padding: 18px 24px; cursor: move; background: rgba(255,255,255,0.03); border-bottom: 1px solid rgba(255,255,255,0.05); }
         .app-title { font-size: 13px; color: #777; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; pointer-events: none; }
+        
+        .header-buttons { display: flex; gap: 8px; }
         .win-btn { width: 32px; height: 32px; border-radius: 50%; border: none; background: rgba(255,255,255,0.05); color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; }
         .win-btn:hover { background: rgba(255,255,255,0.15); }
         .win-btn.close:hover { background: #ff4757; }
 
         .app-content { padding: 0; flex: 1; display: flex; flex-direction: column; overflow-y: auto; }
 
-        /* ნავიგაცია და ძებნა */
+        /* მინი პლეერი ეკრანის ბოლოში (როცა ფანჯარა ჩაკეცილია) */
+        .mini-player { position: absolute; bottom: 120px; left: 50%; transform: translateX(-50%); width: 380px; background: rgba(20, 20, 20, 0.95); backdrop-filter: blur(25px); border-radius: 25px; border: 1px solid rgba(255, 255, 255, 0.1); display: none; flex-direction: column; padding: 15px 20px; gap: 10px; box-shadow: 0 20px 50px rgba(0,0,0,0.7); z-index: 900; }
+        .mini-player.active-session { display: flex; }
+        .mini-player-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+        .mini-player-controls { display: flex; justify-content: center; gap: 20px; align-items: center; margin-top: 5px; }
+
+        /* ნავიგაცია და პარამეტრები */
         .browser-toolbar { display: flex; padding: 12px; background: #1a1a1a; gap: 8px; align-items: center; }
         .browser-toolbar input { flex: 1; background: #000; border: 1px solid #333; border-radius: 12px; color: #fff; padding: 10px 15px; outline: none; font-size: 14px; }
         .browser-toolbar button { background: #333; border: none; color: #fff; padding: 8px 15px; border-radius: 10px; cursor: pointer; font-size: 13px; }
@@ -107,18 +80,15 @@
         .route-cancel-btn { background: rgba(255, 71, 87, 0.15); border: 1px solid #ff4757; color: #ff4757; font-weight: bold; padding: 10px; border-radius: 12px; cursor: pointer; margin-top: 8px; font-size: 12px; width: 100%; transition: 0.2s; }
         .route-cancel-btn:hover { background: rgba(255, 71, 87, 0.3); }
 
-        /* შეტყობინებები */
         .toast { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(0, 255, 170, 0.2); border: 1px solid #00ffaa; color: #fff; padding: 10px 20px; border-radius: 20px; z-index: 9999; font-size: 14px; font-weight: bold; backdrop-filter: blur(10px); opacity: 0; transition: opacity 0.5s; pointer-events: none; }
         .toast.error { background: rgba(255, 71, 87, 0.2); border-color: #ff4757; }
         .toast.show { opacity: 1; }
 
-        /* AI ჩატი */
         .ai-chat-box { flex: 1; padding: 15px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
         .msg { padding: 12px 16px; border-radius: 15px; max-width: 85%; font-size: 14px; line-height: 1.5; position: relative; }
         .msg.user { background: #333; align-self: flex-end; border-bottom-right-radius: 2px; }
         .msg.bot { background: rgba(0, 168, 255, 0.15); border: 1px solid rgba(0, 168, 255, 0.3); align-self: flex-start; border-bottom-left-radius: 2px; }
 
-        /* პარამეტრები */
         .settings-section { margin-bottom: 20px; }
         .settings-title { color: #888; font-size: 12px; text-transform: uppercase; margin-bottom: 12px; border-bottom: 1px solid #333; padding-bottom: 6px; letter-spacing: 1px; }
         .setting-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; font-size: 14px; color: #ddd; }
@@ -145,24 +115,16 @@
         input[type=range] { -webkit-appearance: none; background: #333; height: 6px; border-radius: 5px; outline: none; width: 120px; }
         input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #00ffaa; cursor: pointer; }
         
-        /* მუსიკის პლეერი (ვიზუალური) */
+        /* მუსიკის პლეერი */
+        #yt-player-container { width: 100%; height: 200px; background: #000; border-radius: 15px; overflow: hidden; box-shadow: 0 5px 20px rgba(0,0,0,0.5); margin-bottom: 15px; border: 1px solid #333; }
         .music-ctrl-btn { width: 50px; height: 50px; border-radius: 50%; border: none; background: rgba(255,255,255,0.05); color: #fff; cursor: pointer; font-size: 20px; transition: 0.2s; }
         .music-ctrl-btn:hover { background: rgba(255,255,255,0.15); }
         .music-ctrl-btn.active-mode { color: #00ffaa; background: rgba(0, 255, 170, 0.1); }
         .play-btn { width: 70px; height: 70px; font-size: 30px; background: #ff0000; color: #fff; }
         .play-btn:hover { background: #cc0000; }
         
-        /* ანიმაციური ეკვალაიზერი */
-        .visualizer { display: flex; align-items: flex-end; gap: 3px; height: 30px; margin-top: 10px; opacity: 0; transition: opacity 0.3s; }
-        .visualizer.playing { opacity: 1; }
-        .bar { width: 6px; background: #fff; border-radius: 3px; animation: bounce 1s infinite ease-in-out alternate; }
-        .bar:nth-child(1) { animation-delay: 0.1s; height: 15px; }
-        .bar:nth-child(2) { animation-delay: 0.3s; height: 25px; }
-        .bar:nth-child(3) { animation-delay: 0s; height: 30px; }
-        .bar:nth-child(4) { animation-delay: 0.2s; height: 20px; }
-        .bar:nth-child(5) { animation-delay: 0.4s; height: 10px; }
-        @keyframes bounce { 0% { transform: scaleY(0.3); } 100% { transform: scaleY(1); } }
-
+        .mini-ctrl-btn { width: 40px; height: 40px; font-size: 16px; }
+        .mini-play-btn { width: 50px; height: 50px; font-size: 24px; }
     </style>
 </head>
 <body>
@@ -170,13 +132,11 @@
     <div id="map"></div>
     <div id="toast" class="toast">შეტყობინება...</div>
 
-    <!-- ამინდის და საათის პანელი -->
     <div class="top-bar">
         <span id="clock" style="margin-right: 15px; border-right: 1px solid #444; padding-right: 15px;">00:00</span>
         <div id="weather-widget"><span>--°C</span> ☁️</div>
     </div>
 
-    <!-- ტელემეტრია -->
     <div class="sidebar">
         <div class="header-status"><span class="status-dot"></span> MODEL Y ONLINE</div>
         <div class="speed-value" id="speed">0</div>
@@ -190,7 +150,23 @@
         <button class="ai-status-btn" onclick="getAIStatus()">✨ ჭკვიანი სტატუსი</button>
     </div>
 
-    <!-- Dock და კლიმატი -->
+    <!-- მინი-პლეერი (ჩაკეცილი ფანჯარა) -->
+    <div class="mini-player" id="mini-player">
+        <div class="mini-player-header" onclick="restoreApp('app-music')">
+            <div style="font-size: 24px; margin-right: 10px;">🎵</div>
+            <div style="flex: 1; overflow: hidden;">
+                <div id="mini-track-title" style="font-size: 14px; font-weight: bold; color: #00ffaa; white-space: nowrap; text-overflow: ellipsis;">Loading...</div>
+                <div id="mini-track-artist" style="font-size: 11px; color: #888;">YouTube Media</div>
+            </div>
+            <span style="font-size: 14px; color: #777;">▲ გაშლა</span>
+        </div>
+        <div class="mini-player-controls">
+            <button class="music-ctrl-btn mini-ctrl-btn" onclick="prevTrack()">⏮</button>
+            <button class="music-ctrl-btn play-btn mini-play-btn" onclick="togglePlay()" id="mini-play-btn">▶</button>
+            <button class="music-ctrl-btn mini-ctrl-btn" onclick="nextTrack()">⏭</button>
+        </div>
+    </div>
+
     <div class="dock-container">
         <div class="climate-panel">
             <div class="dock-icon" title="მარცხენა გათბობა" onclick="this.classList.toggle('heat-active')" style="width: 35px; height: 35px; font-size: 16px;">♨️</div>
@@ -215,10 +191,11 @@
     <div class="app-window" id="app-settings">
         <div class="app-header">
             <h3 class="app-title">⚙️ პარამეტრები</h3>
-            <button class="win-btn close" onclick="toggleApp('app-settings')">&times;</button>
+            <div class="header-buttons">
+                <button class="win-btn close" onclick="toggleApp('app-settings')">&times;</button>
+            </div>
         </div>
         <div class="app-content" style="padding: 24px; background: #111;">
-            
             <div class="settings-section">
                 <details class="settings-accordion">
                     <summary class="settings-title" style="cursor: pointer; outline: none;">🎵 YouTube მედია ლისტი <span style="float:right;">▼</span></summary>
@@ -283,7 +260,9 @@
     <div class="app-window" id="app-nav">
         <div class="app-header">
             <h3 class="app-title">🧭 ნავიგაცია</h3>
-            <button class="win-btn close" onclick="toggleApp('app-nav')">&times;</button>
+            <div class="header-buttons">
+                <button class="win-btn close" onclick="toggleApp('app-nav')">&times;</button>
+            </div>
         </div>
         <div class="app-content" style="padding: 20px; background: #111;">
             <div class="browser-toolbar" style="padding: 0; background: transparent;">
@@ -304,35 +283,21 @@
     <!-- მედია ფლეერი (YouTube) -->
     <div class="app-window" id="app-music">
         <div class="app-header">
-            <h3 class="app-title">🎵 მედია ფლეერი</h3>
-            <button class="win-btn close" onclick="toggleApp('app-music')">&times;</button>
+            <h3 class="app-title">🎵 YouTube მედია</h3>
+            <div class="header-buttons">
+                <button class="win-btn" onclick="collapseToMini('app-music')" title="ჩაკეცვა მინი-ფლეერად">_</button>
+                <button class="win-btn close" onclick="toggleApp('app-music')">&times;</button>
+            </div>
         </div>
         <div class="app-content" style="padding: 20px; background: #111; display:flex; flex-direction:column; align-items:center;">
             
-            <!-- პირდაპირი ლინკით ჩართვა ფლეერიდან -->
-            <div style="width:100%; display:flex; gap:8px; margin-bottom: 20px;">
-                <input type="text" id="direct-yt-url" class="settings-input" placeholder="ჩასვით YouTube ლინკი..." style="flex:1;">
-                <button class="settings-btn" onclick="playDirectYT()" style="background:#ff0000;">▶️ დაკვრა</button>
-            </div>
-
-            <!-- ვიზუალური ხატულა + ეკვალაიზერი (რადგან ნამდვილს ვმალავთ ტესლასგან) -->
-            <div style="width: 150px; height: 150px; background: linear-gradient(45deg, #ff0000, #990000); border-radius: 20px; box-shadow: 0 10px 30px rgba(255,0,0,0.3); margin-bottom: 10px; display:flex; flex-direction: column; align-items:center; justify-content:center; position: relative;">
-                <span style="font-size:50px;">📻</span>
-                <div class="visualizer" id="music-visualizer">
-                    <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
-                </div>
-            </div>
-            
-            <h2 id="track-title" style="margin:10px 0 5px 0; text-align: center; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Loading...</h2>
-            <p id="track-artist" style="color:#888; margin:0 0 30px 0;">YouTube Audio</p>
-            
-            <!-- საიდუმლო, უჩინარი YouTube Iframe 
-                 ზომა არის 1x1 პიქსელი, რომ ტესლამ ვიდეოდ არ ჩათვალოს და D-ში არ გათიშოს! -->
-            <div style="position:absolute; top:-9999px; left:-9999px; width:1px; height:1px; opacity:0; pointer-events:none;">
+            <div id="yt-player-container">
                 <div id="yt-player"></div>
             </div>
             
-            <!-- კონტროლები -->
+            <h3 id="track-title" style="margin:0 0 5px 0; text-align: center; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 16px;">Loading...</h3>
+            <p id="track-artist" style="color:#888; margin:0 0 20px 0; font-size: 12px;">YouTube Media</p>
+            
             <div style="display:flex; gap:15px; align-items:center; margin-top: auto; padding-bottom: 10px;">
                 <button class="music-ctrl-btn" id="btn-shuffle" onclick="toggleShuffle()" title="შემთხვევითი">🔀</button>
                 <button class="music-ctrl-btn" onclick="prevTrack()">⏮</button>
@@ -347,7 +312,9 @@
     <div class="app-window" id="app-ai">
         <div class="app-header">
             <h3 class="app-title">✨ AI Co-Pilot</h3>
-            <button class="win-btn close" onclick="toggleApp('app-ai')">&times;</button>
+            <div class="header-buttons">
+                <button class="win-btn close" onclick="toggleApp('app-ai')">&times;</button>
+            </div>
         </div>
         <div class="app-content" style="background: #111;">
             <div class="ai-chat-box" id="ai-chat">
@@ -365,13 +332,14 @@
     <div class="app-window" id="app-browser" style="width: 700px;">
         <div class="app-header">
             <h3 class="app-title">🌐 ბრაუზერი</h3>
-            <div style="display: flex; gap: 8px;">
+            <div class="header-buttons">
+                <button class="win-btn" onclick="window.open('https://youtube.com', '_blank')" title="YouTube გახსნა ახალ ფანჯარაში" style="background: #ff0000;">Y</button>
                 <button class="win-btn close" onclick="toggleApp('app-browser')">&times;</button>
             </div>
         </div>
         <div class="app-content">
             <div class="browser-toolbar">
-                <input type="text" id="url-input" placeholder="ჩაწერეთ საიტი ან ძიება...">
+                <input type="text" id="url-input" placeholder="ჩაწერეთ საიტი...">
                 <button onclick="navigateBrowser()">გადასვლა</button>
             </div>
             <iframe id="browser-iframe" src="about:blank" style="width: 100%; flex: 1; border: none; background: #fff;" allowfullscreen></iframe>
@@ -423,12 +391,11 @@
         let savedMediaTime = 0;
         let savedMediaTrack = -1;
 
-        // იტვირთება YouTube API
         function onYouTubeIframeAPIReady() {
             ytPlayer = new YT.Player('yt-player', {
-                height: '1', width: '1', // უხილავი ზომა
+                height: '100%', width: '100%',
                 videoId: '', 
-                playerVars: { 'autoplay': 0, 'controls': 0, 'showinfo': 0, 'rel': 0 },
+                playerVars: { 'autoplay': 0, 'controls': 1, 'showinfo': 0, 'rel': 0 },
                 events: { 'onReady': onPlayerReady, 'onStateChange': onPlayerStateChange }
             });
         }
@@ -438,19 +405,21 @@
             if(tracks.length > 0) loadTrack(pendingLoadTrackIdx, pendingPlay);
         }
 
+        function updatePlayButtons(isPlaying) {
+            const symbol = isPlaying ? "⏸" : "▶";
+            document.getElementById('play-btn').innerText = symbol;
+            document.getElementById('mini-play-btn').innerText = symbol;
+        }
+
         function onPlayerStateChange(event) {
-            const visualizer = document.getElementById('music-visualizer');
             if (event.data == YT.PlayerState.PLAYING) {
-                document.getElementById('play-btn').innerText = "⏸";
-                visualizer.classList.add('playing');
+                updatePlayButtons(true);
                 saveAppSetting('mediaPlaying', true);
             } else if (event.data == YT.PlayerState.PAUSED) {
-                document.getElementById('play-btn').innerText = "▶";
-                visualizer.classList.remove('playing');
+                updatePlayButtons(false);
                 saveAppSetting('mediaPlaying', false);
                 saveAppSetting('mediaTime', ytPlayer.getCurrentTime());
             } else if (event.data == YT.PlayerState.ENDED) {
-                // მუსიკა მორჩა, ვამოწმებთ რეჟიმებს
                 if (isRepeat) {
                     ytPlayer.seekTo(0);
                     ytPlayer.playVideo();
@@ -466,20 +435,27 @@
             const data = snapshot.val();
             if (data) {
                 if (data.mapStyle) { document.getElementById('map-style-select').value = data.mapStyle; changeMapStyle(false); }
-                if (data.trafficOn) { trafficOn = false; toggleTraffic(false); } 
+                
+                if (data.trafficOn !== undefined) { 
+                    trafficOn = data.trafficOn; 
+                    if(trafficOn) {
+                        map.addLayer(trafficLayer);
+                        document.getElementById('dock-traffic').classList.add('active');
+                        const setToggle = document.getElementById('setting-traffic-toggle');
+                        if(setToggle) setToggle.checked = true;
+                    }
+                } 
+                
                 if (data.carType) { carTypeSetting = data.carType; document.getElementById('car-type-select').value = data.carType; }
                 if (data.carSize) { carSizeSetting = data.carSize; document.getElementById('car-size-slider').value = data.carSize; }
                 if (data.apiKey) { apiKey = data.apiKey; }
                 if (data.lastUrl) { document.getElementById('url-input').value = data.lastUrl; document.getElementById('browser-iframe').src = data.lastUrl; }
                 
-                // Shuffle & Repeat
-                if (data.shuffle !== undefined) { isShuffle = !data.shuffle; toggleShuffle(); } // toggle-ით ვასწორებთ
+                if (data.shuffle !== undefined) { isShuffle = !data.shuffle; toggleShuffle(); } 
                 if (data.repeat !== undefined) { isRepeat = !data.repeat; toggleRepeat(); }
 
                 if (data.stations && Array.isArray(data.stations)) {
-                    if(data.stations.length > 0 && data.stations[0].src) {
-                        tracks = [...defaultYTTracks]; saveAppSetting('stations', tracks);
-                    } else tracks = data.stations;
+                    tracks = data.stations;
                 } else { tracks = [...defaultYTTracks]; saveAppSetting('stations', tracks); }
                 renderStationList();
 
@@ -510,6 +486,10 @@
             if (playlistId) return { ytId: playlistId, type: 'playlist' };
             if (videoId) return { ytId: videoId, type: 'video' };
             return null;
+        }
+
+        function isYouTubeLink(text) {
+            return text.includes('youtube.com') || text.includes('youtu.be');
         }
 
         // --- მუსიკის მართვა ---
@@ -549,21 +529,18 @@
             document.getElementById('new-station-title').value = ''; document.getElementById('new-station-url').value = '';
         }
 
-        // პირდაპირი დაკვრა ველში ჩაგდებით
-        function playDirectYT() {
-            const url = document.getElementById('direct-yt-url').value.trim();
-            if(!url) return;
+        // ტელეფონიდან ავტომატურად დამატება ლისტში
+        function autoAddAndPlayYTUrl(url) {
             const parsed = parseYouTubeUrl(url);
             if(parsed) {
-                const title = "დროებითი: " + (parsed.type === 'playlist' ? "Playlist" : "Video");
-                // ვამატებთ სიის თავში და ვრთავთ
+                const title = "გაზიარებული: " + (parsed.type === 'playlist' ? "Playlist" : "Video");
+                // ვამატებთ სიის თავში
                 tracks.unshift({ title: title, type: parsed.type, ytId: parsed.ytId });
                 saveAppSetting('stations', tracks);
                 renderStationList();
                 loadTrack(0, true);
-                document.getElementById('direct-yt-url').value = '';
             } else {
-                showToast("⚠️ არასწორი YouTube ლინკი!", true);
+                showToast("⚠️ არასწორი YouTube ლინკი გაზიარდა!", true);
             }
         }
 
@@ -578,7 +555,7 @@
         function deleteStation(index) {
             if(!confirm("ნამდვილად გსურთ წაშლა?")) return;
             tracks.splice(index, 1);
-            if(tracks.length === 0) { if(ytPlayerReady) ytPlayer.stopVideo(); document.getElementById('track-title').innerText = "სია ცარიელია"; } 
+            if(tracks.length === 0) { if(ytPlayerReady) ytPlayer.stopVideo(); document.getElementById('track-title').innerText = "სია ცარიელია"; updateMiniPlayer(); } 
             else { if (currentTrackIdx >= tracks.length) currentTrackIdx = 0; loadTrack(currentTrackIdx, false); }
             saveAppSetting('stations', tracks); renderStationList(); showToast("🗑️ წაიშალა");
         }
@@ -603,10 +580,20 @@
             showToast(isRepeat ? "🔁 გამეორება ჩართულია" : "➡️ გამეორება გამორთულია");
         }
         
+        function updateMiniPlayer() {
+            if(tracks.length > 0) {
+                document.getElementById('mini-track-title').innerText = tracks[currentTrackIdx].title;
+            } else {
+                document.getElementById('mini-track-title').innerText = "სია ცარიელია";
+            }
+        }
+
         function loadTrack(idx, play = true) {
             if(tracks.length === 0 || !ytPlayerReady) return;
             currentTrackIdx = idx; const track = tracks[idx];
+            
             document.getElementById('track-title').innerText = track.title;
+            updateMiniPlayer(); // ვაახლებთ მინი პლეერის ტექსტს
             saveAppSetting('mediaTrack', idx);
             
             let startSec = 0;
@@ -619,7 +606,7 @@
                 if (play) ytPlayer.loadVideoById({ videoId: track.ytId, startSeconds: startSec });
                 else ytPlayer.cueVideoById({ videoId: track.ytId, startSeconds: startSec });
             }
-            document.getElementById('play-btn').innerText = play ? "⏸" : "▶";
+            updatePlayButtons(play);
         }
 
         function nextTrack() { 
@@ -678,14 +665,14 @@
 
         async function getAIStatus() {
             const speed = document.getElementById('speed').innerText; const battery = document.getElementById('battery-text').innerText;
-            toggleApp('app-ai'); const chat = document.getElementById('ai-chat');
+            restoreApp('app-ai'); const chat = document.getElementById('ai-chat');
             chat.innerHTML += `<div class="msg user">როგორია ჩემი ავტომობილის მდგომარეობა?</div>`;
             const res = await callGemini(`სიჩქარეა ${speed} კმ/სთ, ბატარეა: ${battery}. შეაფასე ქართულად.`, "ხარ Tesla-ს ასისტენტი.");
             chat.innerHTML += `<div class="msg bot">${res}</div>`;
         }
         async function getAIRouteAnalysis() {
             const dist = document.getElementById('eta-dist').innerText; const time = document.getElementById('eta-time').innerText;
-            toggleApp('app-ai'); const chat = document.getElementById('ai-chat');
+            restoreApp('app-ai'); const chat = document.getElementById('ai-chat');
             chat.innerHTML += `<div class="msg user">მომიყევი მარშრუტის შესახებ (${currentDestination}).</div>`;
             const res = await callGemini(`მივდივარ აქ: ${currentDestination}. მანძილი ${dist} კმ, დრო ${time} წუთი. მომიყევი რამე საინტერესო.`, "ხარ გიდი ასისტენტი.");
             chat.innerHTML += `<div class="msg bot">${res}</div>`;
@@ -698,12 +685,22 @@
 
         function toggleTraffic(showToastMsg = true) {
             trafficOn = !trafficOn;
-            if(trafficOn) { trafficLayer.addTo(map); trafficLayer.bringToFront(); document.getElementById('dock-traffic').classList.add('active'); } 
-            else { map.removeLayer(trafficLayer); document.getElementById('dock-traffic').classList.remove('active'); }
-            const setToggle = document.getElementById('setting-traffic-toggle'); if(setToggle) setToggle.checked = trafficOn;
+            if(trafficOn) {
+                if (!map.hasLayer(trafficLayer)) map.addLayer(trafficLayer);
+                trafficLayer.bringToFront(); 
+                document.getElementById('dock-traffic').classList.add('active');
+            } else {
+                if (map.hasLayer(trafficLayer)) map.removeLayer(trafficLayer);
+                document.getElementById('dock-traffic').classList.remove('active');
+            }
+            const setToggle = document.getElementById('setting-traffic-toggle');
+            if(setToggle) setToggle.checked = trafficOn;
+            
             saveAppSetting('trafficOn', trafficOn);
             if(showToastMsg) showToast(trafficOn ? "🚦 საცობების ჩვენება ჩართულია" : "🚦 საცობების ჩვენება გამორთულია");
         }
+
+        document.getElementById('dock-traffic').onclick = () => toggleTraffic();
 
         function changeMapStyle(save = true) {
             const style = document.getElementById('map-style-select').value; map.removeLayer(baseLayer);
@@ -734,13 +731,38 @@
             document.getElementById('browser-iframe').src = val; saveAppSetting('lastUrl', val);
         }
 
+        // --- ფანჯრების მართვა (ჩაკეცვა / გაშლა) ---
         function toggleApp(id) {
             const win = document.getElementById(id); if (!win) return;
             const wasActive = win.style.display === 'flex';
+            
+            // ვხურავთ სხვა ფანჯრებს
             document.querySelectorAll('.app-window').forEach(w => w.style.display = 'none');
             document.querySelectorAll('.dock-icon').forEach(i => i.classList.remove('active'));
             if (trafficOn) document.getElementById('dock-traffic').classList.add('active');
-            if(!wasActive) { win.style.display = 'flex'; document.getElementById('dock-' + id.split('-')[1])?.classList.add('active'); }
+            
+            // მინი-პლეერს ვმალავთ თუ მთავარი მუსიკის ფანჯარა იხსნება
+            if (id === 'app-music') document.getElementById('mini-player').classList.remove('active-session');
+            
+            if(!wasActive) { 
+                win.style.display = 'flex'; 
+                document.getElementById('dock-' + id.split('-')[1])?.classList.add('active'); 
+            }
+        }
+        
+        function restoreApp(id) {
+            if (id === 'app-music') document.getElementById('mini-player').classList.remove('active-session');
+            toggleApp(id);
+        }
+
+        function collapseToMini(id) {
+            document.getElementById(id).style.display = 'none'; 
+            document.getElementById('dock-' + id.split('-')[1]).classList.remove('active'); 
+            
+            if (id === 'app-music') {
+                updateMiniPlayer();
+                document.getElementById('mini-player').classList.add('active-session');
+            }
         }
 
         document.getElementById('dock-nav').onclick = () => toggleApp('app-nav');
@@ -797,7 +819,6 @@
             if (routingControl) { map.removeControl(routingControl); routingControl = null; }
             document.getElementById('route-info').style.display = 'none'; document.getElementById('search-input').value = '';
             currentDestination = ''; currentDestinationLatLng = null; lastRouteUpdateLatLng = null;    
-            firebase.database().ref("5YJYGCEE123456789/target_address").remove();
             showToast("🛑 მარშრუტი გაუქმებულია");
             if (carMarker) map.setView(carMarker.getLatLng(), 16);
         }
@@ -854,25 +875,22 @@
             else { carMarker.setLatLng(ll); carMarker.setIcon(L.divIcon({ html: carSvg, className: '', iconSize: [w, h], iconAnchor: [aw, ah] })); }
         }
 
-        // --- ტელემეტრია და ბატარეის ლოგიკა ---
+        // --- ტელემეტრია ---
         let lastPosition = null; let lastTime = null; let currentHeading = 0; 
 
         firebase.database().ref("5YJYGCEE123456789").on('value', (s) => {
             const d = s.val(); if(!d) return;
             
             if (d.battery_soc !== undefined) {
-                // ბატარეის ფერების ლოგიკა
-                let batColor = "#00ffaa"; // მწვანე ნაგულისხმევად
-                if (d.battery_soc <= 20 && d.battery_soc >= 15) batColor = "#ffa500"; // ნარინჯისფერი
-                else if (d.battery_soc < 15) batColor = "#ff4757"; // წითელი
+                let batColor = "#00ffaa"; 
+                if (d.battery_soc <= 20 && d.battery_soc >= 15) batColor = "#ffa500"; 
+                else if (d.battery_soc < 15) batColor = "#ff4757"; 
 
                 document.getElementById('battery-level').style.width = d.battery_soc + "%";
                 document.getElementById('battery-level').style.backgroundColor = batColor;
                 document.getElementById('battery-text').innerText = d.battery_soc + "%";
                 document.getElementById('battery-text').style.color = batColor;
-
-                const estRange = Math.round(d.battery_soc * 4.2);
-                document.getElementById('range-text').innerText = estRange + " კმ";
+                document.getElementById('range-text').innerText = Math.round(d.battery_soc * 4.2) + " კმ";
             }
             if(d.lat && d.lng) {
                 const ll = L.latLng(d.lat, d.lng); updateWeather(d.lat, d.lng); 
@@ -909,24 +927,37 @@
             }
         });
 
+        // --- ტელეფონიდან ლინკის/მისამართის დაჭერა ---
         firebase.database().ref("5YJYGCEE123456789/target_address").on('value', (s) => {
             const data = s.val(); if(!data) return;
-            let address = "";
-            if(typeof data === 'string') address = data; else if(data.address) address = data.address; else if(typeof data === 'object') for(let key in data) if(typeof data[key] === 'string') { address = data[key]; break; }
-            if(!address || address.trim().length < 2) return;
-            address = address.trim(); showToast("📍 მიღებულია: " + address);
-            if (document.getElementById('app-nav').style.display !== 'flex') toggleApp('app-nav');
-            document.getElementById('search-input').value = "ვძებნი: " + address;
+            let textData = "";
+            if(typeof data === 'string') textData = data; else if(data.address) textData = data.address; else if(typeof data === 'object') for(let key in data) if(typeof data[key] === 'string') { textData = data[key]; break; }
+            if(!textData || textData.trim().length < 2) return;
+            textData = textData.trim(); 
+            
+            // ვამოწმებთ, YouTube ლინკია თუ არა
+            if(isYouTubeLink(textData)) {
+                showToast("🎵 მიღებულია YouTube ლინკი!");
+                if (document.getElementById('app-music').style.display !== 'flex') restoreApp('app-music');
+                autoAddAndPlayYTUrl(textData); // ავტომატურად ამატებს ლისტში და რთავს
+                firebase.database().ref("5YJYGCEE123456789/target_address").remove(); // ვშლით ბაზიდან, რომ ორჯერ არ ჩართოს
+                return;
+            }
 
-            fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(address)}&limit=1`).then(r => r.json()).then(res => {
+            // ნავიგაცია
+            showToast("📍 მიღებულია მისამართი: " + textData);
+            if (document.getElementById('app-nav').style.display !== 'flex') restoreApp('app-nav');
+            document.getElementById('search-input').value = "ვძებნი: " + textData;
+
+            fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(textData)}&limit=1`).then(r => r.json()).then(res => {
                 if(res.features && res.features.length > 0) {
                     const f = res.features[0]; currentDestination = [f.properties.name, f.properties.city].filter(Boolean).join(', ');
                     currentDestinationLatLng = L.latLng(f.geometry.coordinates[1], f.geometry.coordinates[0]); lastRouteUpdateLatLng = null; 
                     document.getElementById('search-input').value = currentDestination; document.getElementById('suggestions').style.display = 'none'; drawRoute(currentDestinationLatLng); 
-                } else document.getElementById('search-input').value = "ვერ ვიპოვე: " + address;
+                    firebase.database().ref("5YJYGCEE123456789/target_address").remove(); 
+                } else document.getElementById('search-input').value = "ვერ ვიპოვე: " + textData;
             }).catch(err => document.getElementById('search-input').value = "შეცდომა");
         });
     </script>
 </body>
 </html>
-
