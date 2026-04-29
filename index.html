@@ -68,7 +68,7 @@
         /* მინი პლეერი ოდნავ მაღლაა აწეული */
         .mini-player { position: absolute; bottom: 250px; left: 50%; transform: translateX(-50%); width: 380px; background: rgba(20, 20, 20, 0.95); backdrop-filter: blur(25px); border-radius: 25px; border: 1px solid rgba(255, 255, 255, 0.1); display: none; flex-direction: column; padding: 15px 20px; gap: 10px; box-shadow: 0 20px 50px rgba(0,0,0,0.7); z-index: 900; }
         .mini-player.active-session { display: flex; }
-        .mini-player-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+        .mini-player-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; margin-bottom: 5px; }
         .mini-player-controls { display: flex; justify-content: center; gap: 20px; align-items: center; margin-top: 5px; }
 
         .browser-toolbar { display: flex; padding: 12px; background: #1a1a1a; gap: 8px; align-items: center; }
@@ -115,9 +115,14 @@
         .station-btn { background: #333; color: #fff; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 12px; margin-left: 5px; }
         .station-btn:hover { background: #555; }
         .station-btn.del:hover { background: #ff4757; }
+
         input[type=range] { -webkit-appearance: none; background: #333; height: 6px; border-radius: 5px; outline: none; width: 120px; }
         input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #00ffaa; cursor: pointer; }
         
+        /* პროგრესის სლაიდერი (Seek Bar) ახალი სტილი */
+        .progress-slider { width: 100% !important; height: 4px !important; margin: 0; background: #444 !important; }
+        .progress-slider::-webkit-slider-thumb { width: 12px !important; height: 12px !important; background: #ff0000 !important; }
+
         /* YouTube კონტეინერი */
         #yt-player-container { 
             width: 100%; height: 200px; background: #000; 
@@ -183,6 +188,14 @@
             </div>
             <span style="font-size: 14px; color: #777;">▲ გაშლა</span>
         </div>
+        
+        <!-- ახალი: წუთებზე გადახვევის შკალა (Seek Bar) -->
+        <div style="display: flex; align-items: center; gap: 8px; width: 100%; padding: 0 5px; box-sizing: border-box; margin-bottom: 5px;">
+            <span id="mini-time-current" style="font-size: 11px; color: #aaa; width: 35px; text-align: right;">0:00</span>
+            <input type="range" id="mini-progress-bar" class="progress-slider" min="0" max="100" value="0" oninput="onProgressDrag()" onchange="onProgressDrop()">
+            <span id="mini-time-total" style="font-size: 11px; color: #aaa; width: 35px;">0:00</span>
+        </div>
+
         <div class="mini-player-controls">
             <button class="music-ctrl-btn mini-ctrl-btn" onclick="prevTrack()">⏮</button>
             <button class="music-ctrl-btn play-btn mini-play-btn" onclick="togglePlay()" id="mini-play-btn">▶</button>
@@ -315,6 +328,13 @@
             
             <h3 id="track-title" style="margin:0 0 10px 0; text-align: center; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 16px;">იტვირთება...</h3>
             
+            <!-- ახალი: წუთებზე გადახვევის შკალა (Seek Bar) -->
+            <div style="display: flex; align-items: center; gap: 8px; width: 100%; margin-bottom: 15px;">
+                <span id="main-time-current" style="font-size: 12px; color: #aaa; width: 40px; text-align: right;">0:00</span>
+                <input type="range" id="main-progress-bar" class="progress-slider" min="0" max="100" value="0" oninput="onProgressDrag(true)" onchange="onProgressDrop(true)">
+                <span id="main-time-total" style="font-size: 12px; color: #aaa; width: 40px;">0:00</span>
+            </div>
+            
             <div style="display:flex; gap:15px; align-items:center; padding-bottom: 10px;">
                 <button class="music-ctrl-btn" id="btn-shuffle" onclick="toggleShuffle()" title="შემთხვევითი">🔀</button>
                 <button class="music-ctrl-btn" onclick="prevTrack()">⏮</button>
@@ -405,6 +425,7 @@
         let pendingPlay = false;
         let savedMediaTime = 0;
         let savedMediaTrack = -1;
+        let isDraggingProgress = false;
 
         function onYouTubeIframeAPIReady() {
             ytPlayer = new YT.Player('yt-player', {
@@ -488,7 +509,6 @@
                 }
                 renderStationList();
                 
-                // სტანდარტულად მინი-ფლეერი ჩანს თუ ლისტი ცარიელი არაა
                 if(tracks.length > 0) {
                     document.getElementById('mini-player').classList.add('active-session');
                     updateMiniPlayer();
@@ -513,7 +533,6 @@
         // --- YouTube Parsing (ფილტრი ჭკვიანურად ამოიცნობს ლინკს ტექსტში) ---
         function parseYouTubeUrl(url) {
             let videoId = null; let playlistId = null;
-            // ამოვიღოთ მხოლოდ ლინკი ტექსტიდან
             const urlMatch = url.match(/(https?:\/\/[^\s]+)/);
             const cleanUrl = urlMatch ? urlMatch[1] : url;
 
@@ -527,15 +546,12 @@
 
         // --- მუსიკის მართვა ---
         function renderStationList() {
-            // სეთინგების ლისტი
             const settingsContainer = document.getElementById('station-list-container');
             settingsContainer.innerHTML = '';
-            // ფლეერის ლისტი (წაშლის/რედაქტირების გარეშე)
             const playerContainer = document.getElementById('player-playlist');
             playerContainer.innerHTML = '';
 
             tracks.forEach((track, index) => {
-                // სეთინგებისთვის
                 const divSet = document.createElement('div'); divSet.className = 'station-item';
                 divSet.innerHTML = `
                     <div style="flex:1; overflow:hidden;">
@@ -547,7 +563,6 @@
                     </div>`;
                 settingsContainer.appendChild(divSet);
 
-                // ფლეერისთვის
                 const isPlaying = (index === currentTrackIdx);
                 const divPlay = document.createElement('div'); divPlay.className = 'station-item';
                 divPlay.style.cursor = 'pointer';
@@ -651,6 +666,74 @@
             else document.getElementById('mini-track-title').innerText = "სია ცარიელია";
         }
 
+        function formatTime(seconds) {
+            if (isNaN(seconds) || seconds < 0) return "0:00";
+            const m = Math.floor(seconds / 60);
+            const s = Math.floor(seconds % 60);
+            return m + ":" + (s < 10 ? "0" : "") + s;
+        }
+
+        function updateProgressUI() {
+            if (!ytPlayerReady || isDraggingProgress) return;
+            
+            // ამ ეტაპზე შეიძლება duration ჯერ 0 იყოს სანამ ვიდეო ბოლომდე ჩაიტვირთება
+            const currentTime = ytPlayer.getCurrentTime ? ytPlayer.getCurrentTime() : 0;
+            const duration = ytPlayer.getDuration ? ytPlayer.getDuration() : 0;
+
+            const miniBar = document.getElementById('mini-progress-bar');
+            const miniCur = document.getElementById('mini-time-current');
+            const miniTot = document.getElementById('mini-time-total');
+
+            const mainBar = document.getElementById('main-progress-bar');
+            const mainCur = document.getElementById('main-time-current');
+            const mainTot = document.getElementById('main-time-total');
+
+            if (duration > 0) {
+                if(miniBar) {
+                    miniBar.max = duration;
+                    miniBar.value = currentTime;
+                    miniCur.innerText = formatTime(currentTime);
+                    miniTot.innerText = formatTime(duration);
+                }
+                if(mainBar) {
+                    mainBar.max = duration;
+                    mainBar.value = currentTime;
+                    mainCur.innerText = formatTime(currentTime);
+                    mainTot.innerText = formatTime(duration);
+                }
+            } else {
+                // ცოცხალი ტრანსლაციის ან ჩაუტვირთავი ვიდეოს დროს
+                if(miniBar) { miniBar.value = 0; miniCur.innerText = "0:00"; miniTot.innerText = "0:00"; }
+                if(mainBar) { mainBar.value = 0; mainCur.innerText = "0:00"; mainTot.innerText = "0:00"; }
+            }
+        }
+
+        function onProgressDrag(isMain = false) {
+            isDraggingProgress = true;
+            const barId = isMain ? 'main-progress-bar' : 'mini-progress-bar';
+            const curId = isMain ? 'main-time-current' : 'mini-time-current';
+            
+            const progressBar = document.getElementById(barId);
+            const currentSpan = document.getElementById(curId);
+            
+            const otherBarId = isMain ? 'mini-progress-bar' : 'main-progress-bar';
+            const otherCurId = isMain ? 'mini-time-current' : 'main-time-current';
+            const otherBar = document.getElementById(otherBarId);
+            const otherCur = document.getElementById(otherCurId);
+            
+            if(otherBar) otherBar.value = progressBar.value;
+            currentSpan.innerText = formatTime(progressBar.value);
+            if(otherCur) otherCur.innerText = formatTime(progressBar.value);
+        }
+
+        function onProgressDrop(isMain = false) {
+            if (!ytPlayerReady) return;
+            const barId = isMain ? 'main-progress-bar' : 'mini-progress-bar';
+            const progressBar = document.getElementById(barId);
+            ytPlayer.seekTo(progressBar.value, true);
+            isDraggingProgress = false;
+        }
+
         function loadTrack(idx, play = true) {
             if(tracks.length === 0 || !ytPlayerReady) return;
             currentTrackIdx = idx; const track = tracks[idx];
@@ -659,6 +742,10 @@
             updateMiniPlayer(); 
             renderStationList(); 
             saveAppSetting('mediaTrack', idx);
+            
+            // ვანულებთ შკალას ახალი სიმღერის ჩართვისას
+            document.getElementById('mini-progress-bar').value = 0;
+            if(document.getElementById('main-progress-bar')) document.getElementById('main-progress-bar').value = 0;
             
             let startSec = 0;
             if (savedMediaTrack === idx && savedMediaTime > 0) { startSec = savedMediaTime; savedMediaTime = 0; }
@@ -687,15 +774,19 @@
             loadTrack((currentTrackIdx - 1 + tracks.length) % tracks.length, wasPlaying || true); 
         }
 
+        // მთავარი Timer ყველა პერიოდული განახლებისთვის
         setInterval(() => {
-            if(ytPlayerReady && ytPlayer.getPlayerState() === YT.PlayerState.PLAYING) {
-                saveAppSetting('mediaTime', ytPlayer.getCurrentTime());
-            }
-        }, 5000);
-
-        setInterval(() => {
+            // საათის განახლება
             const now = new Date();
             document.getElementById('clock').innerText = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+            
+            // პროგრესის შკალის განახლება
+            updateProgressUI();
+
+            // დროის შენახვა 5 წამში ერთხელ (თუ მუსიკა უკრავს)
+            if(now.getSeconds() % 5 === 0 && ytPlayerReady && ytPlayer.getPlayerState() === YT.PlayerState.PLAYING) {
+                saveAppSetting('mediaTime', ytPlayer.getCurrentTime());
+            }
         }, 1000);
 
         // --- AI Helper Functions ---
