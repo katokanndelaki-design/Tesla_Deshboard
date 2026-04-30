@@ -389,7 +389,8 @@
         firebase.initializeApp(fbConfig);
         const dbSettings = firebase.database().ref("5YJYGCEE123456789/settings");
 
-        let apiKey = ""; 
+        // Gemini API გასაღები ჩაშენებულია კოდში
+        let apiKey = "AIzaSyCiIRonRvsdHUHFIIo43JJ7Gp7Moq1N4ik"; 
         let trafficOn = false;
         let trafficLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=h,traffic&x={x}&y={y}&z={z}', { maxZoom: 20, opacity: 0.8 });
         let baseLayer; 
@@ -485,6 +486,10 @@
                 if (data.carType) { carTypeSetting = data.carType; document.getElementById('car-type-select').value = data.carType; }
                 if (data.carSize) { carSizeSetting = data.carSize; document.getElementById('car-size-slider').value = data.carSize; }
                 if (data.apiKey) { apiKey = data.apiKey; }
+                
+                // ვაჩვენოთ გასაღები სეთინგების ველში
+                document.getElementById('api-key-input').value = apiKey;
+
                 if (data.lastUrl) { document.getElementById('url-input').value = data.lastUrl; document.getElementById('browser-iframe').src = data.lastUrl; }
                 
                 if (data.shuffle !== undefined) { isShuffle = !data.shuffle; toggleShuffle(false); } 
@@ -887,7 +892,7 @@
 
         function saveApiKey() {
             const key = document.getElementById('api-key-input').value.trim();
-            if(key.length > 20) { apiKey = key; saveAppSetting('apiKey', key); showToast("✅ API გასაღები შენახულია"); document.getElementById('api-key-input').value = ""; }
+            if(key.length > 20) { apiKey = key; saveAppSetting('apiKey', key); showToast("✅ API გასაღები შენახულია"); }
             else showToast("❌ არასწორი გასაღები", true);
         }
 
@@ -1123,7 +1128,8 @@
             const urlMatch = textData.match(/(https?:\/\/[^\s]+)/);
             const extractedUrl = urlMatch ? urlMatch[1] : textData;
             
-            if(isYouTubeLink(extractedUrl)) {
+            const parsed = parseYouTubeUrl(extractedUrl);
+            if(parsed) {
                 showToast("🎵 მიღებულია YouTube ლინკი!");
                 if (document.getElementById('app-music').style.display !== 'flex') restoreApp('app-music');
                 autoAddAndPlayYTUrl(extractedUrl);
