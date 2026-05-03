@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="ka">
 <head>
@@ -5,15 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tesla OS - Pro Stable</title>
     
-    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
-    <!-- Leaflet.js -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
-    <!-- Leaflet Routing Machine -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
     <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
 
@@ -75,12 +73,6 @@
         .browser-toolbar input { flex: 1; background: #000; border: 1px solid #333; border-radius: 12px; color: #fff; padding: 10px 15px; outline: none; font-size: 14px; user-select: auto; }
         .browser-toolbar button { background: #333; border: none; color: #fff; padding: 8px 15px; border-radius: 10px; cursor: pointer; font-size: 13px; }
         
-        /* ბრაუზერის ახალი "სწრაფი ლინკების" ზოლი */
-        .bookmarks-bar { display: flex; gap: 8px; padding: 10px 12px; background: #111; overflow-x: auto; border-bottom: 1px solid #222; scrollbar-width: none; }
-        .bookmarks-bar::-webkit-scrollbar { display: none; }
-        .bookmark-btn { background: #222; border: 1px solid #444; color: #fff; padding: 6px 12px; border-radius: 15px; cursor: pointer; font-size: 12px; white-space: nowrap; transition: 0.2s; }
-        .bookmark-btn:hover { background: #00ffaa; color: #000; border-color: #00ffaa; }
-
         .suggestions-list { list-style: none; padding: 0; margin: 10px 0; background: #111; border-radius: 12px; overflow: hidden; display: none; border: 1px solid #222; }
         .suggestions-list li { padding: 14px; border-bottom: 1px solid #222; cursor: pointer; font-size: 14px; color: #ccc; }
         .suggestions-list li:hover { background: #00a8ff; color: #fff; }
@@ -166,7 +158,6 @@
         </div>
     </div>
 
-    <!-- საათი და ამინდი ქვედა მარცხენა კუთხეში -->
     <div class="bottom-info-bar">
         <span id="clock" style="margin-right: 15px; border-right: 1px solid #444; padding-right: 15px;">00:00</span>
         <div id="weather-widget"><span>--°C</span> ☁️</div>
@@ -195,7 +186,6 @@
             <span style="font-size: 14px; color: #777;">▲ გაშლა</span>
         </div>
         
-        <!-- წუთებზე გადახვევის შკალა (Seek Bar) -->
         <div style="display: flex; align-items: center; gap: 8px; width: 100%; padding: 0 5px; box-sizing: border-box; margin-bottom: 5px;">
             <span id="mini-time-current" style="font-size: 11px; color: #aaa; width: 35px; text-align: right;">0:00</span>
             <input type="range" id="mini-progress-bar" class="progress-slider" min="0" max="100" value="0" oninput="onProgressDrag()" onchange="onProgressDrop()">
@@ -334,7 +324,6 @@
             
             <h3 id="track-title" style="margin:0 0 10px 0; text-align: center; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 16px;">იტვირთება...</h3>
             
-            <!-- წუთებზე გადახვევის შკალა (Seek Bar) -->
             <div style="display: flex; align-items: center; gap: 8px; width: 100%; margin-bottom: 15px;">
                 <span id="main-time-current" style="font-size: 12px; color: #aaa; width: 40px; text-align: right;">0:00</span>
                 <input type="range" id="main-progress-bar" class="progress-slider" min="0" max="100" value="0" oninput="onProgressDrag(true)" onchange="onProgressDrop(true)">
@@ -372,24 +361,16 @@
         </div>
     </div>
 
-    <!-- განახლებული ბრაუზერი -->
     <div class="app-window" id="app-browser">
         <div class="app-header">
-            <h3 class="app-title">🌐 ბრაუზერი & მინი-აპები</h3>
+            <h3 class="app-title">🌐 ბრაუზერი</h3>
             <div class="header-buttons">
                 </div>
         </div>
-        <div class="app-content" style="display: flex; flex-direction: column;">
+        <div class="app-content">
             <div class="browser-toolbar">
-                <input type="text" id="url-input" placeholder="მოძებნეთ ან შეიყვანეთ საიტი...">
+                <input type="text" id="url-input" placeholder="ჩაწერეთ საიტი...">
                 <button onclick="navigateBrowser()">გადასვლა</button>
-            </div>
-            <!-- სწრაფი ლინკების / მინი აპლიკაციების ზოლი -->
-            <div class="bookmarks-bar">
-                <button class="bookmark-btn" onclick="loadUrl('https://ka.wikipedia.org/')">📚 Wikipedia</button>
-                <button class="bookmark-btn" onclick="loadUrl('https://play2048.co/')">🎮 2048 თამაში</button>
-                <button class="bookmark-btn" onclick="loadUrl('https://www.desmos.com/scientific')">🧮 კალკულატორი</button>
-                <button class="bookmark-btn" onclick="loadUrl('https://earth.nullschool.net/')">🌍 დედამიწა (რუკა)</button>
             </div>
             <iframe id="browser-iframe" src="about:blank" style="width: 100%; flex: 1; border: none; background: #fff;" allowfullscreen></iframe>
         </div>
@@ -441,16 +422,23 @@
         let savedMediaTrack = -1;
         let isDraggingProgress = false;
 
+        // --- Media Session API (ტესლას ღილაკების და საჭის კონტროლისთვის) ---
+        function setupMediaSession() {
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.setActionHandler('play', () => { togglePlay(); });
+                navigator.mediaSession.setActionHandler('pause', () => { togglePlay(); });
+                navigator.mediaSession.setActionHandler('previoustrack', () => { prevTrack(); });
+                navigator.mediaSession.setActionHandler('nexttrack', () => { nextTrack(); });
+            }
+        }
+        setupMediaSession();
+
         function onYouTubeIframeAPIReady() {
             ytPlayer = new YT.Player('yt-player', {
                 height: '100%', width: '100%',
                 videoId: '', 
                 playerVars: { 'autoplay': 0, 'controls': 1, 'showinfo': 0, 'rel': 0 },
-                events: { 
-                    'onReady': onPlayerReady, 
-                    'onStateChange': onPlayerStateChange,
-                    'onError': onPlayerError // შეცდომების დამჭერი
-                }
+                events: { 'onReady': onPlayerReady, 'onStateChange': onPlayerStateChange }
             });
         }
 
@@ -481,17 +469,6 @@
                     nextTrack();
                 }
             }
-        }
-
-        function onPlayerError(event) {
-            let err = event.data;
-            updatePlayButtons(false);
-            if (err === 101 || err === 150 || err === 153) {
-                showToast("⚠️ ვიდეო დაბლოკილია ავტორის მიერ. ვრთავ შემდეგს...", true);
-            } else {
-                showToast("⚠️ YouTube შეცდომა: " + err + ". ვრთავ შემდეგს...", true);
-            }
-            setTimeout(() => { nextTrack(); }, 3000);
         }
 
         // --- პარამეტრების სინქრონიზაცია ბაზასთან ---
@@ -561,7 +538,7 @@
             let updates = {}; updates[key] = value; dbSettings.update(updates);
         }
 
-        // --- YouTube Parsing ---
+        // --- YouTube Parsing (ფილტრი ჭკვიანურად ამოიცნობს ლინკს ტექსტში) ---
         function parseYouTubeUrl(url) {
             let videoId = null; let playlistId = null;
             const urlMatch = url.match(/(https?:\/\/[^\s]+)/);
@@ -707,6 +684,7 @@
         function updateProgressUI() {
             if (!ytPlayerReady || isDraggingProgress) return;
             
+            // ამ ეტაპზე შეიძლება duration ჯერ 0 იყოს სანამ ვიდეო ბოლომდე ჩაიტვირთება
             const currentTime = ytPlayer.getCurrentTime ? ytPlayer.getCurrentTime() : 0;
             const duration = ytPlayer.getDuration ? ytPlayer.getDuration() : 0;
 
@@ -732,6 +710,7 @@
                     mainTot.innerText = formatTime(duration);
                 }
             } else {
+                // ცოცხალი ტრანსლაციის ან ჩაუტვირთავი ვიდეოს დროს
                 if(miniBar) { miniBar.value = 0; miniCur.innerText = "0:00"; miniTot.innerText = "0:00"; }
                 if(mainBar) { mainBar.value = 0; mainCur.innerText = "0:00"; mainTot.innerText = "0:00"; }
             }
@@ -768,10 +747,21 @@
             currentTrackIdx = idx; const track = tracks[idx];
             
             document.getElementById('track-title').innerText = track.title;
+            
+            // ვაწვდით ინფორმაციას მანქანის მთავარ სისტემას
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.metadata = new MediaMetadata({
+                    title: track.title,
+                    artist: 'Tesla OS Media',
+                    album: 'YouTube'
+                });
+            }
+
             updateMiniPlayer(); 
             renderStationList(); 
             saveAppSetting('mediaTrack', idx);
             
+            // ვანულებთ შკალას ახალი სიმღერის ჩართვისას
             document.getElementById('mini-progress-bar').value = 0;
             if(document.getElementById('main-progress-bar')) document.getElementById('main-progress-bar').value = 0;
             
@@ -802,12 +792,16 @@
             loadTrack((currentTrackIdx - 1 + tracks.length) % tracks.length, wasPlaying || true); 
         }
 
-        // მთავარი Timer
+        // მთავარი Timer ყველა პერიოდული განახლებისთვის
         setInterval(() => {
+            // საათის განახლება
             const now = new Date();
             document.getElementById('clock').innerText = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+            
+            // პროგრესის შკალის განახლება
             updateProgressUI();
 
+            // დროის შენახვა 5 წამში ერთხელ (თუ მუსიკა უკრავს)
             if(now.getSeconds() % 5 === 0 && ytPlayerReady && ytPlayer.getPlayerState() === YT.PlayerState.PLAYING) {
                 saveAppSetting('mediaTime', ytPlayer.getCurrentTime());
             }
@@ -861,11 +855,13 @@
         const map = L.map('map', {zoomControl:false}).setView([41.71, 44.82], 13);
         baseLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
 
+        // რუკაზე (გარეთ) დაჭერისას ფანჯრების დახურვა და პლეერის ჩაკეცვა
         map.on('click', function() {
             document.querySelectorAll('.app-window').forEach(w => w.style.display = 'none');
             document.querySelectorAll('.dock-icon').forEach(i => i.classList.remove('active'));
             if (trafficOn) document.getElementById('dock-traffic').classList.add('active');
             
+            // თუ ტრეკები გვაქვს, ვაჩვენოთ მინი-ფლეერი
             if (tracks.length > 0) {
                 document.getElementById('mini-player').classList.add('active-session');
                 updateMiniPlayer();
@@ -913,28 +909,19 @@
             else showToast("❌ არასწორი გასაღები", true);
         }
 
-        // ბრაუზერის ფუნქციები
-        function loadUrl(url) {
-            document.getElementById('url-input').value = url;
-            document.getElementById('browser-iframe').src = url;
-            saveAppSetting('lastUrl', url);
-        }
-
         function navigateBrowser() {
             let val = document.getElementById('url-input').value.trim(); if(!val) return;
             const isUrl = val.includes('.') && !val.includes(' ');
-            
-            // ვიყენებთ DuckDuckGo-ს სპეციალურ HTML ვერსიას, რომელიც არ ბლოკავს iframe-ს
-            val = isUrl ? (val.startsWith('http') ? val : 'https://' + val) : 'https://html.duckduckgo.com/html/?q=' + encodeURIComponent(val);
-            
-            document.getElementById('browser-iframe').src = val; 
-            saveAppSetting('lastUrl', val);
+            val = isUrl ? (val.startsWith('http') ? val : 'https://' + val) : 'https://duckduckgo.com/?q=' + encodeURIComponent(val) + '&kae=d';
+            document.getElementById('browser-iframe').src = val; saveAppSetting('lastUrl', val);
         }
 
+        // --- ფანჯრების მართვა (ყოველთვის მინი-ფლეერი) ---
         function toggleApp(id) {
             const win = document.getElementById(id); if (!win) return;
             const wasActive = win.style.display === 'flex';
             
+            // თუ სხვა ფანჯარას ვხსნით და მუსიკა ღიაა, ვკეცავთ (და არა ვხურავთ)
             const musicWin = document.getElementById('app-music');
             if (musicWin.style.display === 'flex' && id !== 'app-music') {
                 collapseToMini('app-music'); 
@@ -952,6 +939,7 @@
             if (id === 'app-music') {
                 document.getElementById('mini-player').classList.remove('active-session');
             } else if (tracks.length > 0) {
+                // სხვა ფანჯრის გახსნისას მინი-ფლეერი ვაჩვენოთ
                 document.getElementById('mini-player').classList.add('active-session');
                 updateMiniPlayer();
             }
@@ -976,6 +964,7 @@
             }
         }
 
+        // კლიმატ-კონტროლი
         function adjTemp(val) { targetTemp += val; document.getElementById('climate-temp').innerText = targetTemp.toFixed(1) + "°"; }
 
         document.getElementById('dock-nav').onclick = () => toggleApp('app-nav');
@@ -1148,6 +1137,7 @@
             if(!textData || textData.trim().length < 2) return;
             textData = textData.trim(); 
             
+            // გაუმჯობესებული ძებნა ტექსტში ნებისმიერი ლინკისთვის
             const urlMatch = textData.match(/(https?:\/\/[^\s]+)/);
             const extractedUrl = urlMatch ? urlMatch[1] : textData;
             
@@ -1176,3 +1166,6 @@
     </script>
 </body>
 </html>
+
+
+```
