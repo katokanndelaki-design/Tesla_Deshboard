@@ -24,7 +24,7 @@
         #map { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; background: #111; }
         .leaflet-routing-container, .leaflet-routing-alternatives-container { display: none !important; }
 
-        /* საათი და ამინდი ქვედა მარცხენა კუთხეში */
+        /* საათი და ამინდი */
         .bottom-info-bar { 
             position: absolute; bottom: 20px; left: 20px; z-index: 10; 
             background: rgba(15, 15, 15, 0.85); backdrop-filter: blur(20px); 
@@ -69,11 +69,11 @@
 
         .app-content { padding: 0; flex: 1; display: flex; flex-direction: column; overflow-y: auto; border-bottom-left-radius: 28px; border-bottom-right-radius: 28px; }
 
-        /* მინი პლეერი - გადმოტანილია მარცხნივ, საათის თავზე */
-        .mini-player { position: absolute; bottom: 110px; left: 20px; width: 380px; background: rgba(20, 20, 20, 0.95); backdrop-filter: blur(25px); border-radius: 25px; border: 1px solid rgba(255, 255, 255, 0.1); display: none; flex-direction: column; padding: 15px 20px; gap: 10px; box-shadow: 0 20px 50px rgba(0,0,0,0.7); z-index: 900; }
+        /* მინი პლეერი მარცხნივ, დაპატარავებული */
+        .mini-player { position: absolute; bottom: 120px; left: 20px; width: 320px; background: rgba(20, 20, 20, 0.95); backdrop-filter: blur(25px); border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.1); display: none; flex-direction: column; padding: 12px 18px; gap: 8px; box-shadow: 0 15px 40px rgba(0,0,0,0.7); z-index: 900; touch-action: pan-y; }
         .mini-player.active-session { display: flex; }
-        .mini-player-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; margin-bottom: 5px; }
-        .mini-player-controls { display: flex; justify-content: center; gap: 20px; align-items: center; margin-top: 5px; }
+        .mini-player-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; margin-bottom: 2px; }
+        .mini-player-controls { display: flex; justify-content: center; gap: 15px; align-items: center; margin-top: 2px; }
 
         .browser-toolbar { display: flex; padding: 12px; background: #1a1a1a; gap: 8px; align-items: center; }
         .browser-toolbar input { flex: 1; background: #000; border: 1px solid #333; border-radius: 12px; color: #fff; padding: 10px 15px; outline: none; font-size: 14px; user-select: auto; }
@@ -126,6 +126,10 @@
         .progress-slider { width: 100% !important; height: 4px !important; margin: 0; background: #444 !important; }
         .progress-slider::-webkit-slider-thumb { width: 12px !important; height: 12px !important; background: #ff0000 !important; }
 
+        /* ახალი: მოცულობის (Volume) სლაიდერი */
+        .volume-slider { width: 100% !important; height: 4px !important; margin: 0; background: #444 !important; }
+        .volume-slider::-webkit-slider-thumb { width: 14px !important; height: 14px !important; background: #fff !important; }
+
         #yt-player-container { 
             width: 100%; height: 200px; background: #000; 
             border-radius: 15px; overflow: hidden; box-shadow: 0 5px 20px rgba(0,0,0,0.5); 
@@ -138,8 +142,8 @@
         .play-btn { width: 70px; height: 70px; font-size: 30px; background: #ff0000; color: #fff; }
         .play-btn:hover { background: #cc0000; }
         
-        .mini-ctrl-btn { width: 40px; height: 40px; font-size: 16px; }
-        .mini-play-btn { width: 50px; height: 50px; font-size: 24px; }
+        .mini-ctrl-btn { width: 36px; height: 36px; font-size: 14px; }
+        .mini-play-btn { width: 46px; height: 46px; font-size: 20px; }
 
         #confirm-modal { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center; }
         .confirm-box { background: #222; padding: 25px; border-radius: 15px; border: 1px solid #444; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
@@ -161,10 +165,10 @@
         </div>
     </div>
 
-    <!-- საათი და ამინდი ქვედა მარცხენა კუთხეში -->
+    <!-- საათი და ამინდი -->
     <div class="bottom-info-bar">
         <span id="clock" style="margin-right: 15px; border-right: 1px solid #444; padding-right: 15px;">00:00</span>
-        <!-- დამატებულია onclick ამინდის ფანჯრის გამოსაძახებლად -->
+        <!-- onclick ამინდის ფანჯრისთვის -->
         <div id="weather-widget" onclick="toggleApp('app-weather')" title="კვირის ამინდი"><span>--°C</span> ☁️</div>
     </div>
 
@@ -181,21 +185,21 @@
         <button class="ai-status-btn" onclick="getAIStatus()">✨ ჭკვიანი სტატუსი</button>
     </div>
 
-    <!-- მინი პლეერი - გადმოვიდა მარცხნივ -->
+    <!-- მინი პლეერი - ახლა Swipe კონტროლით -->
     <div class="mini-player" id="mini-player">
         <div class="mini-player-header" onclick="restoreApp('app-music')">
-            <div style="font-size: 24px; margin-right: 10px;">🎵</div>
+            <div style="font-size: 20px; margin-right: 10px;">🎵</div>
             <div style="flex: 1; overflow: hidden;">
-                <div id="mini-track-title" style="font-size: 14px; font-weight: bold; color: #00ffaa; white-space: nowrap; text-overflow: ellipsis;">Loading...</div>
-                <div id="mini-track-artist" style="font-size: 11px; color: #888;">YouTube Media</div>
+                <div id="mini-track-title" style="font-size: 13px; font-weight: bold; color: #00ffaa; white-space: nowrap; text-overflow: ellipsis;">Loading...</div>
+                <div id="mini-track-artist" style="font-size: 10px; color: #888;">YouTube Media</div>
             </div>
-            <span style="font-size: 14px; color: #777;">▲ გაშლა</span>
+            <span style="font-size: 12px; color: #777;">▲ გაშლა</span>
         </div>
         
         <div style="display: flex; align-items: center; gap: 8px; width: 100%; padding: 0 5px; box-sizing: border-box; margin-bottom: 5px;">
-            <span id="mini-time-current" style="font-size: 11px; color: #aaa; width: 35px; text-align: right;">0:00</span>
+            <span id="mini-time-current" style="font-size: 10px; color: #aaa; width: 30px; text-align: right;">0:00</span>
             <input type="range" id="mini-progress-bar" class="progress-slider" min="0" max="100" value="0" oninput="onProgressDrag()" onchange="onProgressDrop()">
-            <span id="mini-time-total" style="font-size: 11px; color: #aaa; width: 35px;">0:00</span>
+            <span id="mini-time-total" style="font-size: 10px; color: #aaa; width: 30px;">0:00</span>
         </div>
 
         <div class="mini-player-controls">
@@ -225,7 +229,7 @@
         </div>
     </div>
 
-    <!-- ახალი: კვირის ამინდის ფანჯარა -->
+    <!-- კვირის ამინდის ფანჯარა -->
     <div class="app-window" id="app-weather">
         <div class="app-header">
             <h3 class="app-title">⛅ ამინდის პროგნოზი</h3>
@@ -288,6 +292,7 @@
                         <option value="dark" selected>ბნელი</option>
                         <option value="satellite">სატელიტი</option>
                         <option value="street">ქუჩები</option>
+                        <option value="auto">ავტო (დღე/ღამე)</option>
                     </select>
                 </div>
                 <div class="setting-item">
@@ -346,10 +351,17 @@
             
             <h3 id="track-title" style="margin:0 0 10px 0; text-align: center; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 16px;">იტვირთება...</h3>
             
-            <div style="display: flex; align-items: center; gap: 8px; width: 100%; margin-bottom: 15px;">
+            <div style="display: flex; align-items: center; gap: 8px; width: 100%; margin-bottom: 5px;">
                 <span id="main-time-current" style="font-size: 12px; color: #aaa; width: 40px; text-align: right;">0:00</span>
                 <input type="range" id="main-progress-bar" class="progress-slider" min="0" max="100" value="0" oninput="onProgressDrag(true)" onchange="onProgressDrop(true)">
                 <span id="main-time-total" style="font-size: 12px; color: #aaa; width: 40px;">0:00</span>
+            </div>
+            
+            <!-- ახალი: ხმის კონტროლის სლაიდერი (Volume) -->
+            <div style="display: flex; align-items: center; gap: 10px; width: 100%; margin-bottom: 15px; padding: 0 10px; box-sizing: border-box;">
+                <span style="font-size: 14px; color: #aaa;">🔉</span>
+                <input type="range" id="volume-slider" class="volume-slider" min="0" max="100" value="100" oninput="changeVolume(this.value)">
+                <span style="font-size: 14px; color: #aaa;">🔊</span>
             </div>
             
             <div style="display:flex; gap:15px; align-items:center; padding-bottom: 10px;">
@@ -444,6 +456,21 @@
         let savedMediaTrack = -1;
         let isDraggingProgress = false;
 
+        // --- Swipe მინი-პლეერზე ---
+        let touchstartX = 0;
+        let touchendX = 0;
+        const miniPlayerEl = document.getElementById('mini-player');
+        miniPlayerEl.addEventListener('touchstart', e => {
+            if(e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return;
+            touchstartX = e.changedTouches[0].screenX;
+        });
+        miniPlayerEl.addEventListener('touchend', e => {
+            if(e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return;
+            touchendX = e.changedTouches[0].screenX;
+            if (touchendX < touchstartX - 50) nextTrack(); // მარცხნივ გასმა
+            if (touchendX > touchstartX + 50) prevTrack(); // მარჯვნივ გასმა
+        });
+
         // Media Session API კლავიშებისთვის
         function setupMediaSession() {
             if ('mediaSession' in navigator) {
@@ -466,6 +493,7 @@
 
         function onPlayerReady(event) {
             ytPlayerReady = true;
+            ytPlayer.setVolume(100);
             if(tracks.length > 0) loadTrack(pendingLoadTrackIdx, pendingPlay);
         }
 
@@ -491,6 +519,11 @@
                     nextTrack();
                 }
             }
+        }
+
+        // --- ხმის რეგულირება (Volume) ---
+        function changeVolume(val) {
+            if (ytPlayerReady) ytPlayer.setVolume(val);
         }
 
         // --- პარამეტრების სინქრონიზაცია ბაზასთან ---
@@ -768,7 +801,6 @@
             
             document.getElementById('track-title').innerText = track.title;
             
-            // ინფორმაცია მანქანის სისტემას (მულტიმედიის ღილაკებისთვის)
             if ('mediaSession' in navigator) {
                 navigator.mediaSession.metadata = new MediaMetadata({
                     title: track.title,
@@ -811,14 +843,26 @@
             loadTrack((currentTrackIdx - 1 + tracks.length) % tracks.length, wasPlaying || true); 
         }
 
-        // მთავარი Timer
+        // --- მთავარი Timer ---
         setInterval(() => {
             const now = new Date();
             document.getElementById('clock').innerText = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
             updateProgressUI();
 
-            if(now.getSeconds() % 5 === 0 && ytPlayerReady && ytPlayer.getPlayerState() === YT.PlayerState.PLAYING) {
-                saveAppSetting('mediaTime', ytPlayer.getCurrentTime());
+            if(ytPlayerReady && ytPlayer.getPlayerState() === YT.PlayerState.PLAYING) {
+                if(now.getSeconds() % 5 === 0) saveAppSetting('mediaTime', ytPlayer.getCurrentTime());
+                
+                // ვაგზავნით მიმდინარე სიმღერის სახელს ბაზაში ახალი ეკრანისთვის
+                if(tracks.length > 0) {
+                    saveAppSetting('currentTrackName', tracks[currentTrackIdx].title);
+                }
+            }
+
+            // რუკის ავტო-რეჟიმის შემოწმება ყოველ წუთში
+            if(now.getSeconds() === 0) {
+                if(document.getElementById('map-style-select').value === 'auto') {
+                    changeMapStyle(false);
+                }
             }
         }, 1000);
 
@@ -895,18 +939,27 @@
             if(setToggle) setToggle.checked = trafficOn;
             
             saveAppSetting('trafficOn', trafficOn);
-            if(showToastMsg) showToast(trafficOn ? "🚦 საცობების ჩვენება ჩართულია" : "🚦 საცობების ჩვენება გამორთულია");
+            if(showToastMsg) showToast(trafficOn ? "🚦 საცობების ჩვენება ჩართულია" : "🚦 საცობების გამორთულია");
         }
 
         document.getElementById('dock-traffic').onclick = () => toggleTraffic();
 
         function changeMapStyle(save = true) {
-            const style = document.getElementById('map-style-select').value; map.removeLayer(baseLayer);
+            let style = document.getElementById('map-style-select').value; 
+            map.removeLayer(baseLayer);
+            
+            // ავტო რეჟიმის ლოგიკა
+            if(style === 'auto') {
+                const hour = new Date().getHours();
+                style = (hour >= 19 || hour <= 6) ? 'dark' : 'street';
+            }
+
             if(style === 'dark') baseLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png');
             else if(style === 'satellite') baseLayer = L.tileLayer('https://mt0.google.com/vt/lyrs=s&x={x}&y={y}&z={z}');
             else if(style === 'street') baseLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
+            
             baseLayer.addTo(map); if(trafficOn) trafficLayer.bringToFront();
-            if(save) { saveAppSetting('mapStyle', style); showToast("🗺️ რუკის სტილი შეიცვალა"); }
+            if(save) { saveAppSetting('mapStyle', document.getElementById('map-style-select').value); showToast("🗺️ რუკის სტილი შეიცვალა"); }
         }
 
         function changeCarSettings() {
@@ -1054,11 +1107,9 @@
             const now = Date.now();
             if (now - lastWeatherFetchTime > 600000) { 
                 lastWeatherFetchTime = now;
-                // შეცვლილია API ლინკი, რათა 7 დღის პროგნოზიც წამოიღოს
                 fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current_weather=true&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=auto`)
                 .then(r => r.json())
                 .then(data => {
-                    // დღევანდელი (მიმდინარე) ამინდი ქვედა პანელისთვის
                     const temp = Math.round(data.current_weather.temperature);
                     const code = data.current_weather.weathercode;
                     let icon = "☀️";
@@ -1067,7 +1118,6 @@
                     else if (code >= 71 && code <= 77) icon = "❄️";
                     document.getElementById('weather-widget').innerHTML = `<span>${temp}°C</span> ${icon}`;
 
-                    // კვირის პროგნოზის გენერირება ახალი ფანჯრისთვის
                     if (data.daily) {
                         let wHTML = "";
                         const days = ['კვირა', 'ორშაბათი', 'სამშაბათი', 'ოთხშაბათი', 'ხუთშაბათი', 'პარასკევი', 'შაბათი'];
