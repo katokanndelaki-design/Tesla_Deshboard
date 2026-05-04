@@ -6,15 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tesla OS - Pro Stable</title>
     
-    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
-    <!-- Leaflet.js -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
-    <!-- Leaflet Routing Machine -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
     <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
 
@@ -24,7 +21,7 @@
         #map { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; background: #111; }
         .leaflet-routing-container, .leaflet-routing-alternatives-container { display: none !important; }
 
-        /* საათი და ამინდი */
+        /* საათი და ამინდი ქვედა მარცხენა კუთხეში */
         .bottom-info-bar { 
             position: absolute; bottom: 20px; left: 20px; z-index: 10; 
             background: rgba(15, 15, 15, 0.85); backdrop-filter: blur(20px); 
@@ -69,8 +66,8 @@
 
         .app-content { padding: 0; flex: 1; display: flex; flex-direction: column; overflow-y: auto; border-bottom-left-radius: 28px; border-bottom-right-radius: 28px; }
 
-        /* მინი პლეერი მარცხნივ, დაპატარავებული */
-        .mini-player { position: absolute; bottom: 120px; left: 20px; width: 320px; background: rgba(20, 20, 20, 0.95); backdrop-filter: blur(25px); border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.1); display: none; flex-direction: column; padding: 12px 18px; gap: 8px; box-shadow: 0 15px 40px rgba(0,0,0,0.7); z-index: 900; touch-action: pan-y; }
+        /* მინი პლეერი - გადმოტანილია მარცხნივ, საათის თავზე */
+        .mini-player { position: absolute; bottom: 110px; left: 20px; width: 320px; background: rgba(20, 20, 20, 0.95); backdrop-filter: blur(25px); border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.1); display: none; flex-direction: column; padding: 12px 18px; gap: 8px; box-shadow: 0 15px 40px rgba(0,0,0,0.7); z-index: 900; touch-action: pan-y; }
         .mini-player.active-session { display: flex; }
         .mini-player-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; margin-bottom: 2px; }
         .mini-player-controls { display: flex; justify-content: center; gap: 15px; align-items: center; margin-top: 2px; }
@@ -79,6 +76,11 @@
         .browser-toolbar input { flex: 1; background: #000; border: 1px solid #333; border-radius: 12px; color: #fff; padding: 10px 15px; outline: none; font-size: 14px; user-select: auto; }
         .browser-toolbar button { background: #333; border: none; color: #fff; padding: 8px 15px; border-radius: 10px; cursor: pointer; font-size: 13px; }
         
+        .bookmarks-bar { display: flex; gap: 8px; padding: 10px 12px; background: #111; overflow-x: auto; border-bottom: 1px solid #222; scrollbar-width: none; }
+        .bookmarks-bar::-webkit-scrollbar { display: none; }
+        .bookmark-btn { background: #222; border: 1px solid #444; color: #fff; padding: 6px 12px; border-radius: 15px; cursor: pointer; font-size: 12px; white-space: nowrap; transition: 0.2s; }
+        .bookmark-btn:hover { background: #00ffaa; color: #000; border-color: #00ffaa; }
+
         .suggestions-list { list-style: none; padding: 0; margin: 10px 0; background: #111; border-radius: 12px; overflow: hidden; display: none; border: 1px solid #222; }
         .suggestions-list li { padding: 14px; border-bottom: 1px solid #222; cursor: pointer; font-size: 14px; color: #ccc; }
         .suggestions-list li:hover { background: #00a8ff; color: #fff; }
@@ -126,7 +128,6 @@
         .progress-slider { width: 100% !important; height: 4px !important; margin: 0; background: #444 !important; }
         .progress-slider::-webkit-slider-thumb { width: 12px !important; height: 12px !important; background: #ff0000 !important; }
 
-        /* ახალი: მოცულობის (Volume) სლაიდერი */
         .volume-slider { width: 100% !important; height: 4px !important; margin: 0; background: #444 !important; }
         .volume-slider::-webkit-slider-thumb { width: 14px !important; height: 14px !important; background: #fff !important; }
 
@@ -165,10 +166,8 @@
         </div>
     </div>
 
-    <!-- საათი და ამინდი -->
     <div class="bottom-info-bar">
         <span id="clock" style="margin-right: 15px; border-right: 1px solid #444; padding-right: 15px;">00:00</span>
-        <!-- onclick ამინდის ფანჯრისთვის -->
         <div id="weather-widget" onclick="toggleApp('app-weather')" title="კვირის ამინდი"><span>--°C</span> ☁️</div>
     </div>
 
@@ -185,7 +184,6 @@
         <button class="ai-status-btn" onclick="getAIStatus()">✨ ჭკვიანი სტატუსი</button>
     </div>
 
-    <!-- მინი პლეერი - ახლა Swipe კონტროლით -->
     <div class="mini-player" id="mini-player">
         <div class="mini-player-header" onclick="restoreApp('app-music')">
             <div style="font-size: 20px; margin-right: 10px;">🎵</div>
@@ -229,7 +227,6 @@
         </div>
     </div>
 
-    <!-- კვირის ამინდის ფანჯარა -->
     <div class="app-window" id="app-weather">
         <div class="app-header">
             <h3 class="app-title">⛅ ამინდის პროგნოზი</h3>
@@ -357,7 +354,6 @@
                 <span id="main-time-total" style="font-size: 12px; color: #aaa; width: 40px;">0:00</span>
             </div>
             
-            <!-- ახალი: ხმის კონტროლის სლაიდერი (Volume) -->
             <div style="display: flex; align-items: center; gap: 10px; width: 100%; margin-bottom: 15px; padding: 0 10px; box-sizing: border-box;">
                 <span style="font-size: 14px; color: #aaa;">🔉</span>
                 <input type="range" id="volume-slider" class="volume-slider" min="0" max="100" value="100" oninput="changeVolume(this.value)">
@@ -397,14 +393,20 @@
 
     <div class="app-window" id="app-browser">
         <div class="app-header">
-            <h3 class="app-title">🌐 ბრაუზერი</h3>
+            <h3 class="app-title">🌐 ბრაუზერი & მინი-აპები</h3>
             <div class="header-buttons">
                 </div>
         </div>
-        <div class="app-content">
+        <div class="app-content" style="display: flex; flex-direction: column;">
             <div class="browser-toolbar">
-                <input type="text" id="url-input" placeholder="ჩაწერეთ საიტი...">
+                <input type="text" id="url-input" placeholder="მოძებნეთ ან შეიყვანეთ საიტი...">
                 <button onclick="navigateBrowser()">გადასვლა</button>
+            </div>
+            <div class="bookmarks-bar">
+                <button class="bookmark-btn" onclick="loadUrl('https://ka.wikipedia.org/')">📚 Wikipedia</button>
+                <button class="bookmark-btn" onclick="loadUrl('https://play2048.co/')">🎮 2048 თამაში</button>
+                <button class="bookmark-btn" onclick="loadUrl('https://www.desmos.com/scientific')">🧮 კალკულატორი</button>
+                <button class="bookmark-btn" onclick="loadUrl('https://earth.nullschool.net/')">🌍 დედამიწა (რუკა)</button>
             </div>
             <iframe id="browser-iframe" src="about:blank" style="width: 100%; flex: 1; border: none; background: #fff;" allowfullscreen></iframe>
         </div>
@@ -975,11 +977,21 @@
             else showToast("❌ არასწორი გასაღები", true);
         }
 
+        // ბრაუზერის ფუნქციები
+        function loadUrl(url) {
+            document.getElementById('url-input').value = url;
+            document.getElementById('browser-iframe').src = url;
+            saveAppSetting('lastUrl', url);
+        }
+
         function navigateBrowser() {
             let val = document.getElementById('url-input').value.trim(); if(!val) return;
             const isUrl = val.includes('.') && !val.includes(' ');
-            val = isUrl ? (val.startsWith('http') ? val : 'https://' + val) : 'https://duckduckgo.com/?q=' + encodeURIComponent(val) + '&kae=d';
-            document.getElementById('browser-iframe').src = val; saveAppSetting('lastUrl', val);
+            
+            val = isUrl ? (val.startsWith('http') ? val : 'https://' + val) : 'https://html.duckduckgo.com/html/?q=' + encodeURIComponent(val);
+            
+            document.getElementById('browser-iframe').src = val; 
+            saveAppSetting('lastUrl', val);
         }
 
         function toggleApp(id) {
@@ -1163,7 +1175,7 @@
             else { carMarker.setLatLng(ll); carMarker.setIcon(L.divIcon({ html: carSvg, className: '', iconSize: [w, h], iconAnchor: [aw, ah] })); }
         }
 
-        // --- ტელემეტრია ---
+        // --- ტელემეტრია და დინამიური რუკის ზუმი ---
         let lastPosition = null; let lastTime = null; let currentHeading = 0; 
 
         firebase.database().ref("5YJYGCEE123456789").on('value', (s) => {
@@ -1183,16 +1195,24 @@
             if(d.lat && d.lng) {
                 const ll = L.latLng(d.lat, d.lng); updateWeather(d.lat, d.lng); 
                 const currentTime = Date.now();
+                let calcSpeedKmh = 0;
+
                 if (!lastTime) { lastTime = currentTime; lastPosition = ll; } 
                 else {
                     const timeDiffSec = (currentTime - lastTime) / 1000;
                     if (timeDiffSec >= 3) {
                         const distanceMeters = ll.distanceTo(lastPosition);
-                        let calcSpeedKmh = (distanceMeters / timeDiffSec) * 3.6;
+                        calcSpeedKmh = (distanceMeters / timeDiffSec) * 3.6;
                         if (calcSpeedKmh < 3) calcSpeedKmh = 0;
                         if (calcSpeedKmh > 250) calcSpeedKmh = parseInt(document.getElementById('speed').innerText) || 0; 
-                        if (d.speed_kmh && d.speed_kmh > 0) document.getElementById('speed').innerText = d.speed_kmh;
-                        else document.getElementById('speed').innerText = Math.round(calcSpeedKmh);
+                        
+                        if (d.speed_kmh && d.speed_kmh > 0) {
+                            calcSpeedKmh = d.speed_kmh;
+                            document.getElementById('speed').innerText = d.speed_kmh;
+                        } else {
+                            document.getElementById('speed').innerText = Math.round(calcSpeedKmh);
+                        }
+                        
                         if (distanceMeters > 2) currentHeading = getBearing(lastPosition.lat, lastPosition.lng, ll.lat, ll.lng);
                         lastPosition = ll; lastTime = currentTime;
                     }
@@ -1200,18 +1220,35 @@
                 
                 updateCarMarker(ll.lat, ll.lng, currentHeading);
                 
+                // რუკის დინამიური ზუმის ლოგიკა
+                let targetZoom = 18; // default ახლო ხედი
+                
+                if (calcSpeedKmh > 100) targetZoom = 16;
+                else if (calcSpeedKmh > 60) targetZoom = 17;
+                else targetZoom = 18;
+
                 if (currentDestinationLatLng) {
                     const distanceMeters = ll.distanceTo(currentDestinationLatLng);
-                    if (distanceMeters <= 50) { showToast("🏁 თქვენ მიხვედით!"); cancelRoute(); } 
-                    else {
-                        let targetZoom = 14; 
-                        if (distanceMeters < 500) targetZoom = 18; else if (distanceMeters < 2000) targetZoom = 17; else if (distanceMeters < 5000) targetZoom = 16; else targetZoom = 15;
+                    if (distanceMeters <= 50) { 
+                        showToast("🏁 თქვენ მიხვედით!"); 
+                        cancelRoute(); 
+                    } else {
+                        // რაც უფრო ახლოსაა მიზანთან, მით უფრო აზუმებს
+                        if (distanceMeters < 300) targetZoom = 20; 
+                        else if (distanceMeters < 1000) targetZoom = 19; 
+                        else if (distanceMeters < 3000) targetZoom = 18; 
+                        else if (distanceMeters < 10000) targetZoom = 17; 
+                        else targetZoom = 16;
+                        
                         map.setView(ll, targetZoom);
                         if (routingControl && (!lastRouteUpdateLatLng || ll.distanceTo(lastRouteUpdateLatLng) > 100)) {
-                            routingControl.setWaypoints([ll, currentDestinationLatLng]); lastRouteUpdateLatLng = ll;
+                            routingControl.setWaypoints([ll, currentDestinationLatLng]); 
+                            lastRouteUpdateLatLng = ll;
                         }
                     }
-                } else map.setView(ll, 16);
+                } else {
+                    map.setView(ll, targetZoom);
+                }
             }
         });
 
