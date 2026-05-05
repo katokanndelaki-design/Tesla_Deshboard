@@ -44,7 +44,7 @@
             transition: opacity 1s ease-in-out; pointer-events: none;
         }
         .boot-logo {
-            font-size: 60px; color: var(--ac); letter-spacing: 5px; font-weight: 300;
+            font-size: 65px; color: var(--ac); letter-spacing: 8px; font-weight: 300;
             animation: pulseLogo 2s infinite alternate; text-transform: uppercase;
         }
         @keyframes pulseLogo {
@@ -93,23 +93,21 @@
         /* მარცხენა პანელი / სტატუსი */
         .sidebar { position: absolute; top: 24px; left: 24px; width: 280px; background: var(--glass-bg); backdrop-filter: var(--glass-blur); border-radius: 30px; border: 1px solid var(--glass-border); z-index: 10; padding: 35px 25px; display: flex; flex-direction: column; gap: 18px; box-shadow: 0 15px 50px rgba(0,0,0,0.6); transition: opacity 0.5s ease;}
         
-        .header-top-row { display: flex; justify-content: space-between; align-items: center; }
-        .lock-btn { background: transparent; border: none; font-size: 20px; cursor: pointer; color: #aaa; transition: 0.3s; padding: 5px;}
-        .lock-btn:hover { color: #fff; transform: scale(1.1); }
-        .lock-btn.locked { color: #ff4757; text-shadow: 0 0 10px rgba(255,71,87,0.5); }
+        .header-top-row { display: flex; justify-content: center; align-items: center; }
         
-        .header-status { color: #999; font-size: 11px; font-weight: bold; letter-spacing: 3px; text-transform: uppercase; }
+        .header-status { color: #999; font-size: 11px; font-weight: bold; letter-spacing: 3px; text-transform: uppercase; display: flex; align-items: center;}
         .status-dot { height: 8px; width: 8px; background: var(--ac); border-radius: 50%; display: inline-block; margin-right: 8px; box-shadow: 0 0 12px var(--ac); transition: 0.3s;}
         
         /* სიჩქარის ბლოკი ელიტარული განლაგებით */
         .speed-block { display: flex; justify-content: center; align-items: flex-end; gap: 15px; position: relative;}
-        .speed-value { font-size: 90px; font-weight: 200; line-height: 1; text-align: center; letter-spacing: -2px; transition: color 0.3s, text-shadow 0.3s; }
-        .speed-limit { width: 36px; height: 36px; border-radius: 50%; background: #fff; border: 4px solid #ff4757; color: #000; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 14px; position: absolute; right: 20px; top: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+        /* სპეციალური შრიფტი სიჩქარისთვის */
+        .speed-value { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Courier New", monospace; font-size: 90px; font-weight: 300; line-height: 1; text-align: center; letter-spacing: -3px; transition: color 0.3s, text-shadow 0.3s; }
+        .speed-limit { width: 36px; height: 36px; border-radius: 50%; background: #fff; border: 4px solid #ff4757; color: #000; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 14px; position: absolute; right: 15px; top: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); font-family: sans-serif;}
         
         .trip-text { text-align: center; color: var(--ac); font-size: 13px; font-weight: bold; margin-top: -15px; margin-bottom: 5px; letter-spacing: 1px; transition: 0.3s; opacity: 0.8;}
         .battery-icon { width: 100%; height: 14px; border: 1px solid #555; border-radius: 4px; padding: 2px; }
         .battery-level { height: 100%; background: var(--ac); width: 0%; transition: background 0.5s, width 0.5s; border-radius: 2px;}
-        #battery-text { text-align: center; font-size: 18px; font-weight: bold; margin-bottom: -5px; transition: color 0.5s; }
+        #battery-text { text-align: center; font-size: 18px; font-weight: bold; margin-bottom: -5px; transition: color 0.5s; font-family: monospace; font-size: 20px;}
         #range-text { text-align: center; font-size: 14px; font-weight: 600; color: #aaa; }
         .ai-status-btn { background: rgba(var(--ac-rgb), 0.1); border: 1px solid rgba(var(--ac-rgb), 0.3); color: #fff; padding: 12px; border-radius: 16px; cursor: pointer; font-size: 12px; font-weight: bold; text-align: center; transition: all 0.3s ease; }
         .ai-status-btn:hover { background: rgba(var(--ac-rgb), 0.2); border-color: var(--ac); box-shadow: 0 5px 15px rgba(var(--ac-rgb), 0.2);}
@@ -236,11 +234,13 @@
     <!-- ჩატვირთვის ანიმაცია -->
     <div id="boot-screen">
         <div class="boot-logo">TESLA OS</div>
-        <div style="color: #666; margin-top: 10px; font-size: 14px; letter-spacing: 2px;">STARTING SYSTEM...</div>
+        <div style="color: #fff; margin-top: -10px; font-size: 22px; letter-spacing: 4px; font-weight: 300;">BY GIUU</div>
+        <div style="color: #666; margin-top: 30px; font-size: 14px; letter-spacing: 2px;">STARTING SYSTEM...</div>
     </div>
 
     <div id="map"></div>
     
+    <!-- მარჯვენა მცურავი პანელი (რუკის კონტროლები) -->
     <div class="map-floating-controls">
         <div class="map-btn" id="btn-map-compass" onclick="toggleMapRotation()" title="რუკის ორიენტაცია">🧭</div>
         <div class="map-btn" id="btn-map-traffic" onclick="toggleTraffic()" title="საცობები">🚦</div>
@@ -272,9 +272,7 @@
 
     <div class="sidebar">
         <div class="header-top-row">
-            <button class="lock-btn" id="lock-btn" onclick="toggleLock()">🔓</button>
             <div class="header-status"><span class="status-dot"></span> MODEL Y ONLINE</div>
-            <div style="width: 30px;"></div> <!-- ბალანსისთვის -->
         </div>
         
         <!-- სიჩქარე და Speed Limit -->
@@ -439,9 +437,11 @@
             </div>
             <ul id="suggestions" class="suggestions-list"></ul>
             <div id="route-info" style="display:none; flex-direction: column; background: rgba(0,0,0,0.3); padding:20px; border-radius:20px; margin-top:20px; border: 1px solid rgba(255,255,255,0.05);">
+                <!-- შეცვლილია: დაემატა ბატარეის პროგნოზი ჩასვლისას -->
                 <div style="display: flex; justify-content: space-around; margin-bottom: 5px;">
                     <div style="text-align:center;"><div style="font-size:28px; font-weight: 300; color:var(--ac);" id="eta-time">--</div><div style="font-size:11px; font-weight: bold; letter-spacing: 1px; color:#666; text-transform: uppercase;">წუთი</div></div>
-                    <div style="text-align:center; border-left: 1px solid rgba(255,255,255,0.05); padding-left: 30px;"><div style="font-size:28px; font-weight: 300; color:var(--ac);" id="eta-dist">--</div><div style="font-size:11px; font-weight: bold; letter-spacing: 1px; color:#666; text-transform: uppercase;">კმ</div></div>
+                    <div style="text-align:center; border-left: 1px solid rgba(255,255,255,0.05); padding-left: 15px; border-right: 1px solid rgba(255,255,255,0.05); padding-right: 15px;"><div style="font-size:28px; font-weight: 300; color:var(--ac);" id="eta-dist">--</div><div style="font-size:11px; font-weight: bold; letter-spacing: 1px; color:#666; text-transform: uppercase;">კმ</div></div>
+                    <div style="text-align:center;"><div style="font-size:28px; font-weight: 300; color:var(--ac);" id="eta-battery">--%</div><div style="font-size:11px; font-weight: bold; letter-spacing: 1px; color:#666; text-transform: uppercase;">ჩასვლისას</div></div>
                 </div>
                 <button id="ai-route-btn" class="route-ai-btn" onclick="getAIRouteAnalysis()">✨ მარშრუტის AI ანალიზი</button>
                 <button class="route-cancel-btn" onclick="cancelRoute()">❌ მარშრუტის გაუქმება</button>
@@ -537,7 +537,7 @@
         window.addEventListener('load', () => {
             setTimeout(() => {
                 document.getElementById('boot-screen').style.opacity = '0';
-            }, 1500); // 1.5 წამში გაქრება
+            }, 1500); 
         });
 
         // --- Firebase ინიციალიზაცია ---
@@ -573,7 +573,7 @@
         let carSizeSetting = 50;
         let targetTemp = 22.0;
         let tripDistanceKm = 0.0;
-        let isLocked = false;
+        let currentBatterySoc = 0; // ბატარეის მიმდინარე მარაგი ნავიგაციისთვის
 
         // --- YouTube მედია სისტემა ---
         const defaultYTTracks = [
@@ -610,26 +610,12 @@
             if (touchendX > touchstartX + 50) prevTrack(); 
         });
 
-        function toggleLock() {
-            isLocked = !isLocked;
-            const btn = document.getElementById('lock-btn');
-            if(isLocked) {
-                btn.innerText = '🔒';
-                btn.classList.add('locked');
-                showToast("🔒 ავტომობილი ჩაკეტილია");
-            } else {
-                btn.innerText = '🔓';
-                btn.classList.remove('locked');
-                showToast("🔓 ავტომობილი განბლოკილია");
-            }
-        }
-
         function toggleZenMode() {
             document.body.classList.toggle('zen-mode');
             const btn = document.getElementById('btn-zen');
             if(document.body.classList.contains('zen-mode')) {
                 btn.classList.add('active');
-                showToast("🔲 სრული ეკრანის რეჟიმი");
+                showToast("🔲 სრული ეკრანის რეჟიმი ჩართულია");
             } else {
                 btn.classList.remove('active');
             }
@@ -999,7 +985,6 @@
             loadTrack((currentTrackIdx - 1 + tracks.length) % tracks.length, wasPlaying || true); 
         }
 
-        // --- განახლებული საათი (თარიღით) ---
         function updateClockAndDate() {
             const now = new Date();
             document.getElementById('clock').innerText = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
@@ -1009,7 +994,6 @@
             document.getElementById('date-text').innerText = `${days[now.getDay()]} ${now.getDate()} ${months[now.getMonth()]}`;
         }
 
-        // მთავარი Timer
         setInterval(() => {
             updateClockAndDate();
             updateProgressUI();
@@ -1069,7 +1053,6 @@
         const map = L.map('map', {zoomControl:false, rotate: true, touchRotate: true}).setView([41.71, 44.82], 13);
         baseLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
 
-        // მარჯვენა პანელის ფუნქციები
         function toggleMapRotation() {
             mapAutoRotate = !mapAutoRotate;
             const btn = document.getElementById('btn-map-compass');
@@ -1087,7 +1070,7 @@
         }
 
         map.on('click', function() {
-            if(document.body.classList.contains('zen-mode')) toggleZenMode(); // ზენ მოუდიდან გამოსვლა რუკაზე კლიკით
+            if(document.body.classList.contains('zen-mode')) toggleZenMode(); 
             document.querySelectorAll('.app-window').forEach(w => w.style.display = 'none');
             document.querySelectorAll('.dock-icon').forEach(i => i.classList.remove('active'));
             if (trafficOn) document.getElementById('btn-map-traffic').classList.add('active');
@@ -1237,8 +1220,22 @@
             else {
                 routingControl = L.Routing.control({ waypoints: [start, end], show: false, lineOptions: { styles: [{color: 'var(--ac)', opacity: 0.8, weight: 6}] }, createMarker: () => null }).addTo(map);
                 routingControl.on('routesfound', e => {
-                    const s = e.routes[0].summary; document.getElementById('route-info').style.display = 'flex';
-                    document.getElementById('eta-time').innerText = Math.round(s.totalTime/60); document.getElementById('eta-dist').innerText = (s.totalDistance/1000).toFixed(1);
+                    const s = e.routes[0].summary; 
+                    document.getElementById('route-info').style.display = 'flex';
+                    document.getElementById('eta-time').innerText = Math.round(s.totalTime/60); 
+                    
+                    const distKm = (s.totalDistance/1000).toFixed(1);
+                    document.getElementById('eta-dist').innerText = distKm;
+                    
+                    // ბატარეის პროგნოზის გამოთვლა: 1% ბატარეა = 4.2 კმ (დაახლოებით)
+                    const batUsed = distKm / 4.2;
+                    const batArrival = Math.max(0, Math.floor(currentBatterySoc - batUsed));
+                    
+                    const batEl = document.getElementById('eta-battery');
+                    batEl.innerText = batArrival + "%";
+                    if(batArrival < 10) batEl.style.color = '#ff4757';
+                    else batEl.style.color = 'var(--ac)';
+
                     document.getElementById('ai-route-btn').style.display = 'block';
                 });
             }
@@ -1330,6 +1327,7 @@
             const d = s.val(); if(!d) return;
             
             if (d.battery_soc !== undefined) {
+                currentBatterySoc = d.battery_soc; // ვინახავთ ლოკალურად პროგნოზისთვის
                 let batColor = "var(--ac)"; 
                 if (d.battery_soc <= 20 && d.battery_soc >= 15) batColor = "#ffa500"; 
                 else if (d.battery_soc < 15) batColor = "#ff4757"; 
@@ -1376,7 +1374,6 @@
                             if(Math.floor(tripDistanceKm * 10) % 5 === 0) saveAppSetting('tripA', tripDistanceKm);
                         }
                         
-                        // თუ მანქანა მოძრაობს, ვმალავთ ზედმეტ ფანჯრებს
                         if (calcSpeedKmh > 5 && !d.wasMoving) {
                             document.querySelectorAll('.app-window').forEach(w => w.style.display = 'none');
                             document.querySelectorAll('.dock-icon').forEach(i => i.classList.remove('active'));
