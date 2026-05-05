@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tesla OS - Premium</title>
+    <title>Tesla OS - Premium Edition</title>
     
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -36,6 +36,22 @@
         .leaflet-routing-container, .leaflet-routing-alternatives-container { display: none !important; }
         .leaflet-control-zoom, .leaflet-control-attribution { display: none !important; }
 
+        /* ჩატვირთვის ანიმაცია (Boot Screen) */
+        #boot-screen {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background-color: #000; z-index: 99999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            transition: opacity 1s ease-in-out; pointer-events: none;
+        }
+        .boot-logo {
+            font-size: 60px; color: var(--ac); letter-spacing: 5px; font-weight: 300;
+            animation: pulseLogo 2s infinite alternate; text-transform: uppercase;
+        }
+        @keyframes pulseLogo {
+            0% { text-shadow: 0 0 10px rgba(var(--ac-rgb), 0.2); transform: scale(0.98); }
+            100% { text-shadow: 0 0 30px rgba(var(--ac-rgb), 0.8); transform: scale(1.02); }
+        }
+
         /* Zen Mode Class */
         body.zen-mode .sidebar, 
         body.zen-mode .dock-container, 
@@ -44,19 +60,20 @@
             opacity: 0; pointer-events: none; transition: 0.5s ease;
         }
 
-        /* საათი და ამინდი */
+        /* საათი, თარიღი და ამინდი */
         .bottom-info-bar { 
             position: absolute; bottom: 24px; left: 24px; z-index: 10; 
             background: var(--glass-bg); backdrop-filter: var(--glass-blur); 
             padding: 14px 28px; border-radius: 30px; border: 1px solid var(--glass-border); 
-            font-size: 24px; font-weight: 600; display: flex; align-items: center; gap: 18px; 
+            font-size: 20px; font-weight: 600; display: flex; align-items: center; gap: 18px; 
             box-shadow: 0 10px 40px rgba(0,0,0,0.6); transition: opacity 0.5s ease;
         }
+        .date-display { font-size: 14px; color: #aaa; font-weight: 400; text-transform: uppercase; letter-spacing: 1px;}
 
         #weather-widget { cursor: pointer; transition: color 0.3s; display: flex; align-items: center; gap: 6px;}
         #weather-widget:hover { color: var(--ac); }
 
-        /* მარჯვენა მცურავი პანელი (Map Controls) - ახალი პრემიუმ დიზაინი */
+        /* მარჯვენა მცურავი პანელი */
         .map-floating-controls {
             position: absolute; top: 24px; right: 24px; z-index: 400;
             display: flex; flex-direction: column; gap: 12px;
@@ -75,9 +92,20 @@
 
         /* მარცხენა პანელი / სტატუსი */
         .sidebar { position: absolute; top: 24px; left: 24px; width: 280px; background: var(--glass-bg); backdrop-filter: var(--glass-blur); border-radius: 30px; border: 1px solid var(--glass-border); z-index: 10; padding: 35px 25px; display: flex; flex-direction: column; gap: 18px; box-shadow: 0 15px 50px rgba(0,0,0,0.6); transition: opacity 0.5s ease;}
-        .header-status { text-align: center; color: #999; font-size: 11px; font-weight: bold; letter-spacing: 3px; text-transform: uppercase; }
+        
+        .header-top-row { display: flex; justify-content: space-between; align-items: center; }
+        .lock-btn { background: transparent; border: none; font-size: 20px; cursor: pointer; color: #aaa; transition: 0.3s; padding: 5px;}
+        .lock-btn:hover { color: #fff; transform: scale(1.1); }
+        .lock-btn.locked { color: #ff4757; text-shadow: 0 0 10px rgba(255,71,87,0.5); }
+        
+        .header-status { color: #999; font-size: 11px; font-weight: bold; letter-spacing: 3px; text-transform: uppercase; }
         .status-dot { height: 8px; width: 8px; background: var(--ac); border-radius: 50%; display: inline-block; margin-right: 8px; box-shadow: 0 0 12px var(--ac); transition: 0.3s;}
+        
+        /* სიჩქარის ბლოკი ელიტარული განლაგებით */
+        .speed-block { display: flex; justify-content: center; align-items: flex-end; gap: 15px; position: relative;}
         .speed-value { font-size: 90px; font-weight: 200; line-height: 1; text-align: center; letter-spacing: -2px; transition: color 0.3s, text-shadow 0.3s; }
+        .speed-limit { width: 36px; height: 36px; border-radius: 50%; background: #fff; border: 4px solid #ff4757; color: #000; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 14px; position: absolute; right: 20px; top: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+        
         .trip-text { text-align: center; color: var(--ac); font-size: 13px; font-weight: bold; margin-top: -15px; margin-bottom: 5px; letter-spacing: 1px; transition: 0.3s; opacity: 0.8;}
         .battery-icon { width: 100%; height: 14px; border: 1px solid #555; border-radius: 4px; padding: 2px; }
         .battery-level { height: 100%; background: var(--ac); width: 0%; transition: background 0.5s, width 0.5s; border-radius: 2px;}
@@ -93,12 +121,10 @@
         .climate-btn:hover { color: #fff; }
         
         .dock { background: var(--glass-bg); backdrop-filter: var(--glass-blur); padding: 10px 20px; border-radius: 40px; display: flex; gap: 18px; border: 1px solid var(--glass-border); box-shadow: 0 10px 40px rgba(0,0,0,0.5);}
-        /* დოკის ხატულები ახლა მრგვალია */
         .dock-icon { width: 48px; height: 48px; border-radius: 50%; background: rgba(255,255,255,0.05); display: flex; justify-content: center; align-items: center; font-size: 22px; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid transparent; }
         .dock-icon:hover { background: rgba(255,255,255,0.15); transform: translateY(-3px); }
         .dock-icon.active { border-color: var(--ac); box-shadow: 0 0 20px rgba(var(--ac-rgb), 0.4); background: rgba(var(--ac-rgb), 0.1); color: var(--ac); }
         
-        /* Seat Heaters Levels */
         .seat-heat { transition: all 0.3s ease; }
         .seat-heat[data-level="1"] { color: #ff9f43; background: rgba(255, 159, 67, 0.15); border-color: #ff9f43; }
         .seat-heat[data-level="2"] { color: #ff7675; background: rgba(255, 118, 117, 0.2); border-color: #ff7675; }
@@ -207,9 +233,14 @@
 </head>
 <body>
 
+    <!-- ჩატვირთვის ანიმაცია -->
+    <div id="boot-screen">
+        <div class="boot-logo">TESLA OS</div>
+        <div style="color: #666; margin-top: 10px; font-size: 14px; letter-spacing: 2px;">STARTING SYSTEM...</div>
+    </div>
+
     <div id="map"></div>
     
-    <!-- მარჯვენა მცურავი პანელი (რუკის კონტროლები - Tesla ულტრა სტილი) -->
     <div class="map-floating-controls">
         <div class="map-btn" id="btn-map-compass" onclick="toggleMapRotation()" title="რუკის ორიენტაცია">🧭</div>
         <div class="map-btn" id="btn-map-traffic" onclick="toggleTraffic()" title="საცობები">🚦</div>
@@ -230,15 +261,28 @@
         </div>
     </div>
 
-    <!-- საათი და ამინდი -->
+    <!-- საათი, თარიღი და ამინდი -->
     <div class="bottom-info-bar">
-        <span id="clock" style="margin-right: 15px; border-right: 1px solid rgba(255,255,255,0.1); padding-right: 18px;">00:00</span>
+        <div style="display: flex; flex-direction: column; padding-right: 18px; border-right: 1px solid rgba(255,255,255,0.1);">
+            <span id="clock" style="line-height: 1;">00:00</span>
+            <span id="date-text" class="date-display">...</span>
+        </div>
         <div id="weather-widget" onclick="toggleApp('app-weather')" title="კვირის ამინდი"><span>--°C</span> ☁️</div>
     </div>
 
     <div class="sidebar">
-        <div class="header-status"><span class="status-dot"></span> MODEL Y ONLINE</div>
-        <div class="speed-value" id="speed">0</div>
+        <div class="header-top-row">
+            <button class="lock-btn" id="lock-btn" onclick="toggleLock()">🔓</button>
+            <div class="header-status"><span class="status-dot"></span> MODEL Y ONLINE</div>
+            <div style="width: 30px;"></div> <!-- ბალანსისთვის -->
+        </div>
+        
+        <!-- სიჩქარე და Speed Limit -->
+        <div class="speed-block">
+            <div class="speed-value" id="speed">0</div>
+            <div class="speed-limit">60</div>
+        </div>
+        
         <div class="trip-text" id="trip-text">TRIP A: 0.0 KM</div>
         
         <div style="display:flex; justify-content:center; gap:16px; font-weight:800; color:#555; font-size:18px; margin-top: -5px;">
@@ -281,7 +325,6 @@
 
     <div class="dock-container">
         <div class="climate-panel">
-            <!-- 3-დონიანი სავარძლის გათბობა -->
             <div class="dock-icon seat-heat" onclick="cycleHeat(this)" data-level="0" title="მარცხენა გათბობა" style="width: 40px; height: 40px; font-size: 18px; background: transparent; border: 1px solid rgba(255,255,255,0.1);">♨️</div>
             <button class="climate-btn" onclick="adjTemp(-0.5)">‹</button>
             <span id="climate-temp" style="width: 80px; text-align: center; font-weight: 400;">22.0°</span>
@@ -290,8 +333,6 @@
         </div>
 
         <div class="dock">
-            <!-- მანქანის ზედმეტი ღილაკი ამოღებულია -->
-            <!-- ნავიგაცია ახლა არის პინი (📍) კომპასის ნაცვლად -->
             <div class="dock-icon" id="dock-nav" title="ნავიგაცია">📍</div>
             <div class="dock-icon" id="dock-music" title="მედია">🎵</div>
             <div class="dock-icon" id="dock-browser" title="ბრაუზერი">🌐</div>
@@ -429,7 +470,6 @@
                 <span id="main-time-total" style="font-size: 12px; color: #888; width: 40px; font-variant-numeric: tabular-nums;">0:00</span>
             </div>
             
-            <!-- ხმის კონტროლის სლაიდერი (Volume) -->
             <div style="display: flex; align-items: center; gap: 15px; width: 100%; margin-bottom: 25px; padding: 0 15px; box-sizing: border-box;">
                 <span style="font-size: 16px; color: #666;">🔉</span>
                 <input type="range" id="volume-slider" class="volume-slider" min="0" max="100" value="100" oninput="changeVolume(this.value)">
@@ -493,6 +533,13 @@
     <script src="https://www.youtube.com/iframe_api"></script>
 
     <script>
+        // ჩატვირთვის ანიმაციის გაქრობა
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                document.getElementById('boot-screen').style.opacity = '0';
+            }, 1500); // 1.5 წამში გაქრება
+        });
+
         // --- Firebase ინიციალიზაცია ---
         const fbConfig = { apiKey: "AIzaSyAH3yVbBGrhvzbSx7J1GxNcVsl_ykX_OX0", authDomain: "tesla-telemetry-29fb6.firebaseapp.com", databaseURL: "https://tesla-telemetry-29fb6-default-rtdb.europe-west1.firebasedatabase.app", projectId: "tesla-telemetry-29fb6" };
         firebase.initializeApp(fbConfig);
@@ -526,6 +573,7 @@
         let carSizeSetting = 50;
         let targetTemp = 22.0;
         let tripDistanceKm = 0.0;
+        let isLocked = false;
 
         // --- YouTube მედია სისტემა ---
         const defaultYTTracks = [
@@ -562,19 +610,31 @@
             if (touchendX > touchstartX + 50) prevTrack(); 
         });
 
-        // Zen Mode (სრული ეკრანი)
+        function toggleLock() {
+            isLocked = !isLocked;
+            const btn = document.getElementById('lock-btn');
+            if(isLocked) {
+                btn.innerText = '🔒';
+                btn.classList.add('locked');
+                showToast("🔒 ავტომობილი ჩაკეტილია");
+            } else {
+                btn.innerText = '🔓';
+                btn.classList.remove('locked');
+                showToast("🔓 ავტომობილი განბლოკილია");
+            }
+        }
+
         function toggleZenMode() {
             document.body.classList.toggle('zen-mode');
             const btn = document.getElementById('btn-zen');
             if(document.body.classList.contains('zen-mode')) {
                 btn.classList.add('active');
-                showToast("🔲 სრული ეკრანის რეჟიმი ჩართულია");
+                showToast("🔲 სრული ეკრანის რეჟიმი");
             } else {
                 btn.classList.remove('active');
             }
         }
 
-        // სავარძლის გათბობის დონეები
         function cycleHeat(el) {
             let lvl = parseInt(el.getAttribute('data-level')) || 0;
             lvl = (lvl + 1) % 4;
@@ -634,9 +694,7 @@
             document.documentElement.style.setProperty('--ac-rgb', themeColors[themeKey].rgb);
             document.getElementById('theme-select').value = themeKey;
             
-            // ვაახლებთ რუკის მარკერს რომ ფერი შეიცვალოს
             if(lastPosition) updateCarMarker(lastPosition.lat, lastPosition.lng, currentHeading);
-
             if(save) saveAppSetting('theme', themeKey);
         }
 
@@ -653,7 +711,6 @@
             showToast("🚗 ტრიპი განულდა");
         }
 
-        // --- პარამეტრების სინქრონიზაცია ბაზასთან ---
         let isFirstLoad = true;
         dbSettings.once('value', (snapshot) => {
             const data = snapshot.val();
@@ -942,14 +999,24 @@
             loadTrack((currentTrackIdx - 1 + tracks.length) % tracks.length, wasPlaying || true); 
         }
 
-        // --- მთავარი Timer ---
-        setInterval(() => {
+        // --- განახლებული საათი (თარიღით) ---
+        function updateClockAndDate() {
             const now = new Date();
             document.getElementById('clock').innerText = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+            
+            const days = ['კვირა', 'ორშ', 'სამშ', 'ოთხშ', 'ხუთშ', 'პარ', 'შაბ'];
+            const months = ['იან', 'თებ', 'მარ', 'აპრ', 'მაი', 'ივნ', 'ივლ', 'აგვ', 'სექ', 'ოქტ', 'ნოე', 'დეკ'];
+            document.getElementById('date-text').innerText = `${days[now.getDay()]} ${now.getDate()} ${months[now.getMonth()]}`;
+        }
+
+        // მთავარი Timer
+        setInterval(() => {
+            updateClockAndDate();
             updateProgressUI();
 
             if(ytPlayerReady && ytPlayer.getPlayerState() === YT.PlayerState.PLAYING) {
-                if(now.getSeconds() % 5 === 0) saveAppSetting('mediaTime', ytPlayer.getCurrentTime());
+                const nowSec = new Date().getSeconds();
+                if(nowSec % 5 === 0) saveAppSetting('mediaTime', ytPlayer.getCurrentTime());
                 if(tracks.length > 0) saveAppSetting('currentTrackName', tracks[currentTrackIdx].title);
             }
         }, 1000);
@@ -1018,6 +1085,18 @@
             saveAppSetting('mapAutoRotate', mapAutoRotate);
             if(lastPosition) updateCarMarker(lastPosition.lat, lastPosition.lng, currentHeading); 
         }
+
+        map.on('click', function() {
+            if(document.body.classList.contains('zen-mode')) toggleZenMode(); // ზენ მოუდიდან გამოსვლა რუკაზე კლიკით
+            document.querySelectorAll('.app-window').forEach(w => w.style.display = 'none');
+            document.querySelectorAll('.dock-icon').forEach(i => i.classList.remove('active'));
+            if (trafficOn) document.getElementById('btn-map-traffic').classList.add('active');
+            
+            if (tracks.length > 0) {
+                document.getElementById('mini-player').classList.add('active-session');
+                updateMiniPlayer();
+            }
+        });
 
         function toggleTraffic(showToastMsg = true) {
             trafficOn = !trafficOn;
@@ -1297,6 +1376,7 @@
                             if(Math.floor(tripDistanceKm * 10) % 5 === 0) saveAppSetting('tripA', tripDistanceKm);
                         }
                         
+                        // თუ მანქანა მოძრაობს, ვმალავთ ზედმეტ ფანჯრებს
                         if (calcSpeedKmh > 5 && !d.wasMoving) {
                             document.querySelectorAll('.app-window').forEach(w => w.style.display = 'none');
                             document.querySelectorAll('.dock-icon').forEach(i => i.classList.remove('active'));
