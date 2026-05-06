@@ -29,8 +29,14 @@
         #map { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; background: #111; }
         .leaflet-routing-container, .leaflet-control-zoom, .leaflet-control-attribution { display: none !important; }
 
-        /* Boot Screen */
-        #boot-screen { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: #000; z-index: 99999; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 1s ease-in-out; }
+        /* --- შესწორებული Boot Screen --- */
+        #boot-screen { 
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
+            background-color: #000; z-index: 99999; 
+            display: flex; flex-direction: column; justify-content: center; align-items: center; 
+            transition: opacity 1s ease-in-out; 
+            pointer-events: none; /* ეს იცავს ღილაკების დაბლოკვისგან */
+        }
         .boot-logo { font-size: 65px; color: var(--ac); letter-spacing: 8px; font-weight: 300; animation: pulseLogo 2s infinite alternate; text-transform: uppercase; }
         @keyframes pulseLogo { 0% { text-shadow: 0 0 10px rgba(var(--ac-rgb), 0.2); } 100% { text-shadow: 0 0 30px rgba(var(--ac-rgb), 0.8); } }
 
@@ -49,7 +55,7 @@
         .map-btn.active { color: var(--ac); background: rgba(var(--ac-rgb), 0.15); box-shadow: inset 0 0 10px rgba(var(--ac-rgb), 0.2); }
 
         /* Sidebar */
-        .sidebar { position: absolute; top: 24px; left: 24px; width: 280px; background: var(--glass-bg); backdrop-filter: var(--glass-blur); border-radius: 30px; border: 1px solid var(--glass-border); z-index: 10; padding: 35px 25px; display: flex; flex-direction: column; gap: 18px; box-shadow: 0 15px 50px rgba(0,0,0,0.6); }
+        .sidebar { position: absolute; top: 24px; left: 24px; width: 280px; background: var(--glass-bg); backdrop-filter: var(--glass-blur); border-radius: 30px; border: 1px solid var(--glass-border); z-index: 10; padding: 35px 25px; display: flex; flex-direction: column; gap: 18px; box-shadow: 0 15px 50px rgba(0,0,0,0.6); overflow: hidden; }
         .header-status { text-align: center; color: #999; font-size: 11px; font-weight: bold; letter-spacing: 3px; display: flex; align-items: center; justify-content: center;}
         .status-dot { height: 8px; width: 8px; background: var(--ac); border-radius: 50%; display: inline-block; margin-right: 8px; box-shadow: 0 0 12px var(--ac); transition: 0.3s;}
         
@@ -57,9 +63,10 @@
         #driving-panel { display: flex; flex-direction: column; align-items: center; gap: 10px; transition: opacity 0.4s ease; }
         #charging-panel { display: none; flex-direction: column; align-items: center; gap: 15px; transition: opacity 0.4s ease; padding: 10px 0; }
         
-        .speed-block { display: flex; justify-content: center; align-items: flex-end; position: relative; margin-top: 10px;}
+        /* --- შესწორებული სიჩქარის ბლოკი (გადაფარვის გარეშე) --- */
+        .speed-block { display: flex; justify-content: center; align-items: flex-start; gap: 5px; position: relative; margin-top: 10px;}
         .speed-value { font-family: monospace; font-size: 90px; font-weight: 300; line-height: 1; letter-spacing: -3px; }
-        .speed-limit { width: 36px; height: 36px; border-radius: 50%; background: #fff; border: 4px solid #ff4757; color: #000; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 14px; position: absolute; right: -25px; top: 10px; }
+        .speed-limit { width: 32px; height: 32px; border-radius: 50%; background: #fff; border: 3px solid #ff4757; color: #000; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 13px; margin-top: 5px; }
         
         .trip-text { text-align: center; color: var(--ac); font-size: 13px; font-weight: bold; letter-spacing: 1px; opacity: 0.8;}
         .prnd-text { display:flex; justify-content:center; gap:16px; font-weight:800; color:#555; font-size:18px; }
@@ -100,11 +107,10 @@
         .seat-heat[data-level="2"] { color: #ff7675; background: rgba(255, 118, 117, 0.2); border-color: #ff7675; }
         .seat-heat[data-level="3"] { color: #ff4757; background: rgba(255, 71, 87, 0.25); border-color: #ff4757; box-shadow: 0 0 15px rgba(255, 71, 87, 0.4); }
 
-        /* ფანჯრები (შესწორებული განლაგება) */
+        /* ფანჯრები */
         .app-window { position: absolute; top: 24px; right: 100px; width: 420px; height: calc(100vh - 160px); background: rgba(15, 15, 15, 0.95); backdrop-filter: var(--glass-blur); border-radius: 30px; border: 1px solid var(--glass-border); z-index: 500; display: none; flex-direction: column; box-shadow: -15px 25px 60px rgba(0,0,0,0.8); overflow: hidden;}
-        .app-window.active { display: flex; }
         
-        /* მინი პლეერი - იდეალურ პოზიციაში */
+        /* მინი პლეერი - იდეალურ პოზიციაში დაბრუნებული */
         .mini-player { position: absolute; bottom: 130px; left: 24px; width: 340px; background: var(--glass-bg); backdrop-filter: var(--glass-blur); border-radius: 24px; border: 1px solid var(--glass-border); display: none; flex-direction: column; padding: 15px 20px; gap: 10px; box-shadow: 0 15px 40px rgba(0,0,0,0.7); z-index: 900; touch-action: pan-y; transition: opacity 0.5s ease;}
         .mini-player.active-session { display: flex; }
 
@@ -422,20 +428,20 @@
     </div>
 
     <script>
-        // ერთადერთი და სუფთა სკრიპტი
-        window.addEventListener('load', () => {
-            setTimeout(() => {
-                const bootScreen = document.getElementById('boot-screen');
+        // --- Boot Screen-ის გარანტირებული გაქრობა (აღარ გაჭედავს) ---
+        setTimeout(() => {
+            const bootScreen = document.getElementById('boot-screen');
+            if (bootScreen) {
                 bootScreen.style.opacity = '0';
-                setTimeout(() => bootScreen.style.display = 'none', 1000); 
-            }, 1500); 
-        });
+                setTimeout(() => bootScreen.style.display = 'none', 1000);
+            }
+        }, 1500);
 
-        // Firebase ინიციალიზაცია
+        // --- Firebase ინიციალიზაცია ---
         const fbConfig = { apiKey: "AIzaSyAH3yVbBGrhvzbSx7J1GxNcVsl_ykX_OX0", authDomain: "tesla-telemetry-29fb6.firebaseapp.com", databaseURL: "https://tesla-telemetry-29fb6-default-rtdb.europe-west1.firebasedatabase.app", projectId: "tesla-telemetry-29fb6" };
         firebase.initializeApp(fbConfig);
         const db = firebase.database().ref("5YJYGCEE123456789");
-        const dbSettings = db.child("settings");
+        const dbSettings = firebase.database().ref("5YJYGCEE123456789/settings");
 
         // გლობალური ცვლადები
         let apiKey = "AIzaSyCiIRonRvsdHUHFIIo43JJ7Gp7Moq1N4ik"; 
@@ -505,22 +511,19 @@
             if (!win) return;
             const wasActive = win.style.display === 'flex';
             
-            // 1. ვმალავთ ყველა სხვა ფანჯარას
+            // ვმალავთ ყველა სხვა ფანჯარას
             document.querySelectorAll('.app-window').forEach(w => w.style.display = 'none');
-            // 2. ვთიშავთ დოკის ყველა ღილაკს
             document.querySelectorAll('.dock .dock-icon').forEach(i => i.classList.remove('active'));
             
-            // 3. მინი-პლეერის ლოგიკა: 
+            // მინი-პლეერის ლოგიკა 
             if (id === 'app-music') {
-                // თუ მუსიკის დიდ ფანჯარას ვხსნით, მინი-პლეერი უნდა დაიმალოს
                 document.getElementById('mini-player').classList.remove('active-session');
             } else if (tracks.length > 0) {
-                // თუ სხვა ფანჯარას ვხსნით და მუსიკა გვაქვს, მინი-პლეერი უნდა გამოჩნდეს
                 document.getElementById('mini-player').classList.add('active-session');
                 updateMiniPlayer();
             }
             
-            // 4. ვხსნით ახალ ფანჯარას თუ ის უკვე არ იყო ღია
+            // ვხსნით ახალს თუ არ იყო ღია
             if (!wasActive) { 
                 win.style.display = 'flex'; 
                 const dockId = id.replace('app-', 'dock-');
@@ -1041,7 +1044,7 @@
                             if(Math.floor(tripDistanceKm * 10) % 5 === 0) saveAppSetting('tripA', tripDistanceKm);
                         }
                         
-                        // თუ მანქანა მოძრაობს, ვმალავთ ფანჯრებს
+                        // ვმალავთ ფანჯრებს მოძრაობისას
                         if (calcSpeedKmh > 5 && !d.wasMoving) {
                             document.querySelectorAll('.app-window').forEach(w => w.style.display = 'none');
                             document.querySelectorAll('.dock .dock-icon').forEach(i => i.classList.remove('active'));
