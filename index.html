@@ -15,6 +15,9 @@
     <script src="https://unpkg.com/leaflet-rotate@0.2.8/dist/leaflet-rotate-src.js"></script>
     <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
 
+    <!-- YouTube Iframe API -->
+    <script src="https://www.youtube.com/iframe_api"></script>
+
     <style>
         :root {
             --ac: #00ffaa; 
@@ -556,6 +559,73 @@
         function cycleHeat(el) { let lvl = parseInt(el.getAttribute('data-level')) || 0; lvl = (lvl + 1) % 4; el.setAttribute('data-level', lvl); }
         function adjTemp(val) { targetTemp += val; document.getElementById('climate-temp').innerText = targetTemp.toFixed(1) + "°"; }
 
+        // --- Settings Accordion Fix ---
+        document.querySelectorAll('details.settings-accordion').forEach(details => {
+            const summary = details.querySelector('summary');
+            if(summary) {
+                summary.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    details.open = !details.open;
+                });
+            }
+        });
+
+        // --- Search Input Handler for Navigation ---
+        const searchInput = document.getElementById('search-input');
+        if(searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                const query = e.target.value.trim();
+                if(query.length < 2) {
+                    document.getElementById('suggestions').style.display = 'none';
+                    return;
+                }
+                
+                fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=5`)
+                    .then(r => r.json())
+                    .then(res => {
+                        const suggestionsList = document.getElementById('suggestions');
+                        suggestionsList.innerHTML = '';
+                        
+                        if(res.features && res.features.length > 0) {
+                            res.features.forEach(feature => {
+                                const name = [feature.properties.name, feature.properties.city].filter(Boolean).join(', ');
+                                const li = document.createElement('li');
+                                li.textContent = name;
+                                li.onclick = () => {
+                                    currentDestination = name;
+                                    currentDestinationLatLng = L.latLng(feature.geometry.coordinates[1], feature.geometry.coordinates[0]);
+                                    lastRouteUpdateLatLng = null;
+                                    searchInput.value = name;
+                                    suggestionsList.style.display = 'none';
+                                    drawRoute(currentDestinationLatLng);
+                                };
+                                suggestionsList.appendChild(li);
+                            });
+                            suggestionsList.style.display = 'block';
+                        } else {
+                            suggestionsList.style.display = 'none';
+                        }
+                    })
+                    .catch(err => {
+                        document.getElementById('suggestions').style.display = 'none';
+                    });
+            });
+
+            // Clear route on input clear
+            searchInput.addEventListener('keydown', (e) => {
+                if(e.key === 'Escape' || (e.key === 'Backspace' && searchInput.value.length === 1)) {
+                    cancelRoute();
+                }
+            });
+
+            // Close suggestions when clicking elsewhere
+            document.addEventListener('click', (e) => {
+                if(e.target !== searchInput) {
+                    document.getElementById('suggestions').style.display = 'none';
+                }
+            });
+        }
+
         // ფანჯრების გადაადგილება (Drag)
         let activeWin = null, offsetX, offsetY;
         document.querySelectorAll('.app-header').forEach(h => {
@@ -804,12 +874,51 @@
         // --- AI API ---
         async function fetchGemini(url, payload) { 
             const retryDelays = [1000, 2000, 4000];
-            for (let i = 0; i < 3; i++) { try { const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); if (!response.ok) throw new Error("HTTP error"); return await response.json(); } catch (e) { if (i === 2) throw e; await new Promise(r => setTimeout(r, retryDelays[i])); } }
+            for (let i = 0; i < 3; i++) { 
+                try { 
+                    console.log("Gemini Request:", payload); // Debug
+                    const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); 
+                    if (!response.ok) {
+                        const errText = await response.text();
+                        console.error("Gemini Error:", response.status, errText);
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                    const data = await response.json();
+                    console.log("Gemini Response:", data); // Debug
+                    return data;
+                } catch (e) { 
+                    console.error("Fetch error attempt", i + 1, e);
+                    if (i === 2) throw e; 
+                    await new Promise(r => setTimeout(r, retryDelays[i])); 
+                } 
+            }
         }
+
         async function callGemini(text, systemPrompt = "თქვენ ხართ Tesla-ს ასისტენტი. უპასუხეთ ქართულად.") {
             if (!apiKey) return "გთხოვთ დაამატოთ API გასაღები.";
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
-            try { const data = await fetchGemini(url, { contents: [{ parts: [{ text: text }] }], systemInstruction: { parts: [{ text: systemPrompt }] } }); return data.candidates?.[0]?.content?.parts?.[0]?.text || "შეცდომა."; } catch(e) { return `შეცდომა კავშირისას.`; }
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-09-2024:generateContent?key=${apiKey}`;
+            try { 
+                const data = await fetchGemini(url, { 
+                    systemInstruction: {
+                        parts: [{
+                            text: systemPrompt
+                        }]
+                    },
+                    contents: [{ 
+                        role: "user",
+                        parts: [{ text: text }] 
+                    }] 
+                }); 
+                const result = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                if(!result) {
+                    console.error("No text in response:", data);
+                    return "პასუხი ვერ მიიღო.";
+                }
+                return result;
+            } catch(e) { 
+                console.error("AI Error:", e);
+                return `შეცდომა: ${e.message}`; 
+            }
         }
 
         async function sendToAI() {
@@ -846,13 +955,141 @@
             saveAppSetting('mapAutoRotate', mapAutoRotate); if(lastPosition) updateCarMarker(lastPosition.lat, lastPosition.lng, currentHeading); 
         }
 
-        map.on('click', function() {
+        map.on('click', function(e) {
             if(document.body.classList.contains('zen-mode')) toggleZenMode(); 
             document.querySelectorAll('.app-window').forEach(w => w.style.display = 'none');
             document.querySelectorAll('.dock .dock-icon').forEach(i => i.classList.remove('active'));
             if (trafficOn) document.getElementById('btn-map-traffic').classList.add('active');
             if (tracks.length > 0) { document.getElementById('mini-player').classList.add('active-session'); updateMiniPlayer(); }
         });
+
+        // --- Long Press / Right Click on Map for Pin ---
+        let mapLongPressTimer = null;
+        let mapContextLatlng = null;
+
+        map.on('mousedown', function(e) {
+            mapContextLatlng = e.latlng;
+            mapLongPressTimer = setTimeout(() => {
+                showMapContextMenu(e.latlng, e.originalEvent);
+            }, 600); // 600ms long press
+        });
+
+        map.on('mouseup', function() {
+            if(mapLongPressTimer) clearTimeout(mapLongPressTimer);
+        });
+
+        map.on('touchstart', function(e) {
+            if(e.touches.length === 1) {
+                const touch = e.touches[0];
+                const point = map.latLngToContainerPoint(e.latlng);
+                mapContextLatlng = e.latlng;
+                mapLongPressTimer = setTimeout(() => {
+                    showMapContextMenu(e.latlng, touch);
+                }, 600);
+            }
+        });
+
+        map.on('touchend', function() {
+            if(mapLongPressTimer) clearTimeout(mapLongPressTimer);
+        });
+
+        // --- Map Context Menu ---
+        function showMapContextMenu(latlng, event) {
+            const existingMenu = document.getElementById('map-context-menu');
+            if(existingMenu) existingMenu.remove();
+
+            const menu = document.createElement('div');
+            menu.id = 'map-context-menu';
+            menu.style.cssText = `
+                position: fixed;
+                top: ${event.clientY}px;
+                left: ${event.clientX}px;
+                background: rgba(20, 20, 20, 0.95);
+                border: 1px solid rgba(0, 255, 170, 0.3);
+                border-radius: 16px;
+                padding: 8px;
+                z-index: 10000;
+                box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+                backdrop-filter: blur(20px);
+                min-width: 200px;
+            `;
+
+            const options = [
+                { icon: '📍', text: 'პინი აქ დაყენება', action: () => setPinAtLocation(latlng) },
+                { icon: '🛣️', text: 'მარშრუტი აქ დან', action: () => setRouteFrom(latlng) },
+                { icon: '🎯', text: 'მარშრუტი აქ ამდე', action: () => setRouteTo(latlng) },
+                { icon: '📋', text: 'კოორდინატები კოპირება', action: () => copyCoordinates(latlng) },
+            ];
+
+            options.forEach(opt => {
+                const btn = document.createElement('div');
+                btn.style.cssText = `
+                    padding: 12px 16px;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    border-radius: 12px;
+                    transition: 0.2s;
+                    color: #fff;
+                    font-size: 14px;
+                    border-bottom: 1px solid rgba(255,255,255,0.05);
+                `;
+                btn.innerHTML = `<span style="font-size: 18px;">${opt.icon}</span><span>${opt.text}</span>`;
+                btn.onmouseover = () => btn.style.background = 'rgba(0, 255, 170, 0.15)';
+                btn.onmouseout = () => btn.style.background = 'transparent';
+                btn.onclick = () => {
+                    opt.action();
+                    menu.remove();
+                };
+                menu.appendChild(btn);
+            });
+
+            document.body.appendChild(menu);
+
+            // Close menu on click outside
+            setTimeout(() => {
+                document.addEventListener('click', function closeMenu(e) {
+                    if(!menu.contains(e.target)) {
+                        menu.remove();
+                        document.removeEventListener('click', closeMenu);
+                    }
+                });
+            }, 0);
+        }
+
+        function setPinAtLocation(latlng) {
+            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latlng.lat}&lon=${latlng.lng}`)
+                .then(r => r.json())
+                .then(data => {
+                    const address = data.address?.road ? `${data.address.road}, ${data.address.city || data.address.town || ''}` : `${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)}`;
+                    currentDestination = address;
+                    currentDestinationLatLng = latlng;
+                    lastRouteUpdateLatLng = null;
+                    
+                    if (document.getElementById('app-nav').style.display !== 'flex') {
+                        restoreApp('app-nav');
+                    }
+                    document.getElementById('search-input').value = address;
+                    document.getElementById('suggestions').style.display = 'none';
+                    drawRoute(latlng);
+                    showToast("📍 პინი დაყენდა: " + address);
+                });
+        }
+
+        function setRouteFrom(latlng) {
+            showToast("⚠️ ეს ფეატურა მოკიდებული");
+        }
+
+        function setRouteTo(latlng) {
+            setPinAtLocation(latlng);
+        }
+
+        function copyCoordinates(latlng) {
+            const coords = `${latlng.lat.toFixed(6)}, ${latlng.lng.toFixed(6)}`;
+            navigator.clipboard.writeText(coords);
+            showToast("✅ კოორდინატები კოპირებული");
+        }
 
         function toggleTraffic(showToastMsg = true) {
             trafficOn = !trafficOn; const btn = document.getElementById('btn-map-traffic');
@@ -954,7 +1191,12 @@
 
         function updateCarMarker(lat, lng, heading) {
             const ll = L.latLng(lat, lng); let carSvg = ""; let s = carSizeSetting; let w = s; let h = s * 2; let ah = h/2; let aw = w/2; 
-            let markerRotation = mapAutoRotate ? 0 : heading;
+            // Validate heading - ensure it's a valid number between 0-360
+            let validHeading = heading;
+            if(typeof heading !== 'number' || isNaN(heading) || heading < 0 || heading > 360) {
+                validHeading = 0; // Default to north if heading is invalid
+            }
+            let markerRotation = mapAutoRotate ? 0 : validHeading;
 
             if(carTypeSetting === 'modelY') carSvg = `<svg width="${w}" height="${h}" viewBox="0 0 100 200" style="transform: rotate(${markerRotation}deg); transition: transform 0.5s; filter: drop-shadow(0px 10px 15px rgba(0,0,0,0.9));"><rect x="25" y="20" width="50" height="160" rx="20" fill="#e74c3c" /><path d="M 30 70 L 70 70 L 65 95 L 35 95 Z" fill="#111" /><path d="M 32 140 L 68 140 L 64 120 L 36 120 Z" fill="#111" /><rect x="30" y="25" width="12" height="6" rx="3" fill="#fff" /><rect x="58" y="25" width="12" height="6" rx="3" fill="#fff" /></svg>`;
             else if(carTypeSetting === 'model3') carSvg = `<svg width="${w}" height="${h}" viewBox="0 0 100 200" style="transform: rotate(${markerRotation}deg); transition: transform 0.5s; filter: drop-shadow(0px 10px 15px rgba(0,0,0,0.9));"><rect x="25" y="20" width="50" height="160" rx="20" fill="#f5f6fa" /><path d="M 30 70 L 70 70 L 65 95 L 35 95 Z" fill="#111" /><path d="M 32 140 L 68 140 L 64 120 L 36 120 Z" fill="#111" /><rect x="30" y="25" width="12" height="6" rx="3" fill="#e74c3c" /><rect x="58" y="25" width="12" height="6" rx="3" fill="#e74c3c" /></svg>`;
@@ -1053,7 +1295,12 @@
                             db.update({ wasMoving: false });
                         }
                         
-                        if (distanceMeters > 2) currentHeading = getBearing(lastPosition.lat, lastPosition.lng, ll.lat, ll.lng);
+                        if (distanceMeters > 2) {
+                            const newHeading = getBearing(lastPosition.lat, lastPosition.lng, ll.lat, ll.lng);
+                            if(typeof newHeading === 'number' && !isNaN(newHeading)) {
+                                currentHeading = newHeading;
+                            }
+                        }
                         lastPosition = ll; lastTime = currentTime;
                     }
                 }
@@ -1112,6 +1359,3 @@
     </script>
 </body>
 </html>
-
-
-```
