@@ -27,10 +27,10 @@
 
         body { margin: 0; padding: 0; overflow: hidden; background-color: #000; font-family: system-ui, sans-serif; color: #fff; user-select: none; }
         #map { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; background: #111; }
-        .leaflet-routing-container { display: none !important; }
+        .leaflet-routing-container, .leaflet-control-zoom, .leaflet-control-attribution { display: none !important; }
 
         /* Boot Screen */
-        #boot-screen { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: #000; z-index: 99999; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 1s ease-in-out; pointer-events: none; }
+        #boot-screen { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: #000; z-index: 99999; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 1s ease-in-out; }
         .boot-logo { font-size: 65px; color: var(--ac); letter-spacing: 8px; font-weight: 300; animation: pulseLogo 2s infinite alternate; text-transform: uppercase; }
         @keyframes pulseLogo { 0% { text-shadow: 0 0 10px rgba(var(--ac-rgb), 0.2); } 100% { text-shadow: 0 0 30px rgba(var(--ac-rgb), 0.8); } }
 
@@ -43,13 +43,14 @@
         #weather-widget { cursor: pointer; transition: color 0.3s; display: flex; align-items: center; gap: 6px;}
 
         /* Floating Map Controls */
-        .map-floating-controls { position: absolute; top: 24px; right: 24px; z-index: 400; display: flex; flex-direction: column; gap: 12px; background: var(--glass-bg); backdrop-filter: var(--glass-blur); padding: 8px; border-radius: 24px; border: 1px solid var(--glass-border); }
+        .map-floating-controls { position: absolute; top: 24px; right: 24px; z-index: 400; display: flex; flex-direction: column; gap: 12px; background: var(--glass-bg); backdrop-filter: var(--glass-blur); padding: 8px; border-radius: 24px; border: 1px solid var(--glass-border); box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
         .map-btn { width: 44px; height: 44px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 20px; cursor: pointer; transition: 0.2s; color: #e0e0e0; background: transparent; }
-        .map-btn.active { color: var(--ac); background: rgba(var(--ac-rgb), 0.15); }
+        .map-btn:hover { background: rgba(255, 255, 255, 0.1); transform: scale(1.1); color: #fff;}
+        .map-btn.active { color: var(--ac); background: rgba(var(--ac-rgb), 0.15); box-shadow: inset 0 0 10px rgba(var(--ac-rgb), 0.2); }
 
         /* Sidebar */
-        .sidebar { position: absolute; top: 24px; left: 24px; width: 280px; background: var(--glass-bg); backdrop-filter: var(--glass-blur); border-radius: 30px; border: 1px solid var(--glass-border); z-index: 10; padding: 35px 25px; display: flex; flex-direction: column; gap: 18px; box-shadow: 0 15px 50px rgba(0,0,0,0.6); overflow: hidden; }
-        .header-status { text-align: center; color: #999; font-size: 11px; font-weight: bold; letter-spacing: 3px; }
+        .sidebar { position: absolute; top: 24px; left: 24px; width: 280px; background: var(--glass-bg); backdrop-filter: var(--glass-blur); border-radius: 30px; border: 1px solid var(--glass-border); z-index: 10; padding: 35px 25px; display: flex; flex-direction: column; gap: 18px; box-shadow: 0 15px 50px rgba(0,0,0,0.6); }
+        .header-status { text-align: center; color: #999; font-size: 11px; font-weight: bold; letter-spacing: 3px; display: flex; align-items: center; justify-content: center;}
         .status-dot { height: 8px; width: 8px; background: var(--ac); border-radius: 50%; display: inline-block; margin-right: 8px; box-shadow: 0 0 12px var(--ac); transition: 0.3s;}
         
         /* პანელები: ტარება vs დატენვა */
@@ -58,7 +59,7 @@
         
         .speed-block { display: flex; justify-content: center; align-items: flex-end; position: relative; margin-top: 10px;}
         .speed-value { font-family: monospace; font-size: 90px; font-weight: 300; line-height: 1; letter-spacing: -3px; }
-        .speed-limit { width: 36px; height: 36px; border-radius: 50%; background: #fff; border: 4px solid #ff4757; color: #000; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 14px; position: absolute; right: -20px; top: 10px; }
+        .speed-limit { width: 36px; height: 36px; border-radius: 50%; background: #fff; border: 4px solid #ff4757; color: #000; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 14px; position: absolute; right: -25px; top: 10px; }
         
         .trip-text { text-align: center; color: var(--ac); font-size: 13px; font-weight: bold; letter-spacing: 1px; opacity: 0.8;}
         .prnd-text { display:flex; justify-content:center; gap:16px; font-weight:800; color:#555; font-size:18px; }
@@ -70,7 +71,7 @@
         @keyframes pulseText { 0% { opacity: 0.6; } 50% { opacity: 1; text-shadow: 0 0 10px rgba(0,168,255,0.5); } 100% { opacity: 0.6; } }
 
         /* Battery UI */
-        .battery-icon { width: 100%; height: 16px; border: 1px solid #555; border-radius: 4px; padding: 2px; position: relative; margin-top: 10px;}
+        .battery-icon { width: 100%; height: 16px; border: 1px solid #555; border-radius: 4px; padding: 2px; position: relative; margin-top: 10px; box-sizing: border-box;}
         .battery-level { height: 100%; background: var(--ac); width: 0%; transition: width 0.5s, background-color 0.5s; border-radius: 2px;}
         #charging-bolt { position: absolute; right: -30px; top: -5px; color: #00a8ff; display: none; font-size: 22px; animation: glowBolt 1s infinite alternate; }
         @keyframes glowBolt { from { opacity: 0.5; } to { opacity: 1; text-shadow: 0 0 15px #00a8ff; } }
@@ -103,7 +104,7 @@
         .app-window { position: absolute; top: 24px; right: 100px; width: 420px; height: calc(100vh - 160px); background: rgba(15, 15, 15, 0.95); backdrop-filter: var(--glass-blur); border-radius: 30px; border: 1px solid var(--glass-border); z-index: 500; display: none; flex-direction: column; box-shadow: -15px 25px 60px rgba(0,0,0,0.8); overflow: hidden;}
         .app-window.active { display: flex; }
         
-        /* მინი პლეერი - იდეალურ პოზიციაში დაბრუნებული */
+        /* მინი პლეერი - იდეალურ პოზიციაში */
         .mini-player { position: absolute; bottom: 130px; left: 24px; width: 340px; background: var(--glass-bg); backdrop-filter: var(--glass-blur); border-radius: 24px; border: 1px solid var(--glass-border); display: none; flex-direction: column; padding: 15px 20px; gap: 10px; box-shadow: 0 15px 40px rgba(0,0,0,0.7); z-index: 900; touch-action: pan-y; transition: opacity 0.5s ease;}
         .mini-player.active-session { display: flex; }
 
@@ -136,6 +137,7 @@
         .suggestions-list li { padding: 15px 20px; border-bottom: 1px solid #222; cursor: pointer; font-size: 14px; color: #ccc; transition: 0.2s;}
         .suggestions-list li:last-child { border-bottom: none; }
         .suggestions-list li:hover { background: rgba(var(--ac-rgb), 0.2); color: var(--ac); padding-left: 25px; }
+        
         .route-ai-btn { background: linear-gradient(135deg, rgba(var(--ac-rgb),0.8), var(--ac)); border: none; color: #000; font-weight: bold; padding: 12px; border-radius: 16px; cursor: pointer; margin-top: 15px; font-size: 13px; display: none; width: 100%; transition: 0.3s; box-shadow: 0 5px 15px rgba(var(--ac-rgb),0.3);}
         .route-ai-btn:hover { filter: brightness(1.1); transform: translateY(-2px);}
         .route-cancel-btn { background: rgba(255, 71, 87, 0.1); border: 1px solid rgba(255, 71, 87, 0.3); color: #ff4757; font-weight: bold; padding: 12px; border-radius: 16px; cursor: pointer; margin-top: 10px; font-size: 13px; width: 100%; transition: 0.2s; }
@@ -198,7 +200,11 @@
 </head>
 <body>
 
-    <div id="boot-screen"><div class="boot-logo">TESLA OS</div><div style="color:#fff; margin-top:-10px; font-size:22px; letter-spacing:4px;">BY GIUU</div></div>
+    <div id="boot-screen">
+        <div class="boot-logo">TESLA OS</div>
+        <div style="color:#fff; margin-top:-10px; font-size:22px; letter-spacing:4px; font-weight: 300;">BY GIUU</div>
+    </div>
+
     <div id="map"></div>
     
     <div id="battery-alert">
@@ -219,7 +225,8 @@
 
     <div class="bottom-info-bar">
         <div style="display: flex; flex-direction: column; padding-right: 18px; border-right: 1px solid rgba(255,255,255,0.1);">
-            <span id="clock" style="line-height: 1;">00:00</span><span id="date-text" class="date-display">...</span>
+            <span id="clock" style="line-height: 1;">00:00</span>
+            <span id="date-text" class="date-display">...</span>
         </div>
         <div id="weather-widget" onclick="toggleApp('app-weather')"><span>--°C</span> ☁️</div>
     </div>
@@ -249,7 +256,10 @@
     </div>
 
     <div class="app-window" id="app-music">
-        <div class="app-header"><h3 class="app-title">🎵 YouTube Media</h3><button class="win-btn" onclick="collapseToMini('app-music')">⤢</button></div>
+        <div class="app-header">
+            <h3 class="app-title">🎵 YouTube Media</h3>
+            <button class="win-btn" onclick="collapseToMini('app-music')">⤢</button>
+        </div>
         <div class="app-content" style="padding:20px; display:flex; flex-direction:column; align-items:center;">
             <div id="yt-player-container"><div id="yt-player"></div></div>
             <h3 id="track-title" style="text-align:center;">იტვირთება...</h3>
@@ -412,11 +422,22 @@
     </div>
 
     <script>
-        // --- Firebase ინიციალიზაცია ---
+        // ერთადერთი და სუფთა სკრიპტი
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                const bootScreen = document.getElementById('boot-screen');
+                bootScreen.style.opacity = '0';
+                setTimeout(() => bootScreen.style.display = 'none', 1000); 
+            }, 1500); 
+        });
+
+        // Firebase ინიციალიზაცია
         const fbConfig = { apiKey: "AIzaSyAH3yVbBGrhvzbSx7J1GxNcVsl_ykX_OX0", authDomain: "tesla-telemetry-29fb6.firebaseapp.com", databaseURL: "https://tesla-telemetry-29fb6-default-rtdb.europe-west1.firebasedatabase.app", projectId: "tesla-telemetry-29fb6" };
         firebase.initializeApp(fbConfig);
-        const dbSettings = firebase.database().ref("5YJYGCEE123456789/settings");
+        const db = firebase.database().ref("5YJYGCEE123456789");
+        const dbSettings = db.child("settings");
 
+        // გლობალური ცვლადები
         let apiKey = "AIzaSyCiIRonRvsdHUHFIIo43JJ7Gp7Moq1N4ik"; 
         let trafficOn = false;
         let trafficLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=h,traffic&x={x}&y={y}&z={z}', { maxZoom: 20, opacity: 0.8 });
@@ -443,8 +464,11 @@
         let currentBatterySoc = 0;
         let isCharging = false;
         let batteryAlertDismissed = false;
+        let lastPosition = null; 
+        let lastTime = null; 
+        let currentHeading = 0; 
 
-        // --- YouTube მედია სისტემა ---
+        // YouTube მედია სისტემა
         const defaultYTTracks = [
             { title: "Lofi Girl (Live)", type: "video", ytId: "jfKfPfyJRdk" },
             { title: "Top Music Playlist", type: "playlist", ytId: "PL4fGSI1pDJn6jXS_Tv_N9B8Z0HTRVJE0m" },
@@ -464,12 +488,61 @@
         let savedMediaTime = 0;
         let savedMediaTrack = -1;
         let isDraggingProgress = false;
+        let isFirstLoad = true;
 
-        let touchstartX = 0;
-        let touchendX = 0;
-        const miniPlayerEl = document.getElementById('mini-player');
-        miniPlayerEl.addEventListener('touchstart', e => { if(e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return; touchstartX = e.changedTouches[0].screenX; });
-        miniPlayerEl.addEventListener('touchend', e => { if(e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return; touchendX = e.changedTouches[0].screenX; if (touchendX < touchstartX - 50) nextTrack(); if (touchendX > touchstartX + 50) prevTrack(); });
+        // UI Utilities
+        function showToast(msg, isError = false) { 
+            const t = document.getElementById('toast'); 
+            t.innerText = msg; 
+            if(isError) t.classList.add('error'); else t.classList.remove('error');
+            t.classList.add('show'); 
+            setTimeout(() => t.classList.remove('show'), 3000); 
+        }
+
+        // --- ფანჯრების (Apps) იდეალური მართვა ---
+        function toggleApp(id) {
+            const win = document.getElementById(id);
+            if (!win) return;
+            const wasActive = win.style.display === 'flex';
+            
+            // 1. ვმალავთ ყველა სხვა ფანჯარას
+            document.querySelectorAll('.app-window').forEach(w => w.style.display = 'none');
+            // 2. ვთიშავთ დოკის ყველა ღილაკს
+            document.querySelectorAll('.dock .dock-icon').forEach(i => i.classList.remove('active'));
+            
+            // 3. მინი-პლეერის ლოგიკა: 
+            if (id === 'app-music') {
+                // თუ მუსიკის დიდ ფანჯარას ვხსნით, მინი-პლეერი უნდა დაიმალოს
+                document.getElementById('mini-player').classList.remove('active-session');
+            } else if (tracks.length > 0) {
+                // თუ სხვა ფანჯარას ვხსნით და მუსიკა გვაქვს, მინი-პლეერი უნდა გამოჩნდეს
+                document.getElementById('mini-player').classList.add('active-session');
+                updateMiniPlayer();
+            }
+            
+            // 4. ვხსნით ახალ ფანჯარას თუ ის უკვე არ იყო ღია
+            if (!wasActive) { 
+                win.style.display = 'flex'; 
+                const dockId = id.replace('app-', 'dock-');
+                const dIcon = document.getElementById(dockId);
+                if (dIcon) dIcon.classList.add('active'); 
+            }
+        }
+        
+        function restoreApp(id) {
+            if (id === 'app-music') document.getElementById('mini-player').classList.remove('active-session');
+            toggleApp(id);
+        }
+
+        function collapseToMini(id) {
+            document.getElementById(id).style.display = 'none'; 
+            const dIcon = document.getElementById('dock-' + id.split('-')[1]);
+            if(dIcon) dIcon.classList.remove('active'); 
+            if (id === 'app-music') { 
+                updateMiniPlayer(); 
+                document.getElementById('mini-player').classList.add('active-session'); 
+            }
+        }
 
         function toggleZenMode() {
             document.body.classList.toggle('zen-mode');
@@ -479,7 +552,22 @@
         }
 
         function cycleHeat(el) { let lvl = parseInt(el.getAttribute('data-level')) || 0; lvl = (lvl + 1) % 4; el.setAttribute('data-level', lvl); }
+        function adjTemp(val) { targetTemp += val; document.getElementById('climate-temp').innerText = targetTemp.toFixed(1) + "°"; }
 
+        // ფანჯრების გადაადგილება (Drag)
+        let activeWin = null, offsetX, offsetY;
+        document.querySelectorAll('.app-header').forEach(h => {
+            h.onmousedown = (e) => { activeWin = h.parentElement; offsetX = e.clientX - activeWin.offsetLeft; offsetY = e.clientY - activeWin.offsetTop; document.querySelectorAll('.app-window').forEach(w => w.style.zIndex = 500); activeWin.style.zIndex = 1000; };
+        });
+        window.addEventListener('mousemove', (e) => { if(activeWin) { activeWin.style.left = (e.clientX - offsetX) + 'px'; activeWin.style.right = 'auto'; activeWin.style.top = (e.clientY - offsetY) + 'px'; } });
+        window.addEventListener('mouseup', () => activeWin = null);
+
+        let touchstartX = 0; let touchendX = 0;
+        const miniPlayerEl = document.getElementById('mini-player');
+        miniPlayerEl.addEventListener('touchstart', e => { if(e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return; touchstartX = e.changedTouches[0].screenX; });
+        miniPlayerEl.addEventListener('touchend', e => { if(e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return; touchendX = e.changedTouches[0].screenX; if (touchendX < touchstartX - 50) nextTrack(); if (touchendX > touchstartX + 50) prevTrack(); });
+
+        // --- YouTube Setup ---
         function setupMediaSession() {
             if ('mediaSession' in navigator) {
                 navigator.mediaSession.setActionHandler('play', () => { togglePlay(); });
@@ -526,28 +614,25 @@
         }
 
         function changeTheme() { applyTheme(document.getElementById('theme-select').value); }
-
         function updateTripUI() { document.getElementById('trip-text').innerText = `TRIP A: ${tripDistanceKm.toFixed(1)} KM`; }
-
         function resetTrip() { tripDistanceKm = 0.0; updateTripUI(); saveAppSetting('tripA', 0); showToast("🚗 ტრიპი განულდა"); }
 
-        let isFirstLoad = true;
+        function saveAppSetting(key, value) { if (isFirstLoad) return; let updates = {}; updates[key] = value; dbSettings.update(updates); }
+
         dbSettings.once('value', (snapshot) => {
             const data = snapshot.val();
             if (data) {
                 if (data.theme) applyTheme(data.theme, false);
                 if (data.tripA !== undefined) { tripDistanceKm = data.tripA; updateTripUI(); }
-
                 if (data.mapStyle) { currentMapStyle = data.mapStyle; document.getElementById('btn-map-layer').innerText = mapStyleIcons[currentMapStyle]; applyMapStyle(false); }
                 if (data.mapAutoRotate !== undefined) { mapAutoRotate = data.mapAutoRotate; const compassBtn = document.getElementById('btn-map-compass'); if(mapAutoRotate) { compassBtn.classList.add('active'); compassBtn.innerText = '🔼'; } }
                 if (data.trafficOn !== undefined) { trafficOn = data.trafficOn; if(trafficOn) { map.addLayer(trafficLayer); document.getElementById('btn-map-traffic').classList.add('active'); } } 
-                
                 if (data.carType) { carTypeSetting = data.carType; document.getElementById('car-type-select').value = data.carType; }
                 if (data.carSize) { carSizeSetting = data.carSize; document.getElementById('car-size-slider').value = data.carSize; }
                 if (data.apiKey) { apiKey = data.apiKey; document.getElementById('api-key-input').value = apiKey;}
                 if (data.lastUrl) { document.getElementById('url-input').value = data.lastUrl; document.getElementById('browser-iframe').src = data.lastUrl; }
-                if (data.shuffle !== undefined) { isShuffle = !data.shuffle; document.getElementById('btn-shuffle').classList.toggle('active-mode', isShuffle); } 
-                if (data.repeat !== undefined) { isRepeat = !data.repeat; document.getElementById('btn-repeat').classList.toggle('active-mode', isRepeat); }
+                if (data.shuffle !== undefined) { isShuffle = !data.shuffle; if(isShuffle) document.getElementById('btn-shuffle').classList.add('active-mode'); } 
+                if (data.repeat !== undefined) { isRepeat = !data.repeat; if(isRepeat) document.getElementById('btn-repeat').classList.add('active-mode'); }
 
                 if (data.stations && Array.isArray(data.stations)) {
                     if(data.stations.length > 0 && data.stations[0].src) { tracks = [...defaultYTTracks]; saveAppSetting('stations', tracks); } 
@@ -562,9 +647,15 @@
                     currentTrackIdx = savedMediaTrack;
                     document.getElementById('track-title').innerText = tracks[currentTrackIdx].title;
                 } else document.getElementById('track-title').innerText = "სია ცარიელია";
+                
                 renderStationList();
                 
-                if(tracks.length > 0) { document.getElementById('mini-player').classList.add('active-session'); updateMiniPlayer(); }
+                if(tracks.length > 0) { 
+                    if (document.getElementById('app-music').style.display !== 'flex') {
+                        document.getElementById('mini-player').classList.add('active-session'); 
+                        updateMiniPlayer(); 
+                    }
+                }
                 if(ytPlayerReady) loadTrack(pendingLoadTrackIdx, pendingPlay);
             } else {
                 applyTheme('neon', false); tracks = [...defaultYTTracks]; saveAppSetting('stations', tracks); renderStationList();
@@ -575,8 +666,7 @@
             isFirstLoad = false;
         });
 
-        function saveAppSetting(key, value) { if (isFirstLoad) return; let updates = {}; updates[key] = value; dbSettings.update(updates); }
-
+        // Track Logic
         function parseYouTubeUrl(url) {
             let videoId = null; let playlistId = null;
             const urlMatch = url.match(/(https?:\/\/[^\s]+)/); const cleanUrl = urlMatch ? urlMatch[1] : url;
@@ -615,6 +705,15 @@
             } else { tracks.push(newTrack); showToast("✅ დაემატა"); }
             
             saveAppSetting('stations', tracks); renderStationList(); document.getElementById('new-station-title').value = ''; document.getElementById('new-station-url').value = '';
+        }
+
+        function autoAddAndPlayYTUrl(url) {
+            const parsed = parseYouTubeUrl(url);
+            if(parsed) {
+                const title = "გაზიარებული: " + (parsed.type === 'playlist' ? "Playlist" : "Video");
+                tracks.unshift({ title: title, type: parsed.type, ytId: parsed.ytId });
+                saveAppSetting('stations', tracks); renderStationList(); loadTrack(0, true);
+            } else showToast("⚠️ ვერ ამოვიცანი YouTube ლინკი", true);
         }
 
         function editStation(index) {
@@ -700,6 +799,7 @@
             }
         }, 1000);
 
+        // --- AI API ---
         async function fetchGemini(url, payload) { 
             const retryDelays = [1000, 2000, 4000];
             for (let i = 0; i < 3; i++) { try { const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); if (!response.ok) throw new Error("HTTP error"); return await response.json(); } catch (e) { if (i === 2) throw e; await new Promise(r => setTimeout(r, retryDelays[i])); } }
@@ -787,79 +887,6 @@
 
         function loadUrl(url) { document.getElementById('url-input').value = url; document.getElementById('browser-iframe').src = url; saveAppSetting('lastUrl', url); }
         function navigateBrowser() { let val = document.getElementById('url-input').value.trim(); if(!val) return; const isUrl = val.includes('.') && !val.includes(' '); val = isUrl ? (val.startsWith('http') ? val : 'https://' + val) : 'https://duckduckgo.com/?q=' + encodeURIComponent(val) + '&kae=d'; document.getElementById('browser-iframe').src = val; saveAppSetting('lastUrl', val); }
-
-        // --- ფანჯრების (Apps) იდეალური მართვა ---
-        function toggleApp(id) {
-            const win = document.getElementById(id);
-            if (!win) return;
-            const wasActive = win.style.display === 'flex';
-            
-            // ვმალავთ ყველა ფანჯარას
-            document.querySelectorAll('.app-window').forEach(w => w.style.display = 'none');
-            // ვთიშავთ დოკის ყველა ღილაკს
-            document.querySelectorAll('.dock .dock-icon').forEach(i => i.classList.remove('active'));
-            
-            // მინი-პლეერის ლოგიკა
-            if (id === 'app-music') {
-                document.getElementById('mini-player').classList.remove('active-session');
-            } else if (tracks.length > 0) {
-                document.getElementById('mini-player').classList.add('active-session');
-                updateMiniPlayer();
-            }
-            
-            // ვხსნით ახალ ფანჯარას თუ ის უკვე არ იყო ღია
-            if (!wasActive) { 
-                win.style.display = 'flex'; 
-                const dockId = id.replace('app-', 'dock-');
-                const dIcon = document.getElementById(dockId);
-                if (dIcon) dIcon.classList.add('active'); 
-            }
-        }
-        
-        function restoreApp(id) {
-            if (id === 'app-music') document.getElementById('mini-player').classList.remove('active-session');
-            toggleApp(id);
-        }
-
-        function collapseToMini(id) {
-            document.getElementById(id).style.display = 'none'; 
-            document.getElementById('dock-' + id.split('-')[1]).classList.remove('active'); 
-            if (id === 'app-music') { updateMiniPlayer(); document.getElementById('mini-player').classList.add('active-session'); }
-        }
-
-        function adjTemp(val) { targetTemp += val; document.getElementById('climate-temp').innerText = targetTemp.toFixed(1) + "°"; }
-
-        // ფანჯრების გადაადგილება (Drag)
-        let activeWin = null, offsetX, offsetY;
-        document.querySelectorAll('.app-header').forEach(h => {
-            h.onmousedown = (e) => { activeWin = h.parentElement; offsetX = e.clientX - activeWin.offsetLeft; offsetY = e.clientY - activeWin.offsetTop; document.querySelectorAll('.app-window').forEach(w => w.style.zIndex = 500); activeWin.style.zIndex = 1000; };
-        });
-        window.onmousemove = (e) => { if(activeWin) { activeWin.style.left = (e.clientX - offsetX) + 'px'; activeWin.style.right = 'auto'; activeWin.style.top = (e.clientY - offsetY) + 'px'; } };
-        window.onmouseup = () => activeWin = null;
-
-        const sIn = document.getElementById('search-input'), sSug = document.getElementById('suggestions');
-        let searchTimeout;
-        sIn.oninput = function() {
-            clearTimeout(searchTimeout); const q = this.value.trim(); if(q.length < 2) { sSug.style.display = 'none'; return; }
-            searchTimeout = setTimeout(() => {
-                fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=5`).then(r => r.json()).then(data => {
-                    sSug.innerHTML = '';
-                    if(data.features?.length) {
-                        sSug.style.display = 'block';
-                        data.features.forEach(f => {
-                            const name = [f.properties.name, f.properties.city].filter(Boolean).join(', ');
-                            const li = document.createElement('li'); li.innerText = name;
-                            li.onclick = () => {
-                                sIn.value = name; sSug.style.display = 'none'; currentDestination = name;
-                                currentDestinationLatLng = L.latLng(f.geometry.coordinates[1], f.geometry.coordinates[0]);
-                                lastRouteUpdateLatLng = null; drawRoute(currentDestinationLatLng);
-                            };
-                            sSug.appendChild(li);
-                        });
-                    } else sSug.style.display = 'none';
-                });
-            }, 400); 
-        };
 
         function calculateETA(soc) {
             let remainingPercent = 100 - soc; if(remainingPercent <= 0) return "სრულად დატენილია";
@@ -980,7 +1007,12 @@
             }
         }
 
-        firebase.database().ref("5YJYGCEE123456789").on('value', (s) => {
+        function dismissBatteryAlert() {
+            document.getElementById('battery-alert').style.display = 'none';
+            batteryAlertDismissed = true;
+        }
+
+        db.on('value', (s) => {
             const d = s.val(); if(!d) return;
             
             if (d.battery_soc !== undefined) {
@@ -1014,9 +1046,9 @@
                             document.querySelectorAll('.app-window').forEach(w => w.style.display = 'none');
                             document.querySelectorAll('.dock .dock-icon').forEach(i => i.classList.remove('active'));
                             if (tracks.length > 0) document.getElementById('mini-player').classList.add('active-session');
-                            firebase.database().ref("5YJYGCEE123456789").update({ wasMoving: true });
+                            db.update({ wasMoving: true });
                         } else if (calcSpeedKmh <= 2) {
-                            firebase.database().ref("5YJYGCEE123456789").update({ wasMoving: false });
+                            db.update({ wasMoving: false });
                         }
                         
                         if (distanceMeters > 2) currentHeading = getBearing(lastPosition.lat, lastPosition.lng, ll.lat, ll.lng);
@@ -1066,14 +1098,14 @@
             }
         }
 
-        firebase.database().ref("5YJYGCEE123456789/target_address").on('value', (s) => {
+        db.child("target_address").on('value', (s) => {
             const data = s.val(); if(!data) return;
             let textData = "";
             if(typeof data === 'string') textData = data; else if(data.address) textData = data.address; else if(typeof data === 'object') for(let key in data) if(typeof data[key] === 'string') { textData = data[key]; break; }
             if(!textData || textData.trim().length < 2) return;
             
             handleIncomingText(textData.trim());
-            firebase.database().ref("5YJYGCEE123456789/target_address").remove(); 
+            db.child('target_address').remove(); 
         });
     </script>
 </body>
