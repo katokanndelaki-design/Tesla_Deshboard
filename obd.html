@@ -29,8 +29,6 @@
         #master-log { width: 100%; height: 250px; background: #0a0a0a; color: #00ffaa; border: 1px solid #333; border-radius: 12px; padding: 15px; font-family: monospace; font-size: 13px; resize: none; box-sizing: border-box;}
         .btn-panel { display: flex; gap: 10px; justify-content: flex-start; margin-top: 15px; }
         .btn { padding: 10px 20px; font-size: 14px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; color: white;}
-        
-        .offline-mode .card { opacity: 0.4; }
     </style>
 </head>
 <body>
@@ -70,7 +68,6 @@
         let prevData = { doors1: '', doors2: '', climate: '', seats: '', drive: '' };
 
         window.onload = function() {
-            // წინა სესიიდან შენახული ლოგების აღდგენა
             const savedLog = localStorage.getItem('tesla_master_log');
             if (savedLog) {
                 const logArea = document.getElementById('master-log');
@@ -129,21 +126,18 @@
             };
         };
 
-        // წამზომი გაიზარდა 10 წამამდე
+        // წამზომი გაიზარდა 60 წამამდე, რათა ინტერნეტის ლაგებმა არ გააწითლოს საიტი ტყუილად
         setInterval(() => {
             if (localPulseTime === 0) {
             } 
-            else if (Date.now() - localPulseTime > 10000) { 
-                document.getElementById('conn-status').innerHTML = "<span style='color:#ff4757;'>🔴 კავშირი არ არის (შეამოწმეთ ინტერნეტი ან კვება)</span>";
-                document.getElementById('main-grid').classList.add('offline-mode');
+            else if (Date.now() - localPulseTime > 60000) { 
+                document.getElementById('conn-status').innerHTML = "<span style='color:#ff4757;'>🔴 კავშირი სუსტია (ველოდები მონაცემს...)</span>";
             } 
             else if (!isObdOnline) {
-                document.getElementById('conn-status').innerHTML = "<span style='color:#ff9f43; background:rgba(255, 159, 67, 0.1); border:1px solid #ff9f43;'>🟡 ინტერნეტი არის, მაგრამ OBD/Bluetooth გათიშულია</span>";
-                document.getElementById('main-grid').classList.remove('offline-mode');
+                document.getElementById('conn-status').innerHTML = "<span style='color:#ff9f43; background:rgba(255, 159, 67, 0.1); border:1px solid #ff9f43;'>🟡 ინტერნეტი არის, მაგრამ OBD2 გათიშულია</span>";
             } 
             else {
                 document.getElementById('conn-status').innerHTML = "<span style='color:#00ffaa; background:rgba(0, 255, 170, 0.1); border:1px solid #00ffaa;'>🟢 ონლაინ (Live)</span>";
-                document.getElementById('main-grid').classList.remove('offline-mode');
             }
         }, 1000);
 
@@ -153,8 +147,6 @@
             let time = new Date().toLocaleTimeString();
             logArea.value += `[${time}] ${name} ➡️ ${val}\n`;
             logArea.scrollTop = logArea.scrollHeight; 
-            
-            // ვინახავთ LocalStorage-ში განახლებისთანავე
             localStorage.setItem('tesla_master_log', logArea.value);
         }
 
