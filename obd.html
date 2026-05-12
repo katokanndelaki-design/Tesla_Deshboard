@@ -5,14 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Tesla Cloud Telemetry</title>
     
-    <!-- Firebase-ის ბიბლიოთეკები -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
     <style>
         body { font-family: system-ui; background-color: #050505; color: #fff; text-align: center; padding: 15px; margin: 0; }
         h2 { color: #00ffaa; letter-spacing: 2px; margin-bottom: 5px; text-transform: uppercase;}
-        #conn-status { font-size: 15px; font-weight: bold; margin-bottom: 20px; transition: 0.3s; padding: 5px; border-radius: 8px; display: inline-block;}
+        #conn-status { font-size: 15px; font-weight: bold; margin-bottom: 5px; transition: 0.3s; padding: 5px; border-radius: 8px; display: inline-block;}
+        #obd-status { font-size: 12px; color: #aaa; margin-bottom: 20px;}
         
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; max-width: 900px; margin: auto; }
         .card { background: #151515; border: 1px solid #333; padding: 15px; border-radius: 12px; text-align: left; transition: opacity 0.3s; }
@@ -35,7 +35,6 @@
 </head>
 <body>
     <h2>⚡ Tesla Cloud Telemetry</h2>
-    <!-- ერთი მთავარი სტატუსის ველი -->
     <div id="conn-status" style="color:#ff9f43">📡 ველოდები სისტემის ჩართვას...</div>
     
     <div class="grid" id="main-grid">
@@ -64,13 +63,11 @@
     </div>
 
     <script>
-        // ლოკალური ცვლადები სისტემის სტატუსებისთვის
         let lastSeenPulse = -1; 
         let localPulseTime = 0; 
-        let isObdOnline = false; // ბლუთუზის/OBD-ს მდგომარეობა
+        let isObdOnline = false; 
         let prevData = { doors1: '', doors2: '', climate: '', seats: '', drive: '' };
 
-        // Firebase-ის ინიციალიზაცია უსაფრთხო გარემოში
         window.onload = function() {
             if (typeof firebase === 'undefined') {
                 document.getElementById('conn-status').innerHTML = "<span style='color:#ff4757;'>🔴 შეცდომა: Firebase ვერ ჩაიტვირთა.</span>";
@@ -82,23 +79,18 @@
                 databaseURL: "https://tesla-telemetry-29fb6-default-rtdb.europe-west1.firebasedatabase.app",
             };
             
-            if (!firebase.apps.length) {
-                firebase.initializeApp(fbConfig);
-            }
+            if (!firebase.apps.length) firebase.initializeApp(fbConfig);
             const db = firebase.database();
             const vinPath = "/5YJYGDEF1LF009721"; 
 
-            // მონაცემების მოსმენა
             db.ref(vinPath + '/can_live').on('value', (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
-                    // პულსის შემოწმება (ახლდება თუ არა ESP32-დან)
                     if(data.pulse !== undefined && data.pulse !== lastSeenPulse) {
                         lastSeenPulse = data.pulse;
                         localPulseTime = Date.now(); 
                     }
                     
-                    // OBD კავშირის სტატუსი
                     isObdOnline = !!data.obd;
                     
                     document.getElementById('v-speed').innerText = data.c257 || 'ველოდები...';
@@ -118,7 +110,6 @@
                 }
             });
 
-            // ბრძანების გაგზავნა ხელმისაწვდომი ხდება გლობალურად
             window.sendCloudCmd = function(id, dataString) {
                 const commandToESP = id + "|" + dataString;
                 db.ref(vinPath + '/command').set(commandToESP);
@@ -126,23 +117,19 @@
             };
         };
 
-        // მკაცრი Watchdog სამივე სტატუსისთვის
+        // წამზომი გაიზარდა 10 წამამდე, რომ მოძრავ მანქანაში მობილური ინტერნეტის შეფერხებებმა არ გააწითლოს საიტი
         setInterval(() => {
             if (localPulseTime === 0) {
-                // საწყისი მდგომარეობა
             } 
-            else if (Date.now() - localPulseTime > 4000) {
-                // 1. ESP32 გათიშულია (არ აქვს ინტერნეტი ან დენი)
+            else if (Date.now() - localPulseTime > 10000) { 
                 document.getElementById('conn-status').innerHTML = "<span style='color:#ff4757;'>🔴 კავშირი არ არის (შეამოწმეთ ინტერნეტი ან კვება)</span>";
                 document.getElementById('main-grid').classList.add('offline-mode');
             } 
             else if (!isObdOnline) {
-                // 2. ESP32 ონლაინშია, მაგრამ OBD2 (Bluetooth) ვერ იპოვა
                 document.getElementById('conn-status').innerHTML = "<span style='color:#ff9f43; background:rgba(255, 159, 67, 0.1); border:1px solid #ff9f43;'>🟡 ინტერნეტი არის, მაგრამ OBD/Bluetooth გათიშულია</span>";
                 document.getElementById('main-grid').classList.remove('offline-mode');
             } 
             else {
-                // 3. ყველაფერი მუშაობს (ESP32-საც აქვს ინტერნეტი და OBD-საც ხედავს)
                 document.getElementById('conn-status').innerHTML = "<span style='color:#00ffaa; background:rgba(0, 255, 170, 0.1); border:1px solid #00ffaa;'>🟢 ონლაინ (Live)</span>";
                 document.getElementById('main-grid').classList.remove('offline-mode');
             }
