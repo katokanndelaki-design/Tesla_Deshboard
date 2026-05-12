@@ -36,6 +36,7 @@
 <body>
     <h2>⚡ Tesla Cloud Telemetry</h2>
     <div id="conn-status" style="color:#ff9f43">📡 ველოდები სისტემის ჩართვას...</div>
+    <div id="obd-status">OBD კავშირი: უცნობია</div>
     
     <div class="grid" id="main-grid">
         <div class="card"><div class="card-header"><div class="label">🏎️ სიჩქარე (257)</div><button class="add-btn" onclick="logManual('სიჩქარე (257)', 'v-speed')">➕ ლოგში</button></div><div class="value-box c-green" id="v-speed">ველოდები...</div></div>
@@ -58,7 +59,7 @@
         <textarea id="master-log" readonly></textarea>
         <div class="btn-panel">
             <button class="btn" style="background:#444;" onclick="document.getElementById('master-log').select(); document.execCommand('copy'); alert('კოპირებულია!');">📋 კოპირება</button>
-            <button class="btn" style="background:#ff4757;" onclick="document.getElementById('master-log').value=''">🗑 წაშლა</button>
+            <button class="btn" style="background:#ff4757;" onclick="clearLog()">🗑 წაშლა</button>
         </div>
     </div>
 
@@ -69,6 +70,14 @@
         let prevData = { doors1: '', doors2: '', climate: '', seats: '', drive: '' };
 
         window.onload = function() {
+            // წინა სესიიდან შენახული ლოგების აღდგენა
+            const savedLog = localStorage.getItem('tesla_master_log');
+            if (savedLog) {
+                const logArea = document.getElementById('master-log');
+                logArea.value = savedLog;
+                logArea.scrollTop = logArea.scrollHeight;
+            }
+
             if (typeof firebase === 'undefined') {
                 document.getElementById('conn-status').innerHTML = "<span style='color:#ff4757;'>🔴 შეცდომა: Firebase ვერ ჩაიტვირთა.</span>";
                 return;
@@ -102,6 +111,9 @@
                     document.getElementById('v-doors1').innerText = data.c218 || 'ველოდები...';
                     document.getElementById('v-doors2').innerText = data.c241 || 'ველოდები...';
 
+                    let obdStat = data.obd ? "<span style='color:#00ffaa'>დაკავშირებულია</span>" : "<span style='color:#ff4757'>გათიშულია</span>";
+                    document.getElementById('obd-status').innerHTML = "OBD კავშირი: " + obdStat;
+
                     checkAutoLog('doors1', '🚪 კარები (218)', data.c218);
                     checkAutoLog('doors2', '🪟 ფანჯრები (241)', data.c241);
                     checkAutoLog('climate', '❄️ კლიმატი (321)', data.c321);
@@ -117,7 +129,7 @@
             };
         };
 
-        // წამზომი გაიზარდა 10 წამამდე, რომ მოძრავ მანქანაში მობილური ინტერნეტის შეფერხებებმა არ გააწითლოს საიტი
+        // წამზომი გაიზარდა 10 წამამდე
         setInterval(() => {
             if (localPulseTime === 0) {
             } 
@@ -141,6 +153,9 @@
             let time = new Date().toLocaleTimeString();
             logArea.value += `[${time}] ${name} ➡️ ${val}\n`;
             logArea.scrollTop = logArea.scrollHeight; 
+            
+            // ვინახავთ LocalStorage-ში განახლებისთანავე
+            localStorage.setItem('tesla_master_log', logArea.value);
         }
 
         function logManual(name, elementId) {
@@ -156,6 +171,11 @@
                 }
                 prevData[key] = newValue;
             }
+        }
+
+        function clearLog() {
+            document.getElementById('master-log').value = '';
+            localStorage.removeItem('tesla_master_log');
         }
     </script>
 </body>
