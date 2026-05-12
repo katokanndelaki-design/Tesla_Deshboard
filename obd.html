@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="ka">
 <head>
@@ -31,8 +30,7 @@
         .btn-panel { display: flex; gap: 10px; justify-content: flex-start; margin-top: 15px; }
         .btn { padding: 10px 20px; font-size: 14px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; color: white;}
         
-        /* როცა გათიშულია ეკრანი ოდნავ მუქდება */
-        .offline-mode .card { opacity: 0.5; }
+        .offline-mode .card { opacity: 0.4; }
     </style>
 </head>
 <body>
@@ -78,11 +76,9 @@
         let localPulseTime = 0; 
         let prevData = { doors1: '', doors2: '', climate: '', seats: '', drive: '' };
 
-        // მონაცემების მოსმენა
         db.ref(vinPath + '/can_live').on('value', (snapshot) => {
             const data = snapshot.val();
             if (data) {
-                // თუ პულსი შეიცვალა, ე.ი. ნამდვილად ცოცხალია
                 if(data.pulse !== undefined && data.pulse !== lastSeenPulse) {
                     lastSeenPulse = data.pulse;
                     localPulseTime = Date.now(); 
@@ -100,7 +96,6 @@
                 let obdStat = data.obd ? "<span style='color:#00ffaa'>დაკავშირებულია</span>" : "<span style='color:#ff4757'>გათიშულია</span>";
                 document.getElementById('obd-status').innerHTML = "OBD კავშირი: " + obdStat;
 
-                // ავტო-ლოგირება
                 checkAutoLog('doors1', '🚪 კარები (218)', data.c218);
                 checkAutoLog('doors2', '🪟 ფანჯრები (241)', data.c241);
                 checkAutoLog('climate', '❄️ კლიმატი (321)', data.c321);
@@ -109,19 +104,14 @@
             }
         });
 
-        // მკაცრი Watchdog (ცრუ ონლაინის გამოსარიცხად)
         setInterval(() => {
             if (localPulseTime === 0) {
-                // ჯერ არ დაწყებულა
-            } 
-            else if (Date.now() - localPulseTime > 4000) {
-                // 4 წამი გავიდა, ე.ი. ESP32 გაითიშა
+                // Initial wait
+            } else if (Date.now() - localPulseTime > 4000) {
                 document.getElementById('conn-status').innerHTML = "<span style='color:#ff4757;'>🔴 ESP32 გათიშულია (Offline)</span>";
                 document.getElementById('obd-status').innerHTML = "შესაძლოა ESP32-ს არ აქვს ინტერნეტი ან დენი";
                 document.getElementById('main-grid').classList.add('offline-mode');
-            } 
-            else {
-                // ყველაფერი მუშაობს
+            } else {
                 document.getElementById('conn-status').innerHTML = "<span style='color:#00ffaa;'>🟢 ESP32 ონლაინშია (Live)</span>";
                 document.getElementById('main-grid').classList.remove('offline-mode');
             }
@@ -158,6 +148,3 @@
     </script>
 </body>
 </html>
-
-
-```
