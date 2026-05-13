@@ -3,218 +3,301 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Tesla Cloud Telemetry</title>
+    <title>Tesla Live Telemetry v1.3 (Full Grid)</title>
     
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
     <style>
-        body { font-family: system-ui; background-color: #050505; color: #fff; text-align: center; padding: 15px; margin: 0; }
-        h2 { color: #00ffaa; letter-spacing: 2px; margin-bottom: 5px; text-transform: uppercase; position: relative;}
-        
-        /* სრული ეკრანის ღილაკი */
-        .fs-btn { position: absolute; right: 15px; top: 15px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 12px; transition: 0.3s; }
-        .fs-btn:hover { background: rgba(255,255,255,0.2); }
+        :root {
+            --accent: #00ffaa;
+            --bg: #050505;
+            --card-bg: #111111;
+            --text: #ffffff;
+        }
 
-        #conn-status { font-size: 14px; font-weight: bold; margin-bottom: 5px; transition: 0.3s; padding: 5px 10px; border-radius: 8px; display: inline-block;}
-        #ping-status { font-size: 11px; color: #888; margin-bottom: 20px; font-family: monospace; display: block; }
+        body { 
+            font-family: 'Segoe UI', system-ui, sans-serif; 
+            background-color: var(--bg); 
+            color: var(--text); 
+            text-align: center; 
+            padding: 15px; 
+            margin: 0; 
+        }
 
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; max-width: 900px; margin: auto; }
-        .card { background: #151515; border: 1px solid #333; padding: 15px; border-radius: 12px; text-align: left; transition: 0.3s; }
-        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-        .label { font-size: 13px; color: #888; text-transform: uppercase; font-weight: bold;}
-        .add-btn { background: #333; color: #fff; border: 1px solid #555; border-radius: 6px; cursor: pointer; padding: 4px 10px; font-size: 12px; transition: 0.2s; }
-        .add-btn:active { background: #00ffaa; color: #000; border-color: #00ffaa; }
+        h2 { 
+            color: var(--accent); 
+            letter-spacing: 2px; 
+            text-transform: uppercase;
+            margin: 10px 0;
+            font-size: 1.2rem;
+        }
 
-        .value-box { background: #000; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 15px; border: 1px solid #222; text-align: center; color: #00a8ff;}
-        
-        .c-green { color: #00ffaa; } .c-orange { color: #ff9f43; } .c-red { color: #ff4757; } .c-cyan { color: #00d2d3; } .c-purple { color: #9b59b6; } .c-yellow { color: #f1c40f; }
-        
-        .master-log-container { max-width: 900px; margin: 30px auto; text-align: left; }
-        #master-log { width: 100%; height: 250px; background: #0a0a0a; color: #00ffaa; border: 1px solid #333; border-radius: 12px; padding: 15px; font-family: monospace; font-size: 13px; resize: none; box-sizing: border-box;}
-        .btn-panel { display: flex; gap: 10px; justify-content: flex-start; margin-top: 15px; flex-wrap: wrap; }
-        .btn { padding: 10px 20px; font-size: 13px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; color: white; transition: 0.2s; }
-        .btn:hover { opacity: 0.8; }
+        .status-badge {
+            font-size: 10px;
+            font-weight: bold;
+            padding: 4px 10px;
+            border-radius: 20px;
+            display: inline-block;
+            margin: 2px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.05);
+        }
+
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); 
+            gap: 12px; 
+            max-width: 1000px; 
+            margin: auto; 
+        }
+
+        .card { 
+            background: var(--card-bg); 
+            border: 1px solid #222; 
+            padding: 12px; 
+            border-radius: 14px; 
+            text-align: left; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .label { 
+            font-size: 10px; 
+            color: #888; 
+            text-transform: uppercase; 
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+
+        .value-box { 
+            background: #000; 
+            padding: 8px; 
+            border-radius: 8px; 
+            font-family: 'Courier New', monospace; 
+            font-size: 16px; 
+            border: 1px solid #1a1a1a; 
+            text-align: center; 
+            color: var(--accent);
+            word-break: break-all;
+        }
+
+        .unit { font-size: 10px; color: #555; margin-left: 3px; }
+
+        .btn-group { display: flex; gap: 5px; margin-top: 10px; }
+        .btn {
+            flex: 1;
+            padding: 10px;
+            border-radius: 8px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            color: white;
+            font-size: 10px;
+            text-transform: uppercase;
+        }
+
+        .btn-open { background: #2ed573; }
+        .btn-close { background: #ff4757; }
+
+        .alert-box {
+            background: rgba(255, 159, 67, 0.1);
+            border: 1px solid #ff9f43;
+            color: #ff9f43;
+            padding: 8px;
+            border-radius: 8px;
+            font-size: 11px;
+            margin-bottom: 10px;
+            display: none;
+        }
+
+        #raw-log {
+            margin-top: 20px;
+            font-size: 10px;
+            color: #444;
+            font-family: monospace;
+        }
     </style>
 </head>
 <body>
-    <button class="fs-btn" onclick="toggleFullScreen()">🔲 სრული ეკრანი</button>
-    <h2>⚡ Tesla Cloud Telemetry</h2>
-    
-    <div id="conn-status" style="color:#ff9f43; background:rgba(255, 159, 67, 0.1);">📡 ველოდები სისტემის ჩართვას...</div>
-    <span id="ping-status">ბოლო განახლება: --</span>
 
-    <div class="grid" id="main-grid">
-        <div class="card"><div class="card-header"><div class="label">🏎️ სიჩქარე (101)</div><button class="add-btn" onclick="logManual('სიჩქარე (101)', 'v-speed')">➕ ლოგში</button></div><div class="value-box c-green" id="v-speed">ველოდები...</div></div>
-        <div class="card"><div class="card-header"><div class="label">🔋 ბატარეის SOC % (124)</div><button class="add-btn" onclick="logManual('ბატარეა (124)', 'v-soc')">➕ ლოგში</button></div><div class="value-box c-orange" id="v-soc">ველოდები...</div></div>
-        <div class="card"><div class="card-header"><div class="label">⚡ BMS ძაბვა/დენი (084)</div><button class="add-btn" onclick="logManual('BMS (084)', 'v-batt')">➕ ლოგში</button></div><div class="value-box c-cyan" id="v-batt">ველოდები...</div></div>
-        <div class="card"><div class="card-header"><div class="label">❄️ კლიმატ-კონტროლი (141)</div><button class="add-btn" onclick="logManual('კლიმატი (141)', 'v-climate')">➕ ლოგში</button></div><div class="value-box c-purple" id="v-climate">ველოდები...</div></div>
-        <div class="card"><div class="card-header"><div class="label">🔥 გათბობა (338)</div><button class="add-btn" onclick="logManual('გათბობა (338)', 'v-seats')">➕ ლოგში</button></div><div class="value-box c-yellow" id="v-seats">ველოდები...</div></div>
-        <div class="card"><div class="card-header"><div class="label">🕹️ საჭე / PRND (118)</div><button class="add-btn" onclick="logManual('საჭე (118)', 'v-drive')">➕ ლოგში</button></div><div class="value-box" style="color:#fff;" id="v-drive">ველოდები...</div></div>
-        <div class="card" style="border-color: #ff4757;"><div class="card-header"><div class="label">🚪 კარები / საბარგული (0DA)</div><button class="add-btn" onclick="logManual('კარები (0DA)', 'v-doors1')">➕ ლოგში</button></div><div class="value-box c-red" id="v-doors1">ველოდები...</div></div>
-        <div class="card" style="border-color: #ff4757;"><div class="card-header"><div class="label">🪟 ფანჯრები / საკეტები (0F1)</div><button class="add-btn" onclick="logManual('ფანჯრები (0F1)', 'v-doors2')">➕ ლოგში</button></div><div class="value-box c-red" id="v-doors2">ველოდები...</div>
-            <div class="btn-panel" style="justify-content: center;">
-                <button class="btn" style="background:#2ed573;" onclick="sendCloudCmd('0DA', '02 00 00 00 00 00 00 00')">🔓 გაღება</button>
-                <button class="btn" style="background:#ff4757;" onclick="sendCloudCmd('0DA', '01 00 00 00 00 00 00 00')">🔒 დაკეტვა</button>
+    <h2>⚡ Tesla Telemetry v1.3</h2>
+    
+    <div id="security-alert" class="alert-box">
+        ⚠️ ლოკალური WebSocket HTTPS-ზე დაბლოკილია. ჩართულია Cloud რეჟიმი.
+    </div>
+
+    <div style="margin-bottom: 15px;">
+        <div id="ws-status" class="status-badge" style="color: #ff4757;">WebSocket: OFF</div>
+        <div id="obd-status" class="status-badge" style="color: #ff9f43;">OBD2: WAIT...</div>
+    </div>
+
+    <div class="grid">
+        <!-- 1. სიჩქარე -->
+        <div class="card">
+            <span class="label">🏎️ სიჩქარე (101)</span>
+            <div class="value-box" id="v-speed">0<span class="unit">km/h</span></div>
+        </div>
+
+        <!-- 2. ბატარეა SOC -->
+        <div class="card">
+            <span class="label">🔋 ბატარეა (124)</span>
+            <div class="value-box" id="v-soc" style="color: #ff9f43;">0.0<span class="unit">%</span></div>
+        </div>
+
+        <!-- 3. BMS ძაბვა -->
+        <div class="card">
+            <span class="label">⚡ ძაბვა (084)</span>
+            <div class="value-box" id="v-volt" style="color: #00a8ff;">0.0<span class="unit">V</span></div>
+        </div>
+
+        <!-- 4. გადაცემა -->
+        <div class="card">
+            <span class="label">🕹️ გადაცემა (118)</span>
+            <div class="value-box" id="v-gear" style="color: #fff;">P</div>
+        </div>
+
+        <!-- 5. კარები -->
+        <div class="card">
+            <span class="label">🚪 კარები (0DA)</span>
+            <div class="value-box" id="v-doors" style="font-size: 12px; color: #ff4757;">--</div>
+        </div>
+
+        <!-- 6. ფანჯრები -->
+        <div class="card">
+            <span class="label">🪟 ფანჯრები (0F1)</span>
+            <div class="value-box" id="v-windows" style="font-size: 12px; color: #ff4757;">--</div>
+        </div>
+
+        <!-- 7. კლიმატი -->
+        <div class="card">
+            <span class="label">❄️ კლიმატი (141)</span>
+            <div class="value-box" id="v-climate" style="font-size: 12px; color: #9b59b6;">--</div>
+        </div>
+
+        <!-- 8. სავარძლები -->
+        <div class="card">
+            <span class="label">🔥 გათბობა (338)</span>
+            <div class="value-box" id="v-seats" style="font-size: 12px; color: #f1c40f;">--</div>
+        </div>
+
+        <!-- კონტროლი -->
+        <div class="card" style="grid-column: span 2; border-color: #333;">
+            <span class="label">🛡️ უსაფრთხო მართვა (TTL)</span>
+            <div class="btn-group">
+                <button class="btn btn-open" onclick="sendSecureCmd('0DA', '02 00 00 00 00 00 00 00')">🔓 გაღება</button>
+                <button class="btn btn-close" onclick="sendSecureCmd('0DA', '01 00 00 00 00 00 00 00')">🔒 დაკეტვა</button>
             </div>
         </div>
     </div>
 
-    <div class="master-log-container">
-        <div class="label" style="color:#fff;">📝 ცვლილებების ლოგი (AUTO LOG)</div>
-        <textarea id="master-log" readonly></textarea>
-        <div class="btn-panel">
-            <button class="btn" style="background:#444;" onclick="document.getElementById('master-log').select(); document.execCommand('copy'); alert('კოპირებულია!');">📋 კოპირება</button>
-            <button class="btn" style="background:#00a8ff;" onclick="downloadLog()">💾 .txt ფაილად ჩამოტვირთვა</button>
-            <button class="btn" style="background:#ff4757; margin-left: auto;" onclick="clearLog()">🗑 წაშლა</button>
-        </div>
-    </div>
+    <div id="raw-log">სისტემა მზად არის.</div>
 
     <script>
-        let localPulseTime = 0; 
-        let isObdOnline = false; 
-        let prevData = { doors1: '', doors2: '', climate: '', seats: '', drive: '', speed: '' };
-
-        window.onload = function() {
-            const savedLog = localStorage.getItem('tesla_master_log');
-            if (savedLog) {
-                const logArea = document.getElementById('master-log');
-                logArea.value = savedLog;
-                logArea.scrollTop = logArea.scrollHeight;
-            }
-
-            if (typeof firebase === 'undefined') {
-                document.getElementById('conn-status').innerHTML = "<span style='color:#ff4757;'>🔴 შეცდომა: Firebase ვერ ჩაიტვირთა.</span>";
-                return;
-            }
-
-            const fbConfig = {
-                apiKey: "AIzaSyAH3yVbBGrhvzbSx7J1GxNcVsl_ykX_OX0",
-                databaseURL: "https://tesla-telemetry-29fb6-default-rtdb.europe-west1.firebasedatabase.app",
-            };
-            
-            if (!firebase.apps.length) firebase.initializeApp(fbConfig);
-            const db = firebase.database();
-            const vinPath = "/5YJYGDEF1LF009721"; 
-
-            db.ref(vinPath + '/can_live').on('value', (snapshot) => {
-                const data = snapshot.val();
-                if (data) {
-                    localPulseTime = Date.now(); 
-                    isObdOnline = !!data.obd;
-                    
-                    // ახლა ვიღებთ მონაცემებს HEX გასაღებებით
-                    document.getElementById('v-speed').innerText = data.c101 || 'ველოდები...';
-                    document.getElementById('v-soc').innerText = data.c124 || 'ველოდები...';
-                    document.getElementById('v-batt').innerText = data.c084 || 'ველოდები...';
-                    document.getElementById('v-climate').innerText = data.c141 || 'ველოდები...';
-                    document.getElementById('v-seats').innerText = data.c338 || 'ველოდები...';
-                    document.getElementById('v-drive').innerText = data.c118 || 'ველოდები...';
-                    document.getElementById('v-doors1').innerText = data.c0DA || 'ველოდები...';
-                    document.getElementById('v-doors2').innerText = data.c0F1 || 'ველოდები...';
-
-                    checkAutoLog('speed', '🏎️ სიჩქარე (101)', data.c101);
-                    checkAutoLog('doors1', '🚪 კარები (0DA)', data.c0DA);
-                    checkAutoLog('doors2', '🪟 ფანჯრები (0F1)', data.c0F1);
-                    checkAutoLog('climate', '❄️ კლიმატი (141)', data.c141);
-                    checkAutoLog('seats', '🔥 გათბობა (338)', data.c338);
-                    checkAutoLog('drive', '🕹️ საჭე/PRND (118)', data.c118);
-                }
-            });
-
-            window.sendCloudCmd = function(id, dataString) {
-                const commandToESP = id + "|" + dataString;
-                db.ref(vinPath + '/command').set(commandToESP);
-                updateLog('🔧 ბრძანება ღრუბლიდან', id + " -> " + dataString);
-            };
+        // --- კონფიგურაცია ---
+        const ESP_IP = "192.168.43.150"; 
+        const VIN_PATH = "/5YJYGDEF1LF009721";
+        
+        const fbConfig = {
+            apiKey: "AIzaSyAH3yVbBGrhvzbSx7J1GxNcVsl_ykX_OX0",
+            databaseURL: "https://tesla-telemetry-29fb6-default-rtdb.europe-west1.firebasedatabase.app"
         };
 
-        setInterval(() => {
-            if (localPulseTime === 0) return;
+        firebase.initializeApp(fbConfig);
+        const db = firebase.database();
+
+        let socket;
+        let isWsActive = false;
+
+        // --- UI-ს განახლება ---
+        function updateDisplay(data) {
+            if (data.speed !== undefined) document.getElementById('v-speed').innerHTML = `${data.speed}<span class="unit">km/h</span>`;
+            if (data.soc !== undefined) document.getElementById('v-soc').innerHTML = `${data.soc.toFixed(1)}<span class="unit">%</span>`;
+            if (data.volt !== undefined) document.getElementById('v-volt').innerHTML = `${data.volt.toFixed(1)}<span class="unit">V</span>`;
+            if (data.gear !== undefined) document.getElementById('v-gear').innerText = data.gear;
             
-            let diff = Date.now() - localPulseTime;
-            let diffSeconds = Math.floor(diff / 1000);
-            let statusEl = document.getElementById('conn-status');
-            let pingEl = document.getElementById('ping-status');
+            // Raw HEX პაკეტების ასახვა (ID-ს გარეშე)
+            if (data.doors) document.getElementById('v-doors').innerText = data.doors.replace("0DA ", "");
+            if (data.windows) document.getElementById('v-windows').innerText = data.windows.replace("0F1 ", "");
+            if (data.climate) document.getElementById('v-climate').innerText = data.climate.replace("141 ", "");
+            if (data.seats) document.getElementById('v-seats').innerText = data.seats.replace("338 ", "");
 
-            pingEl.innerText = `ბოლო განახლება: ${diffSeconds} წამის წინ`;
-
-            if (diff > 120000) { 
-                statusEl.innerHTML = "<span style='color:#ff4757;'>🔴 კავშირი გაწყვეტილია (> 2 წთ)</span>";
-                statusEl.style.background = "rgba(255, 71, 87, 0.1)";
-            } 
-            else if (diff > 6000) { 
-                statusEl.innerHTML = "<span style='color:#f1c40f;'>🟡 ინტერნეტი ჭედავს (ველოდები ახალ მონაცემს...)</span>";
-                statusEl.style.background = "rgba(241, 196, 15, 0.1)";
-            } 
-            else if (!isObdOnline) {
-                statusEl.innerHTML = "<span style='color:#ff9f43;'>🟡 ინტერნეტი არის, მაგრამ OBD2 ვერ ვხედავ</span>";
-                statusEl.style.background = "rgba(255, 159, 67, 0.1)";
-            } 
-            else { 
-                statusEl.innerHTML = "<span style='color:#00ffaa;'>🟢 ონლაინ (Live)</span>";
-                statusEl.style.background = "rgba(0, 255, 170, 0.1)";
-            }
-        }, 1000);
-
-        function updateLog(name, val) {
-            if(!val) return;
-            let logArea = document.getElementById('master-log');
-            let time = new Date().toLocaleTimeString();
-            logArea.value += `[${time}] ${name} ➡️ ${val}\n`;
-            logArea.scrollTop = logArea.scrollHeight; 
-            localStorage.setItem('tesla_master_log', logArea.value);
-        }
-
-        function logManual(name, elementId) {
-            let val = document.getElementById(elementId).innerText;
-            if(val.indexOf('ველოდები') === -1) updateLog(name + ' (ხელით)', val);
-        }
-
-        function checkAutoLog(key, name, newValue) {
-            if (!newValue) return;
-            if (prevData[key] !== newValue) {
-                if (prevData[key] !== '' && newValue.indexOf('ველოდები') === -1) {
-                    updateLog(name + ' (ავტო)', newValue);
-                }
-                prevData[key] = newValue;
-            }
-        }
-
-        function clearLog() {
-            document.getElementById('master-log').value = '';
-            localStorage.removeItem('tesla_master_log');
-        }
-
-        function downloadLog() {
-            let logText = document.getElementById('master-log').value;
-            if(!logText.trim()) {
-                alert("ლოგი ცარიელია!");
-                return;
-            }
-            let blob = new Blob([logText], { type: "text/plain" });
-            let a = document.createElement("a");
-            a.href = URL.createObjectURL(blob);
-            
-            let dateStr = new Date().toISOString().replace(/T/, '_').replace(/:/g, '-').split('.')[0];
-            a.download = `Tesla_Log_${dateStr}.txt`;
-            
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-        }
-
-        function toggleFullScreen() {
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().catch(err => {
-                    console.log(`შეცდომა სრული ეკრანის ჩართვისას: ${err.message}`);
-                });
+            const obdEl = document.getElementById('obd-status');
+            if (data.obd) {
+                obdEl.innerText = "OBD2: LIVE";
+                obdEl.style.color = "#00ffaa";
             } else {
-                if (document.exitFullscreen) {
-                    document.exitFullscreen();
-                }
+                obdEl.innerText = "OBD2: DISCONNECTED";
+                obdEl.style.color = "#ff4757";
             }
         }
+
+        // --- WebSocket (ლოკალური კავშირი) ---
+        function connectWS() {
+            try {
+                // Canvas-ის HTTPS შეზღუდვის შემოწმება
+                if (window.location.protocol === 'https:') {
+                    throw new Error("HTTPS Block");
+                }
+
+                socket = new WebSocket(`ws://${ESP_IP}:81/`);
+
+                socket.onopen = () => {
+                    isWsActive = true;
+                    document.getElementById('ws-status').innerText = "WebSocket: LIVE (20Hz)";
+                    document.getElementById('ws-status').style.color = "#00ffaa";
+                    document.getElementById('security-alert').style.display = "none";
+                };
+
+                socket.onmessage = (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+                        updateDisplay(data);
+                    } catch (e) {}
+                };
+
+                socket.onclose = () => {
+                    isWsActive = false;
+                    document.getElementById('ws-status').innerText = "WebSocket: OFF";
+                    document.getElementById('ws-status').style.color = "#ff4757";
+                    setTimeout(connectWS, 10000);
+                };
+
+                socket.onerror = () => { socket.close(); };
+
+            } catch (e) {
+                document.getElementById('ws-status').innerText = "WebSocket: BLOCKED";
+                document.getElementById('security-alert').style.display = "block";
+            }
+        }
+
+        // --- Firebase (Fallback რეჟიმი) ---
+        db.ref(VIN_PATH + '/telemetry').on('value', (snapshot) => {
+            // თუ WebSocket არ არის აქტიური, მონაცემებს ვიღებთ Firebase-დან
+            if (!isWsActive && snapshot.val()) {
+                updateDisplay(snapshot.val());
+            }
+        });
+
+        // --- უსაფრთხო ბრძანება (TTL) ---
+        window.sendSecureCmd = function(id, hexData) {
+            const unixTime = Math.floor(Date.now() / 1000);
+            const payload = `${id}|${hexData}|${unixTime}`;
+            
+            db.ref(VIN_PATH + '/command').set(payload).then(() => {
+                document.getElementById('raw-log').innerText = `გაიგზავნა: ${payload}`;
+                const btn = event.target;
+                const oldText = btn.innerText;
+                btn.innerText = "გაიგზავნა";
+                setTimeout(() => btn.innerText = oldText, 2000);
+            });
+        };
+
+        // სტარტი
+        connectWS();
     </script>
 </body>
 </html>
