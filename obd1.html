@@ -2,168 +2,253 @@
 <html lang="ka">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Tesla Premium OS v1.4</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tesla Cyber Cockpit v3.0</title>
     
-    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;500;700&display=swap');
 
         :root {
-            --accent: #00ffaa;
-            --glass-bg: rgba(17, 17, 17, 0.7);
-            --glass-border: rgba(255, 255, 255, 0.1);
+            --tesla-cyan: #00f2ff;
+            --tesla-red: #ff0044;
+            --tesla-gold: #ffcc00;
+            --bg-dark: #05070a;
+            --glass: rgba(255, 255, 255, 0.03);
+            --glow-cyan: 0 0 15px rgba(0, 242, 255, 0.5);
         }
 
         body { 
-            font-family: 'Inter', sans-serif; 
-            background: radial-gradient(circle at top right, #0a0f1a, #050505); 
-            color: #ffffff; 
-            min-height: 100vh;
+            background-color: var(--bg-dark);
+            color: #ffffff;
+            font-family: 'Rajdhani', sans-serif;
             margin: 0;
+            overflow: hidden;
+            height: 100vh;
+            background: radial-gradient(circle at center, #0d1625 0%, #05070a 100%);
+        }
+
+        .dashboard-container {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr 1fr;
+            height: 100vh;
             padding: 20px;
-            overflow-x: hidden;
+            gap: 20px;
+            align-items: center;
         }
 
-        .glass-card {
-            background: var(--glass-bg);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid var(--glass-border);
-            border-radius: 20px;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
-            transition: transform 0.3s ease;
+        .side-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            height: 100%;
+            justify-content: center;
         }
 
-        .glass-card:hover {
-            transform: translateY(-2px);
-            border-color: rgba(0, 255, 170, 0.3);
+        /* Circular Gauges */
+        .gauge-svg {
+            filter: drop-shadow(0 0 10px rgba(0, 242, 255, 0.2));
+            transition: all 0.3s ease;
         }
 
-        .status-dot {
-            width: 8px;
-            height: 8px;
+        .progress-ring {
+            transition: stroke-dashoffset 0.1s ease-out;
+            stroke-linecap: round;
+        }
+
+        /* Value Displays */
+        .digital-value {
+            font-family: 'Orbitron', sans-serif;
+            text-shadow: var(--glow-cyan);
+        }
+
+        .cyber-card {
+            background: var(--glass);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 24px;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cyber-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 2px;
+            background: linear-gradient(90deg, transparent, var(--tesla-cyan), transparent);
+        }
+
+        .gear-selector {
+            display: flex;
+            gap: 20px;
+            font-size: 32px;
+            font-weight: 900;
+            color: rgba(255,255,255,0.1);
+            justify-content: center;
+            margin-top: -40px;
+        }
+
+        .gear-active {
+            color: #fff;
+            text-shadow: 0 0 20px #fff;
+        }
+
+        .car-viz {
+            position: relative;
+            width: 100%;
+            height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .car-silhouette {
+            width: 250px;
+            opacity: 0.6;
+            filter: drop-shadow(0 0 20px var(--tesla-cyan));
+        }
+
+        .door-indicator {
+            position: absolute;
+            width: 12px; height: 12px;
             border-radius: 50%;
-            display: inline-block;
-            margin-right: 6px;
-            box-shadow: 0 0 10px currentColor;
+            background: var(--tesla-red);
+            display: none;
+            box-shadow: 0 0 15px var(--tesla-red);
         }
 
-        .glow-text {
-            text-shadow: 0 0 15px rgba(0, 255, 170, 0.5);
+        /* Status Badges */
+        .status-pill {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
         }
 
-        .value-font {
-            font-family: 'Courier New', monospace;
-            font-weight: 700;
+        .badge {
+            background: rgba(0,0,0,0.6);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 5px 15px;
+            border-radius: 100px;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
-        /* კლიმატის ღილაკების სტილი */
-        .btn-ctrl {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--glass-border);
-            border-radius: 10px;
-            padding: 10px;
-            transition: all 0.2s ease;
-        }
-        .btn-ctrl:active {
-            background: var(--accent);
-            color: #000;
-        }
     </style>
 </head>
-<body class="flex flex-col items-center">
+<body>
 
-    <header class="w-full max-w-5xl mb-8 flex justify-between items-center">
-        <div>
-            <h1 class="text-2xl font-bold tracking-widest glow-text uppercase italic">Tesla OS <span class="text-[#00ffaa]">Model Y</span></h1>
-            <p class="text-[10px] text-gray-500 uppercase tracking-tighter">Independent Telemetry System v1.4</p>
-        </div>
-        <div class="flex gap-4">
-            <div id="status-ws" class="glass-card px-3 py-2 text-[10px] font-bold flex items-center text-red-500">
-                <span class="status-dot bg-red-500"></span> WS: OFF
-            </div>
-            <div id="status-obd" class="glass-card px-3 py-2 text-[10px] font-bold flex items-center text-orange-500">
-                <span class="status-dot bg-orange-500"></span> OBD: WAIT
-            </div>
-        </div>
-    </header>
+    <div class="status-pill">
+        <div class="badge" id="ws-badge"><i class="fa-solid fa-bolt mr-2"></i>WS: <span id="ws-val">OFF</span></div>
+        <div class="badge" id="obd-badge"><i class="fa-solid fa-car mr-2"></i>OBD: <span id="obd-val">WAIT</span></div>
+    </div>
 
-    <main class="grid grid-cols-2 md:grid-cols-4 gap-4 w-full max-w-5xl">
+    <div class="dashboard-container">
         
-        <!-- Speed Gauge -->
-        <div class="glass-card p-6 flex flex-col items-center justify-center col-span-2 row-span-2">
-            <span class="text-[10px] text-gray-400 uppercase font-semibold mb-2 tracking-widest">🏎️ Velocity</span>
-            <div class="flex items-baseline">
-                <span id="v-speed" class="text-7xl font-bold value-font text-[#00ffaa]">0</span>
-                <span class="text-xl text-gray-500 ml-2">km/h</span>
+        <div class="side-panel">
+            <div class="cyber-card flex flex-col items-center">
+                <span class="text-xs text-gray-500 uppercase tracking-widest mb-4">Energy Storage</span>
+                <svg width="160" height="160" viewBox="0 0 160 160">
+                    <circle cx="80" cy="80" r="70" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="8" />
+                    <circle id="soc-ring" class="progress-ring" cx="80" cy="80" r="70" fill="none" 
+                            stroke="var(--tesla-gold)" stroke-width="10" stroke-dasharray="440" stroke-dashoffset="440" 
+                            transform="rotate(-90 80 80)" />
+                    <text x="80" y="85" text-anchor="middle" class="digital-value fill-white text-3xl font-bold" id="v-soc">0%</text>
+                </svg>
+                <div class="mt-4 text-center">
+                    <div class="text-sm text-blue-400 font-bold"><span id="v-volt">0.0</span>V</div>
+                    <div class="text-[10px] text-gray-600">BMS SYSTEM VOLTAGE</div>
+                </div>
             </div>
-            <div class="w-full bg-gray-800 h-1 mt-4 rounded-full overflow-hidden">
-                <div id="v-speed-bar" class="bg-[#00ffaa] h-full transition-all duration-300" style="width: 0%"></div>
-            </div>
-        </div>
 
-        <!-- SOC Gauge -->
-        <div class="glass-card p-4 flex flex-col justify-between">
-            <span class="text-[10px] text-gray-400 uppercase font-semibold tracking-widest">🔋 Battery</span>
-            <div class="text-3xl font-bold value-font text-orange-400"><span id="v-soc">0.0</span><span class="text-sm font-normal text-gray-500 ml-1">%</span></div>
-        </div>
-
-        <!-- Voltage Gauge -->
-        <div class="glass-card p-4 flex flex-col justify-between">
-            <span class="text-[10px] text-gray-400 uppercase font-semibold tracking-widest">⚡ Voltage</span>
-            <div class="text-3xl font-bold value-font text-cyan-400"><span id="v-volt">0.0</span><span class="text-sm font-normal text-gray-500 ml-1">V</span></div>
-        </div>
-
-        <!-- Gear Selector -->
-        <div class="glass-card p-4 flex flex-col justify-between">
-            <span class="text-[10px] text-gray-400 uppercase font-semibold tracking-widest">🕹️ Drive Mode</span>
-            <div id="v-gear" class="text-4xl font-bold text-center glow-text">P</div>
-        </div>
-
-        <!-- Climate Control -->
-        <div class="glass-card p-4 flex flex-col justify-between">
-            <span class="text-[10px] text-gray-400 uppercase font-semibold tracking-widest">❄️ Climate</span>
-            <div class="flex items-center justify-between mt-2">
-                <button class="btn-ctrl" onclick="adjustClimate(-0.5)">-</button>
-                <div class="text-2xl font-bold value-font text-purple-400"><span id="v-climate-val">21.0</span>°</div>
-                <button class="btn-ctrl" onclick="adjustClimate(0.5)">+</button>
+            <div class="cyber-card">
+                <span class="text-xs text-gray-500 uppercase tracking-widest mb-2 block text-center">Seat Heaters</span>
+                <div class="flex justify-around mt-4">
+                    <i id="seat-l" class="fa-solid fa-fire text-2xl text-gray-700 transition-colors"></i>
+                    <i id="seat-r" class="fa-solid fa-fire text-2xl text-gray-700 transition-colors"></i>
+                </div>
             </div>
         </div>
 
-        <!-- Doors Status -->
-        <div class="glass-card p-4 col-span-2">
-            <span class="text-[10px] text-gray-400 uppercase font-semibold tracking-widest">🚪 Doors Status (0DA)</span>
-            <div id="v-doors" class="mt-2 text-xs font-mono text-red-400">---</div>
-            <div class="flex gap-2 mt-3">
-                <button class="flex-1 bg-emerald-600/20 border border-emerald-500/30 text-emerald-500 py-2 rounded-lg text-[10px] font-bold uppercase" onclick="sendSecureCmd('0DA', '02 00 00 00 00 00 00 00')">Unlock</button>
-                <button class="flex-1 bg-red-600/20 border border-red-500/30 text-red-500 py-2 rounded-lg text-[10px] font-bold uppercase" onclick="sendSecureCmd('0DA', '01 00 00 00 00 00 00 00')">Lock</button>
+        <div class="flex flex-col items-center justify-center">
+            <div class="relative w-[450px] h-[450px] flex items-center justify-center">
+                <svg width="450" height="450" viewBox="0 0 450 450" class="gauge-svg">
+                    <defs>
+                        <linearGradient id="speedGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:var(--tesla-cyan);stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#0088ff;stop-opacity:1" />
+                        </linearGradient>
+                    </defs>
+                    <!-- Track -->
+                    <circle cx="225" cy="225" r="200" fill="none" stroke="rgba(255,255,255,0.03)" stroke-width="15" />
+                    <!-- Speed Arc -->
+                    <circle id="speed-arc" class="progress-ring" cx="225" cy="225" r="200" fill="none" 
+                            stroke="url(#speedGrad)" stroke-width="18" stroke-dasharray="1256" stroke-dashoffset="1256" 
+                            transform="rotate(135 225 225)" />
+                </svg>
+
+                <div class="absolute text-center">
+                    <div class="text-[18px] text-gray-500 font-light tracking-[0.5em] mb-[-15px]">VELOCITY</div>
+                    <div id="v-speed" class="text-[140px] font-black leading-none digital-value">0</div>
+                    <div class="text-2xl text-cyan-400 font-bold mt-[-10px]">KM/H</div>
+                </div>
+            </div>
+
+            <div class="gear-selector">
+                <span id="g-P" class="gear-active">P</span>
+                <span id="g-R">R</span>
+                <span id="g-N">N</span>
+                <span id="g-D">D</span>
+            </div>
+
+            <!-- Car Model Viz -->
+            <div class="car-viz">
+                <img src="https://placehold.co/400x200/000000/ffffff?text=TESLA+MODEL+Y" class="car-silhouette" alt="Tesla Viz">
+                <!-- Doors indicators (simulated from 0DA) -->
+                <div id="door-fl" class="door-indicator" style="top: 120px; left: 180px;"></div>
+                <div id="door-fr" class="door-indicator" style="top: 120px; right: 180px;"></div>
             </div>
         </div>
 
-        <!-- Windows Status -->
-        <div class="glass-card p-4 col-span-2">
-            <span class="text-[10px] text-gray-400 uppercase font-semibold tracking-widest">🪟 Windows (0F1)</span>
-            <div id="v-windows" class="mt-2 text-xs font-mono text-cyan-400 italic">---</div>
-        </div>
+        <div class="side-panel">
+            <div class="cyber-card flex flex-col items-center">
+                <span class="text-xs text-gray-500 uppercase tracking-widest mb-4">Climate Control</span>
+                <div class="flex items-center gap-6">
+                    <button onclick="adjustClimate(-0.5)" class="text-4xl text-blue-400 hover:text-white active:scale-90 transition-all">-</button>
+                    <div class="text-center">
+                        <div class="text-5xl font-black digital-value" id="v-climate">21.0</div>
+                        <div class="text-xs text-blue-300 font-bold uppercase mt-2 tracking-widest">Celsius</div>
+                    </div>
+                    <button onclick="adjustClimate(0.5)" class="text-4xl text-red-400 hover:text-white active:scale-90 transition-all">+</button>
+                </div>
+                <div class="mt-8 grid grid-cols-2 gap-4 w-full">
+                    <button onclick="sendSecureCmd('0DA', '02 00 00 00 00 00 00 00')" class="bg-emerald-500/10 border border-emerald-500/20 py-2 rounded-xl text-[10px] uppercase font-bold text-emerald-400 hover:bg-emerald-500/20 transition-all">Unlock</button>
+                    <button onclick="sendSecureCmd('0DA', '01 00 00 00 00 00 00 00')" class="bg-red-500/10 border border-red-500/20 py-2 rounded-xl text-[10px] uppercase font-bold text-red-400 hover:bg-red-500/20 transition-all">Lock</button>
+                </div>
+            </div>
 
-        <!-- Seat Heaters -->
-        <div class="glass-card p-4 col-span-2">
-            <span class="text-[10px] text-gray-400 uppercase font-semibold tracking-widest">🔥 Seat Heaters (338)</span>
-            <div id="v-seats" class="mt-2 text-xs font-mono text-yellow-500 uppercase">---</div>
+            <div class="cyber-card">
+                <span class="text-[10px] text-gray-600 uppercase tracking-widest mb-2 block">Network Latency</span>
+                <div class="flex items-end gap-1 h-8">
+                    <div class="bg-cyan-500 w-full h-[20%]"></div>
+                    <div class="bg-cyan-500 w-full h-[40%]"></div>
+                    <div class="bg-cyan-500 w-full h-[30%]"></div>
+                    <div id="ping-bar" class="bg-cyan-400 w-full h-[80%] shadow-[0_0_10px_cyan]"></div>
+                </div>
+            </div>
         </div>
-    </main>
-
-    <div id="raw-log" class="mt-8 text-[9px] text-gray-600 font-mono tracking-tighter uppercase">System Ready. Awaiting Connection...</div>
+    </div>
 
     <script>
         const ESP_IP = "192.168.43.150"; 
         const VIN_PATH = "/5YJYGDEF1LF009721";
-        
         const fbConfig = {
             apiKey: "AIzaSyAH3yVbBGrhvzbSx7J1GxNcVsl_ykX_OX0",
             databaseURL: "https://tesla-telemetry-29fb6-default-rtdb.europe-west1.firebasedatabase.app"
@@ -174,110 +259,101 @@
 
         let socket;
         let isWsActive = false;
-        let currentClimate = 21.0;
+        let climateLock = false;
 
-        // --- UI Updates ---
         function updateDisplay(data) {
+            // 1. Speedometer Update (Center)
             if (data.speed !== undefined) {
-                document.getElementById('v-speed').innerText = data.speed;
-                document.getElementById('v-speed-bar').style.width = Math.min(data.speed / 2, 100) + "%";
+                const speed = parseInt(data.speed);
+                document.getElementById('v-speed').innerText = speed;
+                const offset = 1256 - (Math.min(speed, 250) / 250) * 942; // 270 degree arc
+                document.getElementById('speed-arc').style.strokeDashoffset = offset;
             }
-            if (data.soc !== undefined) document.getElementById('v-soc').innerText = data.soc.toFixed(1);
-            if (data.volt !== undefined) document.getElementById('v-volt').innerText = data.volt.toFixed(1);
-            if (data.gear !== undefined) document.getElementById('v-gear').innerText = data.gear;
-            
-            if (data.doors) document.getElementById('v-doors').innerText = data.doors.replace("0DA ", "");
-            if (data.windows) document.getElementById('v-windows').innerText = data.windows.replace("0F1 ", "");
-            
-            // კლიმატის განახლება მხოლოდ თუ მომხმარებელი არ აკორექტირებს
-            if (data.climate && !window.climateLock) {
-                const rawClimate = data.climate.replace("141 ", "");
-                document.getElementById('v-climate-val').innerText = rawClimate;
-            }
-            
-            if (data.seats) document.getElementById('v-seats').innerText = data.seats.replace("338 ", "");
 
-            const obdEl = document.getElementById('status-obd');
-            if (data.obd) {
-                obdEl.innerHTML = '<span class="status-dot bg-[#00ffaa]"></span> OBD: LIVE';
-                obdEl.className = "glass-card px-3 py-2 text-[10px] font-bold flex items-center text-[#00ffaa]";
-            } else {
-                obdEl.innerHTML = '<span class="status-dot bg-red-500"></span> OBD: DISCONNECTED';
-                obdEl.className = "glass-card px-3 py-2 text-[10px] font-bold flex items-center text-red-500";
+            // 2. State of Charge (Left)
+            if (data.soc !== undefined) {
+                const soc = parseFloat(data.soc);
+                document.getElementById('v-soc').innerText = soc.toFixed(1) + "%";
+                const socOffset = 440 - (soc / 100) * 440;
+                document.getElementById('soc-ring').style.strokeDashoffset = socOffset;
             }
+
+            // 3. System Voltage
+            if (data.volt !== undefined) {
+                document.getElementById('v-volt').innerText = parseFloat(data.volt).toFixed(1);
+            }
+
+            // 4. Gear Selection
+            if (data.gear !== undefined) {
+                ["P", "R", "N", "D"].forEach(g => {
+                    document.getElementById(`g-${g}`).className = (data.gear === g) ? 'gear-active' : '';
+                });
+            }
+
+            // 5. Climate Control (Respect User Lock)
+            if (data.climate && !climateLock) {
+                const temp = data.climate.replace("141 ", "").trim();
+                if (!isNaN(temp)) document.getElementById('v-climate').innerText = temp;
+            }
+
+            // 6. Security & Car State Indicators
+            if (data.doors) {
+                // simple bitmask logic for visualization
+                const isAnyDoorOpen = data.doors.includes("01") || data.doors.includes("02");
+                document.getElementById('door-fl').style.display = isAnyDoorOpen ? 'block' : 'none';
+            }
+
+            // 7. Status Badges
+            document.getElementById('obd-val').innerText = data.obd ? "LIVE" : "WAIT";
+            document.getElementById('obd-badge').className = data.obd ? "badge border-emerald-500/50 text-emerald-400" : "badge";
         }
 
-        // --- Climate Control Logic ---
         window.adjustClimate = function(change) {
-            window.climateLock = true; // დროებით ვთიშავთ ავტომატურ განახლებას
-            currentClimate = parseFloat(document.getElementById('v-climate-val').innerText);
-            currentClimate += change;
-            currentClimate = Math.min(Math.max(currentClimate, 15), 28);
+            climateLock = true;
+            let el = document.getElementById('v-climate');
+            let current = parseFloat(el.innerText);
+            current += change;
+            current = Math.min(Math.max(current, 15), 28);
+            el.innerText = current.toFixed(1);
             
-            const displayVal = currentClimate.toFixed(1);
-            document.getElementById('v-climate-val').innerText = displayVal;
-            
-            // გაგზავნა Firebase-ში
-            sendSecureCmd('141', `SET ${displayVal}`); 
-            
-            // 3 წამში კვლავ ჩავრთავთ ავტომატურ განახლებას
-            setTimeout(() => { window.climateLock = false; }, 3000);
+            sendSecureCmd('141', `SET ${current.toFixed(1)}`);
+            setTimeout(() => { climateLock = false; }, 4000);
         }
 
-        // --- WebSocket Connection ---
         function connectWS() {
             try {
-                if (window.location.protocol === 'https:') throw new Error("HTTPS Block");
-
+                if (window.location.protocol === 'https:') return;
                 socket = new WebSocket(`ws://${ESP_IP}:81/`);
 
                 socket.onopen = () => {
                     isWsActive = true;
-                    const el = document.getElementById('status-ws');
-                    el.innerHTML = '<span class="status-dot bg-[#00ffaa]"></span> WS: LIVE';
-                    el.className = "glass-card px-3 py-2 text-[10px] font-bold flex items-center text-[#00ffaa]";
+                    document.getElementById('ws-val').innerText = "LIVE (20Hz)";
+                    document.getElementById('ws-badge').className = "badge border-cyan-500 text-cyan-400";
                 };
 
-                socket.onmessage = (event) => {
-                    try {
-                        const data = JSON.parse(event.data);
-                        updateDisplay(data);
-                    } catch (e) {}
+                socket.onmessage = (e) => {
+                    try { updateDisplay(JSON.parse(e.data)); } catch (err) {}
                 };
 
                 socket.onclose = () => {
                     isWsActive = false;
-                    const el = document.getElementById('status-ws');
-                    el.innerHTML = '<span class="status-dot bg-red-500"></span> WS: OFF';
-                    el.className = "glass-card px-3 py-2 text-[10px] font-bold flex items-center text-red-500";
-                    setTimeout(connectWS, 5000);
+                    document.getElementById('ws-val').innerText = "OFF";
+                    document.getElementById('ws-badge').className = "badge";
+                    setTimeout(connectWS, 10000);
                 };
-
-                socket.onerror = () => { socket.close(); };
-
-            } catch (e) {
-                document.getElementById('status-ws').innerText = "WS: BLOCKED";
-            }
+            } catch (e) {}
         }
 
-        // --- Firebase Fallback ---
-        db.ref(VIN_PATH + '/telemetry').on('value', (snapshot) => {
-            if (!isWsActive && snapshot.val()) {
-                updateDisplay(snapshot.val());
-            }
+        db.ref(VIN_PATH + '/telemetry').on('value', (snap) => {
+            if (!isWsActive && snap.val()) updateDisplay(snap.val());
         });
 
-        // --- Secure Command (TTL) ---
-        window.sendSecureCmd = function(id, hexData) {
-            const unixTime = Math.floor(Date.now() / 1000);
-            const payload = `${id}|${hexData}|${unixTime}`;
-            
-            db.ref(VIN_PATH + '/command').set(payload).then(() => {
-                document.getElementById('raw-log').innerText = `CMD Sent: ${payload}`;
-            });
+        window.sendSecureCmd = function(id, hex) {
+            const unix = Math.floor(Date.now() / 1000);
+            db.ref(VIN_PATH + '/command').set(`${id}|${hex}|${unix}`);
         };
 
-        // Start
+        // Start App
         connectWS();
     </script>
 </body>
