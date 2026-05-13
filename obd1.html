@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Tesla Premium OS v1.4</title>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+
+        :root {
+            --accent: #00ffaa;
+            --glass-bg: rgba(17, 17, 17, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: radial-gradient(circle at top right, #0a0f1a, #050505); 
+            color: #ffffff; 
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
+            transition: transform 0.3s ease;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(0, 255, 170, 0.3);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 6px;
+            box-shadow: 0 0 10px currentColor;
+        }
+
+        .glow-text {
+            text-shadow: 0 0 15px rgba(0, 255, 170, 0.5);
+        }
+
+        .value-font {
+            font-family: 'Courier New', monospace;
+            font-weight: 700;
+        }
+
+        /* კლიმატის ღილაკების სტილი */
+        .btn-ctrl {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            padding: 10px;
+            transition: all 0.2s ease;
+        }
+        .btn-ctrl:active {
+            background: var(--accent);
+            color: #000;
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center">
+
+    <header class="w-full max-w-5xl mb-8 flex justify-between items-center">
+        <div>
+            <h1 class="text-2xl font-bold tracking-widest glow-text uppercase italic">Tesla OS <span class="text-[#00ffaa]">Model Y</span></h1>
+            <p class="text-[10px] text-gray-500 uppercase tracking-tighter">Independent Telemetry System v1.4</p>
+        </div>
+        <div class="flex gap-4">
+            <div id="status-ws" class="glass-card px-3 py-2 text-[10px] font-bold flex items-center text-red-500">
+                <span class="status-dot bg-red-500"></span> WS: OFF
+            </div>
+            <div id="status-obd" class="glass-card px-3 py-2 text-[10px] font-bold flex items-center text-orange-500">
+                <span class="status-dot bg-orange-500"></span> OBD: WAIT
+            </div>
+        </div>
+    </header>
+
+    <main class="grid grid-cols-2 md:grid-cols-4 gap-4 w-full max-w-5xl">
+        
+        <!-- Speed Gauge -->
+        <div class="glass-card p-6 flex flex-col items-center justify-center col-span-2 row-span-2">
+            <span class="text-[10px] text-gray-400 uppercase font-semibold mb-2 tracking-widest">🏎️ Velocity</span>
+            <div class="flex items-baseline">
+                <span id="v-speed" class="text-7xl font-bold value-font text-[#00ffaa]">0</span>
+                <span class="text-xl text-gray-500 ml-2">km/h</span>
+            </div>
+            <div class="w-full bg-gray-800 h-1 mt-4 rounded-full overflow-hidden">
+                <div id="v-speed-bar" class="bg-[#00ffaa] h-full transition-all duration-300" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <!-- SOC Gauge -->
+        <div class="glass-card p-4 flex flex-col justify-between">
+            <span class="text-[10px] text-gray-400 uppercase font-semibold tracking-widest">🔋 Battery</span>
+            <div class="text-3xl font-bold value-font text-orange-400"><span id="v-soc">0.0</span><span class="text-sm font-normal text-gray-500 ml-1">%</span></div>
+        </div>
+
+        <!-- Voltage Gauge -->
+        <div class="glass-card p-4 flex flex-col justify-between">
+            <span class="text-[10px] text-gray-400 uppercase font-semibold tracking-widest">⚡ Voltage</span>
+            <div class="text-3xl font-bold value-font text-cyan-400"><span id="v-volt">0.0</span><span class="text-sm font-normal text-gray-500 ml-1">V</span></div>
+        </div>
+
+        <!-- Gear Selector -->
+        <div class="glass-card p-4 flex flex-col justify-between">
+            <span class="text-[10px] text-gray-400 uppercase font-semibold tracking-widest">🕹️ Drive Mode</span>
+            <div id="v-gear" class="text-4xl font-bold text-center glow-text">P</div>
+        </div>
+
+        <!-- Climate Control -->
+        <div class="glass-card p-4 flex flex-col justify-between">
+            <span class="text-[10px] text-gray-400 uppercase font-semibold tracking-widest">❄️ Climate</span>
+            <div class="flex items-center justify-between mt-2">
+                <button class="btn-ctrl" onclick="adjustClimate(-0.5)">-</button>
+                <div class="text-2xl font-bold value-font text-purple-400"><span id="v-climate-val">21.0</span>°</div>
+                <button class="btn-ctrl" onclick="adjustClimate(0.5)">+</button>
+            </div>
+        </div>
+
+        <!-- Doors Status -->
+        <div class="glass-card p-4 col-span-2">
+            <span class="text-[10px] text-gray-400 uppercase font-semibold tracking-widest">🚪 Doors Status (0DA)</span>
+            <div id="v-doors" class="mt-2 text-xs font-mono text-red-400">---</div>
+            <div class="flex gap-2 mt-3">
+                <button class="flex-1 bg-emerald-600/20 border border-emerald-500/30 text-emerald-500 py-2 rounded-lg text-[10px] font-bold uppercase" onclick="sendSecureCmd('0DA', '02 00 00 00 00 00 00 00')">Unlock</button>
+                <button class="flex-1 bg-red-600/20 border border-red-500/30 text-red-500 py-2 rounded-lg text-[10px] font-bold uppercase" onclick="sendSecureCmd('0DA', '01 00 00 00 00 00 00 00')">Lock</button>
+            </div>
+        </div>
+
+        <!-- Windows Status -->
+        <div class="glass-card p-4 col-span-2">
+            <span class="text-[10px] text-gray-400 uppercase font-semibold tracking-widest">🪟 Windows (0F1)</span>
+            <div id="v-windows" class="mt-2 text-xs font-mono text-cyan-400 italic">---</div>
+        </div>
+
+        <!-- Seat Heaters -->
+        <div class="glass-card p-4 col-span-2">
+            <span class="text-[10px] text-gray-400 uppercase font-semibold tracking-widest">🔥 Seat Heaters (338)</span>
+            <div id="v-seats" class="mt-2 text-xs font-mono text-yellow-500 uppercase">---</div>
+        </div>
+    </main>
+
+    <div id="raw-log" class="mt-8 text-[9px] text-gray-600 font-mono tracking-tighter uppercase">System Ready. Awaiting Connection...</div>
+
+    <script>
+        const ESP_IP = "192.168.43.150"; 
+        const VIN_PATH = "/5YJYGDEF1LF009721";
+        
+        const fbConfig = {
+            apiKey: "AIzaSyAH3yVbBGrhvzbSx7J1GxNcVsl_ykX_OX0",
+            databaseURL: "https://tesla-telemetry-29fb6-default-rtdb.europe-west1.firebasedatabase.app"
+        };
+
+        firebase.initializeApp(fbConfig);
+        const db = firebase.database();
+
+        let socket;
+        let isWsActive = false;
+        let currentClimate = 21.0;
+
+        // --- UI Updates ---
+        function updateDisplay(data) {
+            if (data.speed !== undefined) {
+                document.getElementById('v-speed').innerText = data.speed;
+                document.getElementById('v-speed-bar').style.width = Math.min(data.speed / 2, 100) + "%";
+            }
+            if (data.soc !== undefined) document.getElementById('v-soc').innerText = data.soc.toFixed(1);
+            if (data.volt !== undefined) document.getElementById('v-volt').innerText = data.volt.toFixed(1);
+            if (data.gear !== undefined) document.getElementById('v-gear').innerText = data.gear;
+            
+            if (data.doors) document.getElementById('v-doors').innerText = data.doors.replace("0DA ", "");
+            if (data.windows) document.getElementById('v-windows').innerText = data.windows.replace("0F1 ", "");
+            
+            // კლიმატის განახლება მხოლოდ თუ მომხმარებელი არ აკორექტირებს
+            if (data.climate && !window.climateLock) {
+                const rawClimate = data.climate.replace("141 ", "");
+                document.getElementById('v-climate-val').innerText = rawClimate;
+            }
+            
+            if (data.seats) document.getElementById('v-seats').innerText = data.seats.replace("338 ", "");
+
+            const obdEl = document.getElementById('status-obd');
+            if (data.obd) {
+                obdEl.innerHTML = '<span class="status-dot bg-[#00ffaa]"></span> OBD: LIVE';
+                obdEl.className = "glass-card px-3 py-2 text-[10px] font-bold flex items-center text-[#00ffaa]";
+            } else {
+                obdEl.innerHTML = '<span class="status-dot bg-red-500"></span> OBD: DISCONNECTED';
+                obdEl.className = "glass-card px-3 py-2 text-[10px] font-bold flex items-center text-red-500";
+            }
+        }
+
+        // --- Climate Control Logic ---
+        window.adjustClimate = function(change) {
+            window.climateLock = true; // დროებით ვთიშავთ ავტომატურ განახლებას
+            currentClimate = parseFloat(document.getElementById('v-climate-val').innerText);
+            currentClimate += change;
+            currentClimate = Math.min(Math.max(currentClimate, 15), 28);
+            
+            const displayVal = currentClimate.toFixed(1);
+            document.getElementById('v-climate-val').innerText = displayVal;
+            
+            // გაგზავნა Firebase-ში
+            sendSecureCmd('141', `SET ${displayVal}`); 
+            
+            // 3 წამში კვლავ ჩავრთავთ ავტომატურ განახლებას
+            setTimeout(() => { window.climateLock = false; }, 3000);
+        }
+
+        // --- WebSocket Connection ---
+        function connectWS() {
+            try {
+                if (window.location.protocol === 'https:') throw new Error("HTTPS Block");
+
+                socket = new WebSocket(`ws://${ESP_IP}:81/`);
+
+                socket.onopen = () => {
+                    isWsActive = true;
+                    const el = document.getElementById('status-ws');
+                    el.innerHTML = '<span class="status-dot bg-[#00ffaa]"></span> WS: LIVE';
+                    el.className = "glass-card px-3 py-2 text-[10px] font-bold flex items-center text-[#00ffaa]";
+                };
+
+                socket.onmessage = (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+                        updateDisplay(data);
+                    } catch (e) {}
+                };
+
+                socket.onclose = () => {
+                    isWsActive = false;
+                    const el = document.getElementById('status-ws');
+                    el.innerHTML = '<span class="status-dot bg-red-500"></span> WS: OFF';
+                    el.className = "glass-card px-3 py-2 text-[10px] font-bold flex items-center text-red-500";
+                    setTimeout(connectWS, 5000);
+                };
+
+                socket.onerror = () => { socket.close(); };
+
+            } catch (e) {
+                document.getElementById('status-ws').innerText = "WS: BLOCKED";
+            }
+        }
+
+        // --- Firebase Fallback ---
+        db.ref(VIN_PATH + '/telemetry').on('value', (snapshot) => {
+            if (!isWsActive && snapshot.val()) {
+                updateDisplay(snapshot.val());
+            }
+        });
+
+        // --- Secure Command (TTL) ---
+        window.sendSecureCmd = function(id, hexData) {
+            const unixTime = Math.floor(Date.now() / 1000);
+            const payload = `${id}|${hexData}|${unixTime}`;
+            
+            db.ref(VIN_PATH + '/command').set(payload).then(() => {
+                document.getElementById('raw-log').innerText = `CMD Sent: ${payload}`;
+            });
+        };
+
+        // Start
+        connectWS();
+    </script>
+</body>
+</html>
