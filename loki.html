@@ -4,40 +4,27 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tesla Diagnostic Terminal</title>
-    <!-- Tailwind CSS for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     
     <style>
-        /* CSS Variables for Neon Effect */
         :root {
             --neon-color: #00ffff;
-            --neon-glow: 10px;
+            --neon-glow: 15px;
         }
 
         body {
-            background-color: black;
-            color: #e5e7eb; /* text-gray-200 */
+            background-color: #050505;
+            color: #e5e7eb;
             font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            user-select: none;
         }
 
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #111827; 
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #374151; 
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #4b5563; 
-        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #111; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
 
-        /* Neon Text and Box Shadow Utilities */
         .neon-text {
             color: var(--neon-color);
             text-shadow: 0 0 var(--neon-glow) var(--neon-color);
@@ -48,203 +35,646 @@
         }
 
         .neon-box-active {
-            box-shadow: inset 2px 0 0 0 var(--neon-color), 0 0 var(--neon-glow) var(--neon-color);
+            box-shadow: inset 3px 0 0 0 var(--neon-color), 0 0 calc(var(--neon-glow)/1.5) calc(var(--neon-color) + '40');
             color: var(--neon-color);
-            text-shadow: 0 0 var(--neon-glow) var(--neon-color);
         }
 
         .neon-bg-glow {
             background-color: var(--neon-color);
-            box-shadow: 0 0 100px 50px var(--neon-color);
+            box-shadow: 0 0 120px 60px var(--neon-color);
         }
 
         .color-preset.active {
             border-color: white;
             box-shadow: 0 0 15px currentColor;
+            transform: scale(1.1);
+        }
+        
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: var(--neon-color);
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: var(--neon-color);
+            box-shadow: 0 0 var(--neon-glow) var(--neon-color);
+        }
+
+        /* --- DROPDOWN HOVER LOGIC --- */
+        .dropdown-container {
+            position: relative;
+            padding-bottom: 10px; /* Hit area extension */
+            margin-bottom: -10px;
+        }
+        .dropdown-menu {
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-5px) scale(0.95);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            z-index: 50;
+        }
+        .dropdown-container:hover .dropdown-menu {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0) scale(1);
+            pointer-events: auto;
+        }
+        .dropdown-trigger {
+            cursor: pointer;
+        }
+        .dropdown-trigger:hover, .dropdown-container:hover .dropdown-trigger {
+            color: var(--neon-color);
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col overflow-hidden">
+<body class="min-h-screen flex flex-col overflow-hidden relative">
 
-    <!-- Top Navigation Bar -->
-    <header class="h-14 border-b border-gray-800 flex items-center justify-between px-4 bg-black/50 backdrop-blur-md z-40 relative">
+    <!-- HIDDEN FILE INPUT FOR IMPORT -->
+    <input type="file" id="file-import-input" accept=".json" class="hidden">
+
+    <!-- Screen Off Overlay -->
+    <div id="screen-saver" class="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center cursor-pointer hidden transition-opacity duration-500 opacity-0">
+        <div class="text-center space-y-4">
+            <div id="saver-clock" class="text-5xl font-extralight text-gray-700 tracking-widest font-mono">00:00:00</div>
+            <p class="text-xs text-gray-800 uppercase tracking-widest animate-pulse">ეკრანი გათიშულია • შეეხეთ გასააქტიურებლად</p>
+        </div>
+    </div>
+
+    <!-- JSON CONFIG EDITOR MODAL (UPDATED WITH LINE NUMBERS) -->
+    <div id="modal-config" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-gray-950 border border-gray-800 rounded-2xl p-6 w-full max-w-3xl mx-4 relative shadow-2xl flex flex-col h-[85vh]">
+            <div class="flex items-center justify-between border-b border-gray-800 pb-4 mb-4">
+                <h3 class="text-lg font-semibold text-white flex items-center gap-2">
+                    <i data-lucide="file-code-2" class="text-[var(--neon-color)] w-5 h-5"></i>
+                    Config.json ჭკვიანი რედაქტორი
+                </h3>
+                <button onclick="toggleModal('modal-config', false)" class="text-gray-500 hover:text-white transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <p class="text-xs text-gray-400 mb-3">რედაქტირებისას დაიცავით JSON სინტაქსი. შეცდომის შემთხვევაში სისტემა გააწითლებს შესაბამის ხაზს.</p>
+            
+            <!-- Code Editor Area with Line Numbers -->
+            <div class="flex-1 w-full bg-[#0a0a0a] border border-gray-800 rounded-xl font-mono text-sm text-green-400 focus-within:border-[var(--neon-color)] transition-colors mb-4 flex overflow-hidden relative shadow-inner">
+                <div id="editor-lines" class="w-10 bg-gray-900/60 border-r border-gray-800 text-gray-500 text-right pr-2 py-4 select-none overflow-y-hidden overflow-x-hidden text-[13px] leading-[22px]"></div>
+                <textarea id="config-editor-area" spellcheck="false" class="flex-1 bg-transparent p-4 pl-3 focus:outline-none resize-none text-[13px] leading-[22px] whitespace-pre" wrap="off"></textarea>
+            </div>
+            
+            <!-- Validation Error Display -->
+            <div id="config-error-display" class="hidden mb-4 p-3 rounded-xl border border-red-900/50 bg-red-950/30 text-sm text-red-400 font-mono flex flex-col gap-1.5 shadow-lg">
+                <span class="font-bold flex items-center gap-2 text-red-500"><i data-lucide="alert-octagon" class="w-4 h-4"></i> აღმოჩენილია სინტაქსური შეცდომა!</span>
+                <span id="config-error-msg" class="text-xs leading-relaxed"></span>
+            </div>
+
+            <div class="flex gap-3 mt-auto pt-2">
+                <button onclick="validateAndApplyConfig()" class="flex-1 py-3 bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-[var(--neon-color)] text-white font-medium rounded-xl transition-all duration-300 active:scale-95 flex items-center justify-center gap-2">
+                    <i data-lucide="check-circle" class="w-4 h-4 text-green-500"></i> შემოწმება და დამახსოვრება
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CONNECTION SETTINGS MODAL -->
+    <div id="modal-connection" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-gray-950 border border-gray-800 rounded-3xl p-6 w-full max-w-md mx-4 relative shadow-2xl">
+            <div class="absolute top-4 right-4">
+                <button onclick="toggleModal('modal-connection', false)" class="text-gray-500 hover:text-white transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <h3 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                <i data-lucide="wifi" class="text-[var(--neon-color)] w-5 h-5"></i>
+                ქსელის კონფიგურაცია
+            </h3>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs text-gray-500 uppercase tracking-wider mb-1.5 font-mono">ESP32 IP მისამართი</label>
+                    <input type="text" id="cfg-ip" value="192.168.4.1" class="w-full bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 text-sm font-mono text-white focus:outline-none focus:border-[var(--neon-color)] transition-colors">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 uppercase tracking-wider mb-1.5 font-mono">Wi-Fi წვდომის წერტილი (SSID)</label>
+                    <input type="text" id="cfg-ssid" value="Tesla_Loki_Terminal" class="w-full bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[var(--neon-color)] transition-colors">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 uppercase tracking-wider mb-1.5 font-mono">პაროლი</label>
+                    <input type="password" id="cfg-pass" value="teslapassword" class="w-full bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[var(--neon-color)] transition-colors">
+                </div>
+
+                <div class="pt-2">
+                    <button onclick="applyConnectionSettings()" class="w-full py-3 bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-[var(--neon-color)] text-white font-medium rounded-xl transition-all duration-300 active:scale-95 flex items-center justify-center gap-2">
+                        <i data-lucide="check" class="w-4 h-4"></i> დაკავშირება
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SYSTEM EVENT LOG DRAWER -->
+    <div id="drawer-logs" class="fixed top-0 right-0 h-full w-80 bg-gray-950 border-l border-gray-800 z-45 translate-x-full transition-transform duration-300 flex flex-col shadow-2xl">
+        <div class="p-4 border-b border-gray-800 flex items-center justify-between">
+            <span class="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
+                <i data-lucide="file-text" class="w-4 h-4 text-[var(--neon-color)]"></i>
+                სისტემური ლოგები
+            </span>
+            <button onclick="toggleDrawer('drawer-logs', false)" class="text-gray-500 hover:text-white">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+        </div>
+        <div id="system-event-log" class="flex-1 overflow-y-auto p-4 font-mono text-[10px] text-gray-400 space-y-2">
+            <!-- Event entries go here -->
+        </div>
+        <div class="p-4 border-t border-gray-800 bg-[#050505] flex gap-2">
+            <button onclick="clearEventLogs()" class="w-full py-2 text-xs bg-gray-900 hover:bg-gray-800 border border-gray-800 text-gray-400 hover:text-white rounded-lg transition-colors">
+                გასუფთავება
+            </button>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-6 left-6 z-50 bg-gray-900 border border-gray-800 px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+        <i id="toast-icon" data-lucide="info" class="w-5 h-5 text-[var(--neon-color)]"></i>
+        <span id="toast-text" class="text-xs font-medium text-white">შეტყობინება</span>
+    </div>
+
+    <!-- Top Navigation Bar (HOVER ENABLED) -->
+    <header class="h-14 border-b border-gray-800 flex items-center justify-between px-4 bg-black/80 backdrop-blur-md z-40 relative">
         <div class="flex items-center gap-6">
             <div class="flex items-center gap-2 font-bold text-xl tracking-wider neon-text">
                 <i data-lucide="cpu" class="w-6 h-6"></i>
-                <span>TESLA TERMINAL</span>
+                <span>LOKI WEB</span>
             </div>
             
-            <nav class="hidden md:flex items-center space-x-1">
-                <!-- Dropdown 1 -->
-                <div class="relative group">
-                    <button class="flex items-center gap-1 px-3 py-2 text-sm text-gray-300 hover:text-[var(--neon-color)] transition-colors">
-                        ფაილი <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
-                    </button>
-                    <div class="absolute left-0 mt-1 w-48 bg-gray-900 border border-gray-800 rounded-md shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
-                        <ul class="py-1">
-                            <li class="px-4 py-2 text-sm text-gray-400 hover:bg-gray-800 hover:text-white cursor-pointer">გახსნა (Open)</li>
-                            <li class="px-4 py-2 text-sm text-gray-400 hover:bg-gray-800 hover:text-white cursor-pointer">შენახვა (Save)</li>
-                            <li class="px-4 py-2 text-sm text-gray-400 hover:bg-gray-800 hover:text-white cursor-pointer">ექსპორტი (Export)</li>
-                        </ul>
+            <nav class="hidden md:flex items-center space-x-2 relative z-50">
+                <!-- FILE DROPDOWN -->
+                <div class="dropdown-container">
+                    <div class="dropdown-trigger px-3 py-2 text-sm text-gray-400 flex items-center gap-1 transition-colors">
+                        ფაილი <i data-lucide="chevron-down" class="w-3 h-3"></i>
+                    </div>
+                    <div class="dropdown-menu w-56 bg-gray-950 border border-gray-800 rounded-xl shadow-2xl py-1">
+                        <button onclick="triggerFileImport()" class="w-full text-left px-4 py-2 text-xs text-gray-300 hover:bg-gray-900 hover:text-[var(--neon-color)] transition-colors flex items-center gap-2">
+                            <i data-lucide="upload" class="w-3.5 h-3.5"></i> Config იმპორტი
+                        </button>
+                        <button onclick="openConfigEditor()" class="w-full text-left px-4 py-2 text-xs text-gray-300 hover:bg-gray-900 hover:text-[var(--neon-color)] transition-colors flex items-center gap-2">
+                            <i data-lucide="file-edit" class="w-3.5 h-3.5"></i> კონფიგურაციის რედაქტორი
+                        </button>
+                        <button onclick="exportSettings()" class="w-full text-left px-4 py-2 text-xs text-gray-300 hover:bg-gray-900 hover:text-[var(--neon-color)] transition-colors flex items-center gap-2">
+                            <i data-lucide="download" class="w-3.5 h-3.5"></i> სწრაფი შენახვა (.json)
+                        </button>
+                        <div class="h-px bg-gray-800 my-1 mx-2"></div>
+                        <button onclick="exportBackup()" class="w-full text-left px-4 py-2 text-xs text-yellow-500/80 hover:bg-gray-900 hover:text-yellow-400 transition-colors flex items-center gap-2">
+                            <i data-lucide="database-backup" class="w-3.5 h-3.5"></i> Backup (VIN + Date)
+                        </button>
+                        <div class="h-px bg-gray-800 my-1 mx-2"></div>
+                        <button onclick="exportCANLogsToCSV()" class="w-full text-left px-4 py-2 text-xs text-gray-300 hover:bg-gray-900 hover:text-[var(--neon-color)] transition-colors flex items-center gap-2">
+                            <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i> CAN ლოგების ექსპორტი
+                        </button>
                     </div>
                 </div>
-                <!-- Dropdown 2 -->
-                <div class="relative group">
-                    <button class="flex items-center gap-1 px-3 py-2 text-sm text-gray-300 hover:text-[var(--neon-color)] transition-colors">
-                        მოწყობილობა <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
-                    </button>
+
+                <!-- LOGS DROPDOWN -->
+                <div class="dropdown-container">
+                    <div class="dropdown-trigger px-3 py-2 text-sm text-gray-400 flex items-center gap-1 transition-colors">
+                        ლოგები <i data-lucide="chevron-down" class="w-3 h-3"></i>
+                    </div>
+                    <div class="dropdown-menu w-48 bg-gray-950 border border-gray-800 rounded-xl shadow-2xl py-1">
+                        <button onclick="toggleDrawer('drawer-logs', true)" class="w-full text-left px-4 py-2 text-xs text-gray-300 hover:bg-gray-900 hover:text-[var(--neon-color)] transition-colors flex items-center gap-2">
+                            <i data-lucide="list-collapse" class="w-3.5 h-3.5"></i> სისტემური ლოგები
+                        </button>
+                        <button onclick="toggleSDLogging()" class="w-full text-left px-4 py-2 text-xs text-gray-300 hover:bg-gray-900 hover:text-[var(--neon-color)] transition-colors flex items-center gap-2">
+                            <i data-lucide="hard-drive" class="w-3.5 h-3.5 text-red-500" id="icon-sd-log"></i> <span id="lbl-sd-log">ლოგირების ჩართვა</span>
+                        </button>
+                    </div>
                 </div>
-                <div class="relative group">
-                    <button class="flex items-center gap-1 px-3 py-2 text-sm text-gray-300 hover:text-[var(--neon-color)] transition-colors">
-                        პროტოკოლები <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
-                    </button>
+
+                <!-- CONNECTION DROPDOWN -->
+                <div class="dropdown-container">
+                    <div class="dropdown-trigger px-3 py-2 text-sm text-gray-400 flex items-center gap-1 transition-colors">
+                        კავშირი <i data-lucide="chevron-down" class="w-3 h-3"></i>
+                    </div>
+                    <div class="dropdown-menu w-52 bg-gray-950 border border-gray-800 rounded-xl shadow-2xl py-1">
+                        <button onclick="toggleModal('modal-connection', true)" class="w-full text-left px-4 py-2 text-xs text-gray-300 hover:bg-gray-900 hover:text-[var(--neon-color)] transition-colors flex items-center gap-2">
+                            <i data-lucide="settings" class="w-3.5 h-3.5"></i> ქსელის კონფიგურაცია
+                        </button>
+                        <button onclick="forceReconnect()" class="w-full text-left px-4 py-2 text-xs text-gray-300 hover:bg-gray-900 hover:text-[var(--neon-color)] transition-colors flex items-center gap-2">
+                            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> კავშირის გადატვირთვა
+                        </button>
+                    </div>
                 </div>
             </nav>
         </div>
 
-        <div class="flex items-center gap-4 text-sm">
-            <div class="flex items-center gap-2 text-green-500">
-                <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                CAN სტატუსი: ONLINE
+        <div class="flex items-center gap-4">
+            <button id="btn-screen-off" class="p-2 text-gray-400 hover:text-yellow-500 transition-colors" title="ეკრანის გათიშვა (Stealth)">
+                <i data-lucide="moon" class="w-5 h-5"></i>
+            </button>
+            <div class="h-4 w-px bg-gray-800"></div>
+            <div id="connection-status" class="flex items-center gap-2 text-sm text-yellow-500">
+                <div class="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></div>
+                <span>ველით ტექნიკას...</span>
             </div>
         </div>
     </header>
 
-    <!-- Main Content & Right Sidebar Layout -->
-    <div class="flex flex-1 overflow-hidden">
+    <!-- Main Content & Sidebar Layout -->
+    <div class="flex flex-1 overflow-hidden relative">
         
-        <!-- Center/Left Content Area -->
-        <main class="flex-1 p-6 overflow-y-auto relative">
-            <!-- Subtle background glow -->
-            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full opacity-[0.03] pointer-events-none neon-bg-glow"></div>
+        <!-- Main Area -->
+        <main class="flex-1 min-w-0 p-4 md:p-8 overflow-y-auto relative bg-[#0a0a0a] z-10">
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full opacity-[0.02] pointer-events-none neon-bg-glow mix-blend-screen"></div>
             
-            <!-- Dashboard Tab (Active by default) -->
-            <div id="tab-dashboard" class="tab-content space-y-6 z-10 relative">
+            <!-- 0. Dashboard Tab -->
+            <div id="tab-dashboard" class="tab-content space-y-6 relative">
                 <h2 class="text-2xl font-light tracking-wide text-white border-b border-gray-800 pb-2">
-                    მთავარი სადიაგნოსტიკო დაფა
+                    ცენტრალური ტელემეტრია
                 </h2>
                 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <!-- Speed Card -->
-                    <div class="bg-gray-900/80 border border-gray-800 p-6 rounded-xl flex flex-col items-center justify-center relative overflow-hidden group hover:border-[var(--neon-color)] transition-colors">
-                        <span class="text-gray-500 text-sm mb-2">სიჩქარე</span>
-                        <div id="val-speed" class="text-6xl font-bold neon-text neon-text-dim">0</div>
-                        <span class="text-gray-500 text-sm mt-1">KM/H</span>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-gray-900/40 border border-gray-800 p-6 rounded-2xl flex flex-col items-center justify-center relative hover:border-[var(--neon-color)] transition-colors duration-500">
+                        <span class="text-gray-500 text-sm mb-2 uppercase tracking-widest">სიჩქარე</span>
+                        <div id="val-speed" class="text-7xl font-bold neon-text neon-text-dim">0</div>
+                        <span class="text-gray-500 text-xs mt-2 font-mono">KM/H (0x101)</span>
                     </div>
 
-                    <!-- Battery Card -->
-                    <div class="bg-gray-900/80 border border-gray-800 p-6 rounded-xl flex flex-col items-center justify-center relative overflow-hidden group hover:border-[var(--neon-color)] transition-colors">
-                        <span class="text-gray-500 text-sm mb-2">ბატარეა (SoC)</span>
-                        <div class="text-6xl font-bold text-white">
-                            <span id="val-soc">85</span><span class="text-2xl">%</span>
+                    <div class="bg-gray-900/40 border border-gray-800 p-6 rounded-2xl flex flex-col items-center justify-center relative hover:border-[var(--neon-color)] transition-colors duration-500">
+                        <span class="text-gray-500 text-sm mb-2 uppercase tracking-widest">ბატარეა</span>
+                        <div class="text-6xl font-bold text-white flex items-end gap-1">
+                            <span id="val-soc">--</span><span class="text-3xl text-gray-500 mb-1">%</span>
                         </div>
-                        <span id="val-voltage" class="text-gray-500 text-sm mt-1">395.2 V</span>
+                        <span id="val-voltage" class="text-gray-500 text-xs mt-2 font-mono">-- V | -- A</span>
                     </div>
 
-                    <!-- Gear Card -->
-                    <div class="bg-gray-900/80 border border-gray-800 p-6 rounded-xl flex flex-col items-center justify-center relative overflow-hidden group hover:border-[var(--neon-color)] transition-colors">
-                        <span class="text-gray-500 text-sm mb-2">გადაცემათა კოლოფი</span>
-                        <div id="val-gear" class="text-6xl font-bold text-white">P</div>
+                    <div class="bg-gray-900/40 border border-gray-800 p-6 rounded-2xl flex flex-col items-center justify-center relative hover:border-[var(--neon-color)] transition-colors duration-500">
+                        <span class="text-gray-500 text-sm mb-2 uppercase tracking-widest">სტატუსი</span>
+                        <div id="val-gear" class="text-6xl font-bold text-white">-</div>
+                        <span class="text-gray-500 text-xs mt-2 font-mono">GEAR (0x118)</span>
                     </div>
                 </div>
 
-                <!-- DTC Scanner Section -->
-                <div class="bg-gray-900/80 border border-gray-800 rounded-xl p-6">
-                    <div class="flex flex-col gap-3 mb-4">
-                        <h3 class="text-lg font-medium text-white flex items-start gap-2">
-                            <i data-lucide="shield-alert" class="w-4.5 h-4.5 text-yellow-500 shrink-0 mt-1"></i>
-                            <span class="leading-tight">შეცდომების (DTC) მონიტორინგი</span>
+                <!-- Performance & Power Bar -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-gray-900/40 border border-gray-800 rounded-xl p-4 flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <i data-lucide="timer" class="w-5 h-5 text-orange-500"></i>
+                            <span class="text-gray-400 text-sm uppercase tracking-wider">0-100 კმ/სთ ტაიმერი</span>
+                        </div>
+                        <div class="text-2xl font-mono font-bold text-white" id="val-0-100">-- s</div>
+                    </div>
+                    <div class="bg-gray-900/40 border border-gray-800 rounded-xl p-4 flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <i data-lucide="zap-fast" class="w-5 h-5 text-yellow-500"></i>
+                            <span class="text-gray-400 text-sm uppercase tracking-wider">მიმდინარე სიმძლავრე</span>
+                        </div>
+                        <div class="text-2xl font-mono font-bold text-white" id="val-power">0 kW</div>
+                    </div>
+                </div>
+
+                <div class="bg-gray-900/40 border border-gray-800 rounded-2xl p-6">
+                    <div class="flex flex-col gap-4 mb-4">
+                        <h3 class="text-lg font-medium text-white flex items-center gap-3">
+                            <i data-lucide="shield-alert" class="w-6 h-6 text-yellow-500 shrink-0"></i>
+                            <span class="leading-tight">სწრაფი სკანირება (DTC)</span>
                         </h3>
-                        <button class="px-4 py-2 text-sm bg-gray-800 hover:bg-gray-700 text-white rounded transition-colors flex items-center justify-center gap-2 border border-gray-700 w-full sm:w-max mt-1">
-                            <i data-lucide="play" class="w-3.5 h-3.5"></i> სკანირება
+                        <button id="btn-scan" class="w-full md:w-auto px-6 py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-xl transition-all flex items-center justify-center gap-2 border border-gray-700 shadow-lg active:scale-95">
+                            <i data-lucide="scan-line" class="w-4 h-4"></i> სისტემის შემოწმება
                         </button>
                     </div>
-                    <div class="h-32 flex items-center justify-center border border-dashed border-gray-700 rounded-lg bg-black/50 p-4 text-center">
-                        <span class="text-gray-500 font-mono text-sm">სისტემაში შეცდომები არ ფიქსირდება (No DTCs Found)</span>
+                    <div id="dtc-results" class="h-24 flex items-center justify-center border border-dashed border-gray-800 rounded-xl bg-black/30 p-4">
+                        <span class="text-gray-600 font-mono text-sm flex items-center gap-2">
+                            <i data-lucide="info" class="w-4 h-4"></i> მონაცემები არ იძებნება
+                        </span>
                     </div>
                 </div>
             </div>
 
-            <!-- Settings Tab -->
-            <div id="tab-settings" class="tab-content space-y-6 z-10 relative hidden max-w-2xl">
+            <!-- 1. Live CAN Sniffer -->
+            <div id="tab-sniffer" class="tab-content space-y-6 relative hidden">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-gray-800 pb-2 gap-4">
+                    <h2 class="text-2xl font-light tracking-wide text-white">
+                        Live CAN Sniffer (Listen-Only)
+                    </h2>
+                    <div class="flex gap-2">
+                        <button id="btn-freeze-sniffer" class="px-4 py-2 text-xs bg-gray-800 hover:bg-gray-700 text-white border border-gray-700 rounded-lg flex items-center gap-1.5 active:scale-95">
+                            <i data-lucide="pause" class="w-3.5 h-3.5"></i> <span>გაჩერება</span>
+                        </button>
+                        <button id="btn-clear-sniffer" class="px-4 py-2 text-xs bg-red-950/20 hover:bg-red-900/30 text-red-400 border border-red-900/50 rounded-lg flex items-center gap-1.5 active:scale-95">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> <span>გაწმენდა</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-gray-900/30 border border-gray-800 rounded-2xl overflow-hidden animate-fade-in">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse font-mono text-xs">
+                            <thead>
+                                <tr class="bg-gray-950 text-gray-500 uppercase tracking-wider border-b border-gray-800">
+                                    <th class="p-3">ID (Hex)</th>
+                                    <th class="p-3">DLC</th>
+                                    <th class="p-3">მონაცემები (Data)</th>
+                                    <th class="p-3 text-right">პერიოდი (ms)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sniffer-table-body" class="divide-y divide-gray-800/50"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Active Control Tab -->
+            <div id="tab-active" class="tab-content space-y-6 relative hidden">
                 <h2 class="text-2xl font-light tracking-wide text-white border-b border-gray-800 pb-2">
-                    პარამეტრები და პერსონალიზაცია
+                    აქტიური კონტროლი (CAN Injection)
                 </h2>
                 
-                <div class="bg-gray-900/80 border border-gray-800 rounded-xl p-6 space-y-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Doors Panel -->
+                    <div class="bg-gray-900/40 border border-gray-800 rounded-2xl p-6">
+                        <h3 class="text-gray-400 text-sm uppercase tracking-widest mb-4 flex items-center gap-2">
+                            <i data-lucide="unlock" class="w-4 h-4 text-[var(--neon-color)]"></i> საკეტების მართვა
+                        </h3>
+                        <div class="grid grid-cols-2 gap-3">
+                            <button onclick="triggerUnlatch('driver_door', 'მძღოლის კარი')" class="bg-gray-800/50 hover:bg-gray-800 border border-gray-700/60 p-4 rounded-xl flex flex-col items-center gap-2 transition-all active:scale-95 group">
+                                <i data-lucide="door-open" class="text-gray-400 group-hover:text-[var(--neon-color)] w-6 h-6 transition-colors"></i>
+                                <span class="text-xs text-white" id="lbl-driver_door">მძღოლის კარი</span>
+                            </button>
+                            <button onclick="triggerUnlatch('passenger_door', 'მგზავრის კარი')" class="bg-gray-800/50 hover:bg-gray-800 border border-gray-700/60 p-4 rounded-xl flex flex-col items-center gap-2 transition-all active:scale-95 group">
+                                <i data-lucide="door-open" class="text-gray-400 group-hover:text-[var(--neon-color)] w-6 h-6 transition-colors"></i>
+                                <span class="text-xs text-white" id="lbl-passenger_door">მგზავრის კარი</span>
+                            </button>
+                            <button onclick="triggerUnlatch('frunk', 'წინა საბარგული')" class="bg-gray-800/50 hover:bg-gray-800 border border-gray-700/60 p-4 rounded-xl flex flex-col items-center gap-2 transition-all active:scale-95 group">
+                                <i data-lucide="package-open" class="text-gray-400 group-hover:text-[var(--neon-color)] w-6 h-6 transition-colors"></i>
+                                <span class="text-xs text-white" id="lbl-frunk">წინა საბარგული (Frunk)</span>
+                            </button>
+                            <button onclick="triggerUnlatch('trunk', 'უკანა საბარგული')" class="bg-gray-800/50 hover:bg-gray-800 border border-gray-700/60 p-4 rounded-xl flex flex-col items-center gap-2 transition-all active:scale-95 group">
+                                <i data-lucide="car-front" class="text-gray-400 group-hover:text-[var(--neon-color)] w-6 h-6 transition-colors"></i>
+                                <span class="text-xs text-white" id="lbl-trunk">უკანა საბარგული</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Comfort and Lighting Panel (NEW) -->
+                    <div class="bg-gray-900/40 border border-gray-800 rounded-2xl p-6">
+                        <h3 class="text-gray-400 text-sm uppercase tracking-widest mb-4 flex items-center gap-2">
+                            <i data-lucide="sparkles" class="w-4 h-4 text-[var(--neon-color)]"></i> კომფორტი და განათება
+                        </h3>
+                        <div class="space-y-3">
+                            <button onclick="triggerAction('Venting Windows...')" class="w-full bg-gray-800/50 hover:bg-gray-800 border border-gray-700/60 p-4 rounded-xl flex items-center justify-between transition-all active:scale-95">
+                                <div class="flex items-center gap-3">
+                                    <i data-lucide="app-window" class="text-gray-400 w-5 h-5"></i>
+                                    <span class="text-sm text-white">ფანჯრების ჩამოწევა (Venting)</span>
+                                </div>
+                                <span class="text-xs bg-gray-900 px-2 py-1 rounded text-gray-500 font-mono">0x218</span>
+                            </button>
+                            <button onclick="triggerAction('Light Show Started')" class="w-full bg-gray-800/50 hover:bg-gray-800 border border-gray-700/60 p-4 rounded-xl flex items-center justify-between transition-all active:scale-95">
+                                <div class="flex items-center gap-3">
+                                    <i data-lucide="sun" class="text-yellow-500 w-5 h-5"></i>
+                                    <span class="text-sm text-white">ფარების ციმციმი (Light Strobe)</span>
+                                </div>
+                                <span class="text-xs bg-gray-900 px-2 py-1 rounded text-gray-500 font-mono">0x138</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Autopilot & Battery Hacks -->
+                    <div class="md:col-span-2 bg-gray-900/40 border border-gray-800 rounded-2xl p-6 space-y-5">
+                        <h3 class="text-gray-400 text-sm uppercase tracking-widest flex items-center gap-2">
+                            <i data-lucide="sliders" class="w-4 h-4 text-[var(--neon-color)]"></i> დამხმარე ჰაკები
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Nag Killer Toggle -->
+                            <div class="flex items-center justify-between bg-black/30 p-4 rounded-xl border border-gray-800">
+                                <div>
+                                    <h4 class="text-white text-sm font-medium">Nag Killer (იმიტაცია)</h4>
+                                    <p class="text-[10px] text-gray-500">ხელის მოთხოვნის დადუმება</p>
+                                </div>
+                                <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+                                    <input type="checkbox" id="toggle-nag" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer z-10 transition-transform duration-300"/>
+                                    <label for="toggle-nag" class="toggle-label block overflow-hidden h-5 rounded-full bg-gray-700 cursor-pointer transition-colors duration-300"></label>
+                                </div>
+                            </div>
+                            <!-- Chime Suppress Toggle -->
+                            <div class="flex items-center justify-between bg-black/30 p-4 rounded-xl border border-gray-800">
+                                <div>
+                                    <h4 class="text-white text-sm font-medium">ISA Chime Suppress</h4>
+                                    <p class="text-[10px] text-gray-500">სიჩქარის ლიმიტის ხმის ბლოკირება</p>
+                                </div>
+                                <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+                                    <input type="checkbox" id="toggle-chime" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer z-10 transition-transform duration-300"/>
+                                    <label for="toggle-chime" class="toggle-label block overflow-hidden h-5 rounded-full bg-gray-700 cursor-pointer transition-colors duration-300"></label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Preconditioning Simulator -->
+                        <div class="bg-black/30 p-4 rounded-xl border border-gray-800">
+                            <div class="flex items-center justify-between mb-2">
+                                <div>
+                                    <h4 class="text-white text-sm font-medium">ბატარეის გათბობა (Preconditioning)</h4>
+                                    <p class="text-[10px] text-gray-500">HVAC 0x141 ტემპერატურის იმიტაცია</p>
+                                </div>
+                                <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+                                    <input type="checkbox" id="toggle-precond" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer z-10 transition-transform duration-300"/>
+                                    <label for="toggle-precond" class="toggle-label block overflow-hidden h-5 rounded-full bg-gray-700 cursor-pointer transition-colors duration-300"></label>
+                                </div>
+                            </div>
+                            <div id="precond-status" class="w-full bg-gray-900 rounded-full h-1.5 mt-3 overflow-hidden hidden">
+                                <div id="precond-bar" class="bg-orange-500 h-1.5 w-0 transition-all duration-1000"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. UDS Diagnostics Tab -->
+            <div id="tab-uds" class="tab-content space-y-6 relative hidden">
+                <h2 class="text-2xl font-light tracking-wide text-white border-b border-gray-800 pb-2">
+                    UDS ღრმა ინჟინერია (ISO 14229)
+                </h2>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-1 space-y-6">
+                        <!-- UDS Info Read -->
+                        <div class="bg-gray-900/40 border border-gray-800 rounded-2xl p-6 space-y-4">
+                            <h3 class="text-white font-medium mb-1 flex items-center gap-2 text-sm uppercase tracking-widest">
+                                <i data-lucide="search" class="w-4 h-4 text-[var(--neon-color)]"></i> 0x22 ინფორმაციის წაკითხვა
+                            </h3>
+                            <button onclick="triggerUDSRead()" class="w-full px-4 py-3 bg-gray-800/80 hover:bg-gray-700 border border-gray-700 text-white rounded-xl text-xs transition-all active:scale-95">
+                                ავტომობილის მონაცემების ამოკითხვა
+                            </button>
+                            <div class="space-y-2 text-xs font-mono">
+                                <div class="flex justify-between border-b border-gray-800 pb-1">
+                                    <span class="text-gray-500">VIN:</span><span id="uds-vin" class="text-gray-300">უცნობია</span>
+                                </div>
+                                <div class="flex justify-between border-b border-gray-800 pb-1">
+                                    <span class="text-gray-500">Firmware:</span><span id="uds-fw" class="text-gray-300">უცნობია</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-500">ბატარეის დეგრადაცია:</span><span id="uds-deg" class="text-gray-300">უცნობია</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Critical Actions -->
+                        <div class="bg-red-950/10 border border-red-900/40 rounded-2xl p-6 relative overflow-hidden h-max space-y-4">
+                            <div class="absolute top-0 left-0 w-1 h-full bg-red-600"></div>
+                            <h3 class="text-red-400 font-medium mb-1 flex items-center gap-2">
+                                <i data-lucide="alert-triangle" class="w-5 h-5"></i> კრიტიკული ოპერაციები
+                            </h3>
+                            
+                            <div class="space-y-2 pt-2">
+                                <button onclick="triggerUDSCommand('SERVICE_MODE')" class="w-full px-4 py-3 bg-red-900/40 hover:bg-red-800/60 border border-red-700 text-white rounded-xl text-xs transition-all flex items-center justify-between active:scale-95">
+                                    <span>Service Mode+ ჩართვა</span>
+                                    <i data-lucide="wrench" class="w-4 h-4"></i>
+                                </button>
+                                <button onclick="triggerUDSCommand('FACTORY_RESET')" class="w-full px-4 py-3 bg-red-900/40 hover:bg-red-800/60 border border-red-700 text-white rounded-xl text-xs transition-all flex items-center justify-between active:scale-95">
+                                    <span>Factory Reset (MCU Format)</span>
+                                    <i data-lucide="power" class="w-4 h-4"></i>
+                                </button>
+                                <button onclick="triggerUDSCommand('CLEAR_DTC')" class="w-full px-4 py-3 bg-gray-800/60 hover:bg-gray-700/60 border border-gray-700 text-white rounded-xl text-xs transition-all flex items-center justify-between active:scale-95">
+                                    <span>DTC მეხსიერების გაწმენდა</span>
+                                    <i data-lucide="trash-2" class="w-4 h-4 text-yellow-500"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Update & Provisioning Actions (NEW) -->
+                        <div class="bg-gray-900/40 border border-gray-800 rounded-2xl p-6 space-y-4 mt-6">
+                            <h3 class="text-white font-medium mb-1 flex items-center gap-2 text-sm uppercase tracking-widest">
+                                <i data-lucide="download-cloud" class="w-4 h-4 text-blue-400"></i> პროგრამული მართვა
+                            </h3>
+                            <div class="space-y-2">
+                                <button onclick="triggerUDSCommand('REINSTALL_FW')" class="w-full px-4 py-3 bg-gray-800/80 hover:bg-gray-700 border border-gray-700 text-white rounded-xl text-xs transition-all flex items-center justify-between active:scale-95">
+                                    <span>Firmware იძულებითი რეინსტალაცია</span>
+                                    <i data-lucide="refresh-cw" class="w-4 h-4 text-blue-400"></i>
+                                </button>
+                                <button onclick="triggerUDSCommand('FORCE_NAV_UPDATE')" class="w-full px-4 py-3 bg-gray-800/80 hover:bg-gray-700 border border-gray-700 text-white rounded-xl text-xs transition-all flex items-center justify-between active:scale-95">
+                                    <span>ნავიგაციის რუკების განახლების მოთხოვნა</span>
+                                    <i data-lucide="map" class="w-4 h-4 text-green-400"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Hacker Console -->
+                    <div class="lg:col-span-2 bg-black border border-gray-800 rounded-2xl p-4 flex flex-col h-[500px]">
+                        <div class="flex items-center justify-between border-b border-gray-900 pb-2 mb-3">
+                            <span class="text-xs font-mono text-gray-500 uppercase tracking-widest flex items-center gap-1.5">
+                                <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                                UDS სადიაგნოსტიკო კონსოლი
+                            </span>
+                            <button onclick="clearConsole()" class="text-[10px] text-gray-500 hover:text-white transition-colors uppercase font-mono">გასუფთავება</button>
+                        </div>
+                        <div id="uds-console" class="flex-1 overflow-y-auto font-mono text-[11px] text-green-400 space-y-1.5 p-2 bg-gray-950/50 rounded-lg">
+                            <div>&gt; ველით ბრძანებას...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. Loki Architecture Tab -->
+            <div id="tab-loki" class="tab-content space-y-6 relative hidden">
+                <h2 class="text-2xl font-light tracking-wide text-white border-b border-gray-800 pb-2">
+                    Loki კრიპტო-არქიტექტურა და VCSEC
+                </h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl">
+                    <div class="bg-gray-900/40 border border-gray-800 rounded-2xl p-6 space-y-4">
+                        <h3 class="text-white font-medium flex items-center gap-2">
+                            <i data-lucide="key-round" class="text-[var(--neon-color)] w-5 h-5"></i>
+                            Loki Hex Key ავტორიზაცია
+                        </h3>
+                        <p class="text-xs text-gray-400 leading-relaxed">
+                            Tesla Model Y იყენებს ელიფსური მრუდების (ECC) ალგორითმს. იდენტიფიცირებული Hex გასაღები:
+                        </p>
+                        <div class="bg-black/60 p-3 rounded-lg border border-gray-800/80 break-all text-[11px] font-mono text-[var(--neon-color)] p-4 leading-normal select-text">
+                            0428B5143AD9DF5798682DB7DB6F70EF880794F1892CE990996735FC8DB409E74A8AC80E7F980A3349E6FA8BA404A8057BC231E3B72E23563B7C63C54FC956DE99
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Tab (RESTORED) -->
+            <div id="tab-settings" class="tab-content space-y-6 max-w-2xl relative hidden">
+                <h2 class="text-2xl font-light tracking-wide text-white border-b border-gray-800 pb-2">
+                    პარამეტრები
+                </h2>
+                
+                <div class="bg-gray-900/40 border border-gray-800 rounded-2xl p-6 space-y-8">
+                    <!-- Simulation Toggle -->
+                    <div class="flex items-center justify-between border-b border-gray-800 pb-6">
+                        <div>
+                            <h4 class="text-white font-medium mb-1">დემო / სიმულაციის რეჟიმი</h4>
+                            <p class="text-xs text-gray-500">რთავთ მონაცემების ავტომატურ გენერაციას ტესტირებისთვის.</p>
+                        </div>
+                        <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+                            <input type="checkbox" name="toggle" id="sim-toggle" checked class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer z-10 transition-transform duration-300"/>
+                            <label for="sim-toggle" class="toggle-label block overflow-hidden h-5 rounded-full bg-gray-700 cursor-pointer transition-colors duration-300"></label>
+                        </div>
+                    </div>
+
                     <div>
                         <label class="block text-sm text-gray-400 mb-4">ნეონური განათების ფერი</label>
-                        <div class="flex gap-4" id="color-presets">
-                            <!-- Populated by JS -->
-                        </div>
+                        <div class="flex gap-4" id="color-presets"></div>
                     </div>
 
                     <div>
                         <label class="flex justify-between text-sm text-gray-400 mb-4">
-                            <span>განათების სიმკვეთრე (Glow Intensity)</span>
-                            <span id="intensity-val">10px</span>
+                            <span>განათების სიმკვეთრე</span>
+                            <span id="intensity-val" class="font-mono">15px</span>
                         </label>
-                        <input 
-                            type="range" id="intensity-slider" min="0" max="30" value="10"
-                            class="w-full h-2 bg-gray-800 rounded-lg appearance-none cursor-pointer"
-                        />
+                        <input type="range" id="intensity-slider" min="0" max="40" value="15" class="w-full h-1 bg-gray-800 rounded-lg appearance-none cursor-pointer">
                     </div>
                 </div>
-            </div>
-
-            <!-- Placeholder Tabs (Passive, Active, UDS, Loki) -->
-            <div id="tab-placeholder" class="tab-content h-full flex flex-col items-center justify-center text-center space-y-4 hidden">
-                <i data-lucide="terminal" class="w-12 h-12 text-gray-700"></i>
-                <h2 class="text-2xl text-gray-400 font-light">კოდის ინტეგრაცია მიმდინარეობს...</h2>
-                <p id="placeholder-text" class="text-gray-600 max-w-md">
-                    ეს მოდული საჭიროებს დაკავშირებას Backend-თან.
-                </p>
             </div>
 
         </main>
 
         <!-- Right Navigation Sidebar -->
-        <aside class="w-80 border-l border-gray-800 bg-black/80 flex flex-col z-30">
-            <div class="p-4 border-b border-gray-800">
-                <h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest">ნავიგაცია</h3>
+        <aside class="w-72 shrink-0 border-l border-gray-800 bg-[#080808] flex flex-col z-30 shadow-2xl relative">
+            <div class="p-5 border-b border-gray-800">
+                <h3 class="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em]">ნავიგაცია</h3>
             </div>
             
-            <nav class="flex-1 overflow-y-auto p-4 space-y-2">
-                
-                <button data-target="dashboard" class="nav-btn relative px-4 py-3 rounded-md transition-all duration-300 flex items-center gap-3 w-full text-left bg-gray-800 text-white neon-box-active">
-                    <i data-lucide="activity" class="w-4.5 h-4.5"></i>
+            <nav class="flex-1 overflow-y-auto p-3 space-y-1">
+                <button data-target="dashboard" class="nav-btn relative px-4 py-3 rounded-xl transition-all duration-300 flex items-center gap-3 w-full text-left bg-gray-800 text-white neon-box-active group">
+                    <i data-lucide="activity" class="w-5 h-5 transition-transform group-hover:scale-110"></i>
                     <span class="text-sm font-medium">სადიაგნოსტიკო დაფა</span>
                 </button>
 
-                <div class="pt-4 pb-2">
-                    <h4 class="text-xs font-semibold text-gray-600 uppercase">მოდულები</h4>
+                <div class="pt-5 pb-2 px-2">
+                    <h4 class="text-[10px] font-bold text-gray-600 uppercase tracking-[0.2em]">მოდულები</h4>
                 </div>
 
-                <button data-target="passive" class="nav-btn relative px-4 py-3 rounded-md transition-all duration-300 flex items-center gap-3 w-full text-left text-gray-400 hover:text-white hover:bg-gray-800">
-                    <i data-lucide="database" class="w-4.5 h-4.5"></i>
-                    <span class="text-sm font-medium">1. პასიური მონიტორინგი</span>
+                <button data-target="sniffer" class="nav-btn relative px-4 py-3 rounded-xl transition-all duration-300 flex items-center gap-3 w-full text-left text-gray-400 hover:text-white hover:bg-gray-800/50 group">
+                    <i data-lucide="eye" class="w-5 h-5 transition-transform group-hover:scale-110"></i>
+                    <span class="text-sm font-medium">1. მოსმენის რეჟიმი</span>
                 </button>
 
-                <button data-target="active" class="nav-btn relative px-4 py-3 rounded-md transition-all duration-300 flex items-center gap-3 w-full text-left text-gray-400 hover:text-white hover:bg-gray-800">
-                    <i data-lucide="zap" class="w-4.5 h-4.5"></i>
-                    <span class="text-sm font-medium">2. აქტიური კონტროლი (CAN)</span>
+                <button data-target="active" class="nav-btn relative px-4 py-3 rounded-xl transition-all duration-300 flex items-center gap-3 w-full text-left text-gray-400 hover:text-white hover:bg-gray-800/50 group">
+                    <i data-lucide="zap" class="w-5 h-5 transition-transform group-hover:scale-110"></i>
+                    <span class="text-sm font-medium">2. აქტიური კონტროლი</span>
                 </button>
 
-                <button data-target="uds" class="nav-btn relative px-4 py-3 rounded-md transition-all duration-300 flex items-center gap-3 w-full text-left text-gray-400 hover:text-white hover:bg-gray-800">
-                    <i data-lucide="terminal" class="w-4.5 h-4.5"></i>
+                <button data-target="uds" class="nav-btn relative px-4 py-3 rounded-xl transition-all duration-300 flex items-center gap-3 w-full text-left text-gray-400 hover:text-white hover:bg-gray-800/50 group">
+                    <i data-lucide="terminal-square" class="w-5 h-5 transition-transform group-hover:scale-110"></i>
                     <span class="text-sm font-medium">3. UDS დიაგნოსტიკა</span>
                 </button>
 
-                <button data-target="loki" class="nav-btn relative px-4 py-3 rounded-md transition-all duration-300 flex items-center gap-3 w-full text-left text-gray-400 hover:text-white hover:bg-gray-800">
-                    <i data-lucide="car" class="w-4.5 h-4.5"></i>
+                <button data-target="loki" class="nav-btn relative px-4 py-3 rounded-xl transition-all duration-300 flex items-center gap-3 w-full text-left text-gray-400 hover:text-white hover:bg-gray-800/50 group">
+                    <i data-lucide="car" class="w-5 h-5 transition-transform group-hover:scale-110"></i>
                     <span class="text-sm font-medium">4. Loki არქიტექტურა</span>
                 </button>
-
             </nav>
 
-            <div class="p-4 border-t border-gray-800">
-                <button data-target="settings" class="nav-btn relative px-4 py-3 rounded-md transition-all duration-300 flex items-center gap-3 w-full text-left text-gray-400 hover:text-white hover:bg-gray-800">
-                    <i data-lucide="settings-2" class="w-4.5 h-4.5"></i>
+            <div class="p-3 border-t border-gray-800 bg-[#050505]">
+                <button data-target="settings" class="nav-btn relative px-4 py-3 rounded-xl transition-all duration-300 flex items-center gap-3 w-full text-left text-gray-400 hover:text-white hover:bg-gray-800/50 group">
+                    <i data-lucide="settings-2" class="w-5 h-5 transition-transform group-hover:rotate-45"></i>
                     <span class="text-sm font-medium">პარამეტრები</span>
                 </button>
             </div>
@@ -254,13 +684,7 @@
 
     <!-- Application Logic -->
     <script>
-        // Initialize Lucide Icons
         lucide.createIcons();
-
-        // --- State ---
-        let currentSpeed = 0;
-        let gear = 'P';
-        let speedInterval;
 
         // --- DOM Elements ---
         const root = document.documentElement;
@@ -269,108 +693,513 @@
         const slider = document.getElementById('intensity-slider');
         const intensityVal = document.getElementById('intensity-val');
         const colorContainer = document.getElementById('color-presets');
+        const simToggle = document.getElementById('sim-toggle');
+        const btnScreenOff = document.getElementById('btn-screen-off');
+        const screenSaver = document.getElementById('screen-saver');
+        const saverClock = document.getElementById('saver-clock');
+        const fileImportInput = document.getElementById('file-import-input');
+        const configEditorArea = document.getElementById('config-editor-area');
         
-        // Telemetry elements
         const speedEl = document.getElementById('val-speed');
-        const placeholderText = document.getElementById('placeholder-text');
+        const socEl = document.getElementById('val-soc');
+        const voltEl = document.getElementById('val-voltage');
+        const gearEl = document.getElementById('val-gear');
+        const timer0100El = document.getElementById('val-0-100');
+        const powerEl = document.getElementById('val-power');
 
-        // --- Colors ---
+        // Sniffer DOM Elements
+        const snifferTableBody = document.getElementById('sniffer-table-body');
+        const btnFreezeSniffer = document.getElementById('btn-freeze-sniffer');
+        const btnClearSniffer = document.getElementById('btn-clear-sniffer');
+
+        // Console & Logs DOM Elements
+        const udsConsole = document.getElementById('uds-console');
+        const systemEventLog = document.getElementById('system-event-log');
+
+        // --- State ---
+        let currentSpeed = 0;
+        let gear = 'P';
+        let speedInterval;
+        let snifferInterval;
+        let isSnifferFrozen = false;
+        let snifferRowLimit = 35;
+        let isSDLoggingActive = false;
+        
+        // 0-100 Timer State
+        let timerStartMs = 0;
+        let isTimerRunning = false;
+        let timerResult = null;
+
+        // Current Config Object
+        let appConfig = {
+            neonColor: localStorage.getItem('teslaNeonColor') || '#00ffff',
+            neonIntensity: parseInt(localStorage.getItem('teslaNeonIntensity')) || 15,
+            isSimulation: localStorage.getItem('teslaSimMode') !== 'false'
+        };
+
+        // --- Initialization ---
+        function applyConfigToUI() {
+            root.style.setProperty('--neon-color', appConfig.neonColor);
+            root.style.setProperty('--neon-glow', appConfig.neonIntensity + 'px');
+            slider.value = appConfig.neonIntensity;
+            intensityVal.textContent = appConfig.neonIntensity + 'px';
+            simToggle.checked = appConfig.isSimulation;
+            
+            // Re-render colors to show active state
+            renderColorPresets();
+            manageSimulation();
+        }
+
         const colors = [
             { name: 'ცისფერი (Default)', val: '#00ffff' },
+            { name: 'Tesla წითელი', val: '#e82127' },
             { name: 'სტაფილოსფერი', val: '#ff6600' },
-            { name: 'მწვანე', val: '#00ff00' },
-            { name: 'წითელი (Danger)', val: '#ff0033' },
-            { name: 'იასამნისფერი', val: '#b026ff' }
+            { name: 'ტოქსიკური მწვანე', val: '#39ff14' },
+            { name: 'Cyberpunk იასამნისფერი', val: '#b026ff' }
         ];
 
-        let activeColor = '#00ffff';
-
-        // Initialize colors
-        colors.forEach(color => {
-            const btn = document.createElement('button');
-            btn.className = `color-preset w-10 h-10 rounded-full border-2 transition-transform hover:scale-110 ${color.val === activeColor ? 'active' : 'border-transparent'}`;
-            btn.style.backgroundColor = color.val;
-            btn.style.color = color.val; // for currentColor shadow
-            btn.title = color.name;
-            
-            btn.onclick = () => {
-                document.querySelectorAll('.color-preset').forEach(b => b.classList.remove('active', 'border-white'));
-                b.classList.add('border-transparent');
+        function renderColorPresets() {
+            colorContainer.innerHTML = '';
+            colors.forEach(color => {
+                const btn = document.createElement('button');
+                btn.className = `color-preset w-10 h-10 rounded-full border-2 transition-all ${color.val === appConfig.neonColor ? 'active' : 'border-transparent'}`;
+                btn.style.backgroundColor = color.val;
+                btn.style.color = color.val; 
+                btn.title = color.name;
                 
-                btn.classList.add('active', 'border-white');
-                btn.classList.remove('border-transparent');
-                
-                activeColor = color.val;
-                root.style.setProperty('--neon-color', color.val);
-            };
-            colorContainer.appendChild(btn);
-        });
-
-        // Initialize Slider
-        slider.oninput = function() {
-            intensityVal.textContent = this.value + 'px';
-            root.style.setProperty('--neon-glow', this.value + 'px');
+                btn.onclick = () => {
+                    appConfig.neonColor = color.val;
+                    localStorage.setItem('teslaNeonColor', color.val);
+                    applyConfigToUI();
+                    pushEventLog(`თემა შეიცვალა ფერზე: ${color.name}`);
+                };
+                colorContainer.appendChild(btn);
+            });
         }
+
+        if (slider) {
+            slider.oninput = function() {
+                appConfig.neonIntensity = parseInt(this.value);
+                intensityVal.textContent = this.value + 'px';
+                root.style.setProperty('--neon-glow', this.value + 'px');
+                localStorage.setItem('teslaNeonIntensity', this.value);
+            }
+        }
+
+        // Apply initially
+        applyConfigToUI();
 
         // --- Navigation Logic ---
         navButtons.forEach(btn => {
             btn.addEventListener('click', () => {
                 const target = btn.getAttribute('data-target');
                 
-                // Update Buttons UI
                 navButtons.forEach(b => {
                     b.classList.remove('bg-gray-800', 'text-white', 'neon-box-active');
-                    b.classList.add('text-gray-400', 'hover:text-white', 'hover:bg-gray-800');
+                    b.classList.add('text-gray-400', 'hover:text-white', 'hover:bg-gray-800/50');
                 });
-                btn.classList.remove('text-gray-400', 'hover:text-white', 'hover:bg-gray-800');
+                btn.classList.remove('text-gray-400', 'hover:text-white', 'hover:bg-gray-800/50');
                 btn.classList.add('bg-gray-800', 'text-white', 'neon-box-active');
 
-                // Update Tabs UI
                 tabContents.forEach(tab => tab.classList.add('hidden'));
-                
-                if (target === 'dashboard') {
-                    document.getElementById('tab-dashboard').classList.remove('hidden');
-                    startSimulation();
-                } else if (target === 'settings') {
-                    document.getElementById('tab-settings').classList.remove('hidden');
-                    stopSimulation();
-                } else {
-                    document.getElementById('tab-placeholder').classList.remove('hidden');
-                    if(target === 'active') placeholderText.textContent = "ეს მოდული საჭიროებს C++ Backend-ის მხრიდან შესაბამისი CAN ID-ების გააქტიურებას (მაგ: 0x0DA კარისთვის).";
-                    else if(target === 'uds') placeholderText.textContent = "ეს მოდული საჭიროებს C++ Backend-ის მხრიდან შესაბამისი CAN ID-ების გააქტიურებას (მაგ: UDS 0x31 Routine Control).";
-                    else placeholderText.textContent = "ეს მოდული საჭიროებს დაკავშირებას Backend-თან.";
-                    stopSimulation();
-                }
+                document.getElementById('tab-' + target).classList.remove('hidden');
+                pushEventLog(`გაიხსნა ჩანართი: ${target}`);
             });
         });
 
-        // --- Simulation Logic ---
-        function startSimulation() {
-            stopSimulation();
-            speedInterval = setInterval(() => {
-                if (gear === 'D') {
-                    currentSpeed = Math.min(currentSpeed + 1, 120);
+        // --- Toast Messages ---
+        function showToast(text, iconName = 'info') {
+            const toast = document.getElementById('toast');
+            const toastText = document.getElementById('toast-text');
+            const toastIcon = document.getElementById('toast-icon');
+            
+            toastText.textContent = text;
+            toastIcon.setAttribute('data-lucide', iconName);
+            lucide.createIcons();
+            
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+            
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        // --- System Logs Drawer Logic ---
+        function pushEventLog(text) {
+            const logContainer = document.getElementById('system-event-log');
+            const entry = document.createElement('div');
+            const now = new Date().toLocaleTimeString();
+            entry.innerHTML = `<span class="text-[var(--neon-color)]">[${now}]</span> ${text}`;
+            logContainer.appendChild(entry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        function toggleDrawer(id, open) {
+            const drawer = document.getElementById(id);
+            if (open) {
+                drawer.classList.remove('translate-x-full');
+            } else {
+                drawer.classList.add('translate-x-full');
+            }
+        }
+
+        function clearEventLogs() {
+            document.getElementById('system-event-log').innerHTML = '';
+        }
+
+        function toggleModal(id, open) {
+            const modal = document.getElementById(id);
+            if (open) {
+                modal.classList.remove('hidden');
+                setTimeout(() => { modal.classList.add('opacity-100'); }, 10);
+            } else {
+                modal.classList.remove('opacity-100');
+                setTimeout(() => { modal.classList.add('hidden'); }, 300);
+            }
+        }
+
+        // --- JSON Config Editor (UPDATED WITH SMART HIGHLIGHTING) ---
+        const editorArea = document.getElementById('config-editor-area');
+        const editorLines = document.getElementById('editor-lines');
+
+        // Sync line numbers and scrolling
+        function updateEditorLines(errorLine = -1) {
+            const lineCount = editorArea.value.split('\n').length;
+            let linesHtml = '';
+            for (let i = 1; i <= lineCount; i++) {
+                if (i === errorLine) {
+                    linesHtml += `<div class="bg-red-900/80 text-red-200 font-bold px-1 rounded-sm w-full">${i}</div>`;
                 } else {
-                    currentSpeed = 0; // if P, R, N
+                    linesHtml += `<div>${i}</div>`;
                 }
-                speedEl.textContent = currentSpeed;
-            }, 1000);
+            }
+            editorLines.innerHTML = linesHtml;
         }
 
-        function stopSimulation() {
-            clearInterval(speedInterval);
-        }
-
-        // Start initial simulation
-        startSimulation();
-
-        // Optional: click on gear to simulate drive mode
-        document.getElementById('val-gear').parentElement.addEventListener('click', () => {
-            const gearEl = document.getElementById('val-gear');
-            gear = gear === 'P' ? 'D' : 'P';
-            gearEl.textContent = gear;
+        editorArea.addEventListener('input', () => updateEditorLines(-1));
+        editorArea.addEventListener('scroll', () => {
+            editorLines.scrollTop = editorArea.scrollTop;
         });
 
+        function openConfigEditor() {
+            const prettyJson = JSON.stringify(appConfig, null, 4);
+            editorArea.value = prettyJson;
+            updateEditorLines(-1);
+            document.getElementById('config-error-display').classList.add('hidden');
+            toggleModal('modal-config', true);
+        }
+
+        function parseJsonError(text, errorMessage) {
+            let lineNum = 1;
+            let pos = -1;
+            
+            // Extract position from JS Native JSON error
+            let match = errorMessage.match(/position (\d+)/);
+            if (match) {
+                pos = parseInt(match[1]);
+                let substring = text.substring(0, pos);
+                lineNum = (substring.match(/\n/g) || []).length + 1;
+            } else if (errorMessage.match(/line (\d+)/)) {
+                lineNum = parseInt(errorMessage.match(/line (\d+)/)[1]);
+            }
+            
+            let geoMsg = "დაფიქსირდა სინტაქსური შეცდომა.";
+            
+            // Georgian Smart Translation & Backtracking (უკუქცევის ალგორითმი)
+            if (pos !== -1 && (errorMessage.includes("Expected ','") || errorMessage.includes("Unexpected string") || errorMessage.includes("Unexpected token"))) {
+                // ვპოულობთ რეალურად სად აკლია მძიმე (წინა ხაზზე)
+                let lastCharIndex = text.substring(0, pos).trimEnd().length - 1;
+                if (lastCharIndex >= 0) {
+                    let actualLineNum = (text.substring(0, lastCharIndex + 1).match(/\n/g) || []).length + 1;
+                    if (actualLineNum < lineNum) {
+                        lineNum = actualLineNum; // ვაწითლებთ რეალურ დამნაშავე ხაზს (მაგ: მე-3 ხაზს მე-4-ის ნაცვლად)
+                    }
+                }
+                geoMsg = `სტრუქტურა დარღვეულია! მე-${lineNum} ხაზის ბოლოს სავარაუდოდ აკლია მძიმე (',').`;
+            } else if (errorMessage.includes("Expected")) {
+                geoMsg = `სტრუქტურა დარღვეულია! მე-${lineNum} ხაზზე აკლია დამხურავი ფრჩხილი ('}').`;
+            } else if (errorMessage.includes("Unexpected end of JSON")) {
+                geoMsg = `ფაილი მოულოდნელად შეწყდა. აუცილებლად დახურეთ ბოლო ფრჩხილით '}'.`;
+            } else {
+                geoMsg = `სინტაქსის შეცდომა მე-${lineNum} ხაზზე.`;
+            }
+            
+            return { lineNum, geoMsg, raw: errorMessage };
+        }
+
+        function validateAndApplyConfig() {
+            const errorDisplay = document.getElementById('config-error-display');
+            const errorMsg = document.getElementById('config-error-msg');
+            
+            try {
+                const parsed = JSON.parse(editorArea.value);
+                
+                // Success logic
+                appConfig = parsed;
+                localStorage.setItem('teslaNeonColor', appConfig.neonColor || '#00ffff');
+                localStorage.setItem('teslaNeonIntensity', appConfig.neonIntensity || 15);
+                localStorage.setItem('teslaSimMode', appConfig.isSimulation);
+                
+                applyConfigToUI();
+                errorDisplay.classList.add('hidden');
+                updateEditorLines(-1); // clear errors
+                toggleModal('modal-config', false);
+                
+                pushEventLog("კონფიგურაცია რედაქტორით შეიცვალა. სინტაქსი ვერიფიცირებულია.");
+                showToast("კონფიგურაცია განახლებულია!", "check-circle");
+                
+            } catch (err) {
+                // Handle Error intelligently
+                let parsedErr = parseJsonError(editorArea.value, err.message);
+                
+                updateEditorLines(parsedErr.lineNum); // Highlight red line
+                errorMsg.innerHTML = `${parsedErr.geoMsg}<br><span class="text-[10px] text-red-500/70 mt-1 block">ტექნიკური დეტალი: ${parsedErr.raw}</span>`;
+                errorDisplay.classList.remove('hidden');
+                
+                // Auto-scroll to the problematic line (approx 22px per line)
+                editorArea.scrollTop = Math.max(0, (parsedErr.lineNum - 3) * 22);
+            }
+        }
+
+        // --- Custom File Management (Import / Export / Backup) ---
+        function triggerFileImport() {
+            fileImportInput.click();
+        }
+
+        fileImportInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                try {
+                    const parsed = JSON.parse(evt.target.result);
+                    appConfig = { ...appConfig, ...parsed };
+                    
+                    localStorage.setItem('teslaNeonColor', appConfig.neonColor);
+                    localStorage.setItem('teslaNeonIntensity', appConfig.neonIntensity);
+                    localStorage.setItem('teslaSimMode', appConfig.isSimulation);
+                    
+                    applyConfigToUI();
+                    pushEventLog(`კონფიგურაცია წარმატებით ჩაიტვირთა: ${file.name}`);
+                    showToast("კონფიგურაცია ჩაიტვირთა!", "check-circle");
+                } catch (err) {
+                    showToast("არავალიდური ფაილის სტრუქტურა.", "alert-circle");
+                }
+            };
+            reader.readAsText(file);
+        });
+
+        function exportSettings() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appConfig, null, 4));
+            const dlAnchorElem = document.createElement('a');
+            dlAnchorElem.setAttribute("href", dataStr);
+            dlAnchorElem.setAttribute("download", "loki_config.json");
+            dlAnchorElem.click();
+            showToast("ფაილი გადმოწერილია!", "check-circle");
+        }
+
+        // NEW: Backup Export with VIN and Date format
+        function exportBackup() {
+            const mockVin = "5YJYGCEE0LF001234"; // Fake VIN
+            const now = new Date();
+            
+            const YYYY = now.getFullYear();
+            const MM = String(now.getMonth() + 1).padStart(2, '0');
+            const DD = String(now.getDate()).padStart(2, '0');
+            const HH = String(now.getHours()).padStart(2, '0');
+            const mm = String(now.getMinutes()).padStart(2, '0');
+            
+            const filename = `VIN_${mockVin}_Backup_${YYYY}-${MM}-${DD}_${HH}-${mm}.json`;
+            const backupData = {
+                vin: mockVin,
+                timestamp: now.toISOString(),
+                settings: appConfig
+            };
+
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 4));
+            const dlAnchorElem = document.createElement('a');
+            dlAnchorElem.setAttribute("href", dataStr);
+            dlAnchorElem.setAttribute("download", filename);
+            dlAnchorElem.click();
+            
+            pushEventLog(`შეიქმნა Backup ფაილი: ${filename}`);
+            showToast("Backup წარმატებით შენახულია!", "database-backup");
+        }
+
+        // --- Simulation Logic (Dashboard & 0-100 Timer) ---
+        function updateDashboardUI() {
+            speedEl.textContent = currentSpeed;
+            gearEl.textContent = gear;
+            socEl.textContent = "85";
+            voltEl.textContent = "395.2 V | 12.4 A";
+            powerEl.textContent = Math.floor(currentSpeed * 1.5) + " kW";
+        }
+
+        function manageSimulation() {
+            clearInterval(speedInterval);
+            if (appConfig.isSimulation) {
+                document.getElementById('connection-status').innerHTML = `<div class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div> სიმულაცია ჩართულია`;
+                document.getElementById('connection-status').className = "flex items-center gap-2 text-blue-500 text-sm";
+                
+                speedInterval = setInterval(() => {
+                    if (gear === 'D') {
+                        // 0-100 Timer Logic
+                        if (currentSpeed === 0 && !isTimerRunning) {
+                            isTimerRunning = true;
+                            timerStartMs = Date.now();
+                            timer0100El.textContent = "0.0 s";
+                        }
+                        
+                        currentSpeed = Math.min(currentSpeed + Math.floor(Math.random() * 5) + 2, 120);
+                        
+                        if (isTimerRunning) {
+                            let elapsed = (Date.now() - timerStartMs) / 1000;
+                            timer0100El.textContent = elapsed.toFixed(1) + " s";
+                            if (currentSpeed >= 100) {
+                                isTimerRunning = false;
+                                timer0100El.innerHTML = `<span class="text-[var(--neon-color)]">${elapsed.toFixed(2)} s</span>`;
+                                pushEventLog(`0-100 ტესტი დასრულდა: ${elapsed.toFixed(2)} წამში.`);
+                            }
+                        }
+
+                    } else {
+                        currentSpeed = 0;
+                        isTimerRunning = false;
+                    }
+                    updateDashboardUI();
+                }, 100);
+                runSniffer();
+            } else {
+                document.getElementById('connection-status').innerHTML = `<div class="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></div> ველით ტექნიკას...`;
+                document.getElementById('connection-status').className = "flex items-center gap-2 text-yellow-500 text-sm";
+                currentSpeed = 0;
+                updateDashboardUI();
+                speedEl.textContent = "0";
+                socEl.textContent = "--";
+                voltEl.textContent = "-- V | -- A";
+                powerEl.textContent = "0 kW";
+                gearEl.textContent = "-";
+                clearInterval(snifferInterval);
+                snifferTableBody.innerHTML = '';
+            }
+        }
+
+        simToggle.addEventListener('change', (e) => {
+            appConfig.isSimulation = e.target.checked;
+            localStorage.setItem('teslaSimMode', appConfig.isSimulation);
+            manageSimulation();
+        });
+
+        gearEl.parentElement.addEventListener('click', () => {
+            if(!appConfig.isSimulation) return;
+            gear = gear === 'P' ? 'D' : 'P';
+            // Reset timer
+            if (gear === 'D') {
+                currentSpeed = 0;
+                isTimerRunning = false;
+                timer0100El.textContent = "0.0 s";
+            }
+            updateDashboardUI();
+            pushEventLog(`კოლოფი გადაირთო: ${gear}`);
+        });
+
+        // --- Other UI Utilities ---
+        function triggerAction(text) {
+            pushEventLog(`აქტიური მოთხოვნა: ${text}`);
+            showToast(text, "zap");
+        }
+
+        function triggerUDSRead() {
+            showToast("მონაცემები ამოკითხულია 0x22 სერვისით", "search");
+            document.getElementById('uds-vin').textContent = "5YJYGCEE0LF001234";
+            document.getElementById('uds-vin').classList.add('text-green-400');
+            document.getElementById('uds-fw').textContent = "v12.0 (2024.14.9)";
+            document.getElementById('uds-fw').classList.add('text-green-400');
+            document.getElementById('uds-deg').textContent = "4.2%";
+            document.getElementById('uds-deg').classList.add('text-green-400');
+        }
+
+        function writeToConsole(text, type = 'info') {
+            const line = document.createElement('div');
+            const now = new Date().toLocaleTimeString();
+            line.className = type === 'error' ? 'text-red-500' : type === 'success' ? 'text-green-400' : 'text-gray-400';
+            line.textContent = `[${now}] ${text}`;
+            udsConsole.appendChild(line);
+            udsConsole.scrollTop = udsConsole.scrollHeight;
+        }
+
+        function clearConsole() {
+            udsConsole.innerHTML = '<div>&gt; კონსოლი გასუფთავებულია. ველი ბრძანებას...</div>';
+        }
+
+        function triggerUDSCommand(cmd) {
+            clearConsole();
+            if (cmd === 'SERVICE_MODE') {
+                writeToConsole("UDS Service 0x27 (Security Access)...", 'info');
+                setTimeout(() => { writeToConsole("Access Granted. Unlocking Diagnostic Gateway...", 'success'); }, 800);
+                setTimeout(() => { writeToConsole("Enabling Service Mode+ on center display...", 'info'); }, 1500);
+                setTimeout(() => { showToast("Service Mode+ ჩაირთო!", "wrench"); }, 2000);
+            } else if (cmd === 'FACTORY_RESET') {
+                writeToConsole("Initiating MCU Format (0x31 Routine Control)...", 'error');
+                setTimeout(() => { showToast("MCU რესეტი დასრულდა", "power"); }, 2000);
+            } else if (cmd === 'CLEAR_DTC') {
+                writeToConsole("UDS Service 0x14 [Clear Diagnostic Information]...", 'info');
+                setTimeout(() => { showToast("DTC წაიშალა", "check"); }, 1000);
+            } else if (cmd === 'REINSTALL_FW') {
+                writeToConsole("UDS Service 0x31 (Routine Control) - Requesting Firmware Reinstall...", 'info');
+                setTimeout(() => { writeToConsole("Verifying staged payload in Gateway ECU...", 'info'); }, 1000);
+                setTimeout(() => { writeToConsole("Update verification SUCCESS. Rebooting systems...", 'success'); }, 2500);
+                setTimeout(() => { showToast("Firmware ინსტალაცია დაიწყო", "download-cloud"); }, 3000);
+            } else if (cmd === 'FORCE_NAV_UPDATE') {
+                writeToConsole("Triggering DoIP / Wi-Fi Check for Navigation Maps...", 'info');
+                setTimeout(() => { writeToConsole("Sending trigger to Telematics/Connectivity Module...", 'info'); }, 800);
+                setTimeout(() => { writeToConsole("Tesla Servers responded. Update queued in background.", 'success'); }, 2000);
+                setTimeout(() => { showToast("ნავიგაცია განახლდება ფონურად", "map"); }, 2500);
+            }
+        }
+
+        // --- Screen Off / Sniffer Code from previous versions remains intact ---
+        function updateSaverClock() {
+            const now = new Date();
+            saverClock.textContent = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+        }
+        btnScreenOff.addEventListener('click', () => {
+            screenSaver.classList.remove('hidden');
+            setTimeout(() => { screenSaver.classList.add('opacity-100'); }, 50);
+            updateSaverClock();
+            window.clockTimer = setInterval(updateSaverClock, 1000);
+        });
+        screenSaver.addEventListener('click', () => {
+            screenSaver.classList.remove('opacity-100');
+            clearInterval(window.clockTimer);
+            setTimeout(() => { screenSaver.classList.add('hidden'); }, 500);
+        });
+
+        const mockCanFrames = [
+            { id: '0x101', dlc: 8, data: '04 8C 00 00 00 00 0F F2' },
+            { id: '0x118', dlc: 8, data: '20 00 11 00 00 FF 12 00' },
+            { id: '0x124', dlc: 8, data: 'AA 02 B5 03 00 00 00 00' },
+            { id: '0x0DA', dlc: 8, data: '00 10 00 02 00 00 00 F4' }
+        ];
+
+        function runSniffer() {
+            clearInterval(snifferInterval);
+            if (!appConfig.isSimulation) return;
+            snifferInterval = setInterval(() => {
+                if (isSnifferFrozen) return;
+                const frame = mockCanFrames[Math.floor(Math.random() * mockCanFrames.length)];
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-900/40 border-b border-gray-900/50';
+                row.innerHTML = `<td class="p-3 text-[var(--neon-color)] font-bold">${frame.id}</td><td class="p-3 text-gray-400">${frame.dlc}</td><td class="p-3 text-gray-300 tracking-wider">${frame.data}</td><td class="p-3 text-right text-gray-500">${Math.floor(Math.random()*80)+10} ms</td>`;
+                snifferTableBody.insertBefore(row, snifferTableBody.firstChild);
+                if (snifferTableBody.children.length > snifferRowLimit) snifferTableBody.removeChild(snifferTableBody.lastChild);
+            }, 300);
+        }
+        btnFreezeSniffer.addEventListener('click', () => { isSnifferFrozen = !isSnifferFrozen; });
+        btnClearSniffer.addEventListener('click', () => { snifferTableBody.innerHTML = ''; });
     </script>
 </body>
 </html>
