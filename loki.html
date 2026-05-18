@@ -90,7 +90,8 @@
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col overflow-hidden relative">
+<!-- შეცვლილია min-h-screen -> h-screen w-screen მკაცრი ეკრანის ზომისთვის -->
+<body class="h-screen w-screen flex flex-col overflow-hidden relative">
 
     <!-- HIDDEN FILE INPUT FOR IMPORT -->
     <input type="file" id="file-import-input" accept=".json" class="hidden">
@@ -203,7 +204,7 @@
     </div>
 
     <!-- Top Navigation Bar (HOVER ENABLED) -->
-    <header class="h-14 border-b border-gray-800 flex items-center justify-between px-4 bg-black/80 backdrop-blur-md z-40 relative">
+    <header class="h-14 border-b border-gray-800 flex items-center justify-between px-4 bg-black/80 backdrop-blur-md z-40 relative shrink-0">
         <div class="flex items-center gap-6">
             <div class="flex items-center gap-2 font-bold text-xl tracking-wider neon-text">
                 <i data-lucide="cpu" class="w-6 h-6"></i>
@@ -284,7 +285,7 @@
     <!-- Main Content & Sidebar Layout -->
     <div class="flex flex-1 overflow-hidden relative">
         
-        <!-- Main Area -->
+        <!-- Main Area (Scrolling enabled) -->
         <main class="flex-1 min-w-0 p-4 md:p-8 overflow-y-auto relative bg-[#0a0a0a] z-10">
             <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full opacity-[0.02] pointer-events-none neon-bg-glow mix-blend-screen"></div>
             
@@ -417,7 +418,7 @@
                         </div>
                     </div>
 
-                    <!-- Comfort and Lighting Panel (NEW) -->
+                    <!-- Comfort and Lighting Panel -->
                     <div class="bg-gray-900/40 border border-gray-800 rounded-2xl p-6">
                         <h3 class="text-gray-400 text-sm uppercase tracking-widest mb-4 flex items-center gap-2">
                             <i data-lucide="sparkles" class="w-4 h-4 text-[var(--neon-color)]"></i> კომფორტი და განათება
@@ -542,7 +543,7 @@
                             </div>
                         </div>
 
-                        <!-- Update & Provisioning Actions (NEW) -->
+                        <!-- Update & Provisioning Actions -->
                         <div class="bg-gray-900/40 border border-gray-800 rounded-2xl p-6 space-y-4 mt-6">
                             <h3 class="text-white font-medium mb-1 flex items-center gap-2 text-sm uppercase tracking-widest">
                                 <i data-lucide="download-cloud" class="w-4 h-4 text-blue-400"></i> პროგრამული მართვა
@@ -599,7 +600,7 @@
                 </div>
             </div>
 
-            <!-- Settings Tab (RESTORED) -->
+            <!-- Settings Tab -->
             <div id="tab-settings" class="tab-content space-y-6 max-w-2xl relative hidden">
                 <h2 class="text-2xl font-light tracking-wide text-white border-b border-gray-800 pb-2">
                     პარამეტრები
@@ -635,7 +636,7 @@
 
         </main>
 
-        <!-- Right Navigation Sidebar -->
+        <!-- Right Navigation Sidebar (Scrolling enabled) -->
         <aside class="w-72 shrink-0 border-l border-gray-800 bg-[#080808] flex flex-col z-30 shadow-2xl relative">
             <div class="p-5 border-b border-gray-800">
                 <h3 class="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em]">ნავიგაცია</h3>
@@ -741,9 +742,15 @@
         function applyConfigToUI() {
             root.style.setProperty('--neon-color', appConfig.neonColor);
             root.style.setProperty('--neon-glow', appConfig.neonIntensity + 'px');
-            slider.value = appConfig.neonIntensity;
-            intensityVal.textContent = appConfig.neonIntensity + 'px';
-            simToggle.checked = appConfig.isSimulation;
+            if (slider) {
+                slider.value = appConfig.neonIntensity;
+            }
+            if (intensityVal) {
+                intensityVal.textContent = appConfig.neonIntensity + 'px';
+            }
+            if (simToggle) {
+                simToggle.checked = appConfig.isSimulation;
+            }
             
             // Re-render colors to show active state
             renderColorPresets();
@@ -759,6 +766,7 @@
         ];
 
         function renderColorPresets() {
+            if (!colorContainer) return;
             colorContainer.innerHTML = '';
             colors.forEach(color => {
                 const btn = document.createElement('button');
@@ -829,6 +837,7 @@
         // --- System Logs Drawer Logic ---
         function pushEventLog(text) {
             const logContainer = document.getElementById('system-event-log');
+            if (!logContainer) return;
             const entry = document.createElement('div');
             const now = new Date().toLocaleTimeString();
             entry.innerHTML = `<span class="text-[var(--neon-color)]">[${now}]</span> ${text}`;
@@ -866,6 +875,7 @@
 
         // Sync line numbers and scrolling
         function updateEditorLines(errorLine = -1) {
+            if (!editorArea || !editorLines) return;
             const lineCount = editorArea.value.split('\n').length;
             let linesHtml = '';
             for (let i = 1; i <= lineCount; i++) {
@@ -878,10 +888,12 @@
             editorLines.innerHTML = linesHtml;
         }
 
-        editorArea.addEventListener('input', () => updateEditorLines(-1));
-        editorArea.addEventListener('scroll', () => {
-            editorLines.scrollTop = editorArea.scrollTop;
-        });
+        if (editorArea) {
+            editorArea.addEventListener('input', () => updateEditorLines(-1));
+            editorArea.addEventListener('scroll', () => {
+                editorLines.scrollTop = editorArea.scrollTop;
+            });
+        }
 
         function openConfigEditor() {
             const prettyJson = JSON.stringify(appConfig, null, 4);
@@ -895,7 +907,6 @@
             let lineNum = 1;
             let pos = -1;
             
-            // Extract position from JS Native JSON error
             let match = errorMessage.match(/position (\d+)/);
             if (match) {
                 pos = parseInt(match[1]);
@@ -907,14 +918,12 @@
             
             let geoMsg = "დაფიქსირდა სინტაქსური შეცდომა.";
             
-            // Georgian Smart Translation & Backtracking (უკუქცევის ალგორითმი)
             if (pos !== -1 && (errorMessage.includes("Expected ','") || errorMessage.includes("Unexpected string") || errorMessage.includes("Unexpected token"))) {
-                // ვპოულობთ რეალურად სად აკლია მძიმე (წინა ხაზზე)
                 let lastCharIndex = text.substring(0, pos).trimEnd().length - 1;
                 if (lastCharIndex >= 0) {
                     let actualLineNum = (text.substring(0, lastCharIndex + 1).match(/\n/g) || []).length + 1;
                     if (actualLineNum < lineNum) {
-                        lineNum = actualLineNum; // ვაწითლებთ რეალურ დამნაშავე ხაზს (მაგ: მე-3 ხაზს მე-4-ის ნაცვლად)
+                        lineNum = actualLineNum;
                     }
                 }
                 geoMsg = `სტრუქტურა დარღვეულია! მე-${lineNum} ხაზის ბოლოს სავარაუდოდ აკლია მძიმე (',').`;
@@ -936,7 +945,6 @@
             try {
                 const parsed = JSON.parse(editorArea.value);
                 
-                // Success logic
                 appConfig = parsed;
                 localStorage.setItem('teslaNeonColor', appConfig.neonColor || '#00ffff');
                 localStorage.setItem('teslaNeonIntensity', appConfig.neonIntensity || 15);
@@ -944,21 +952,19 @@
                 
                 applyConfigToUI();
                 errorDisplay.classList.add('hidden');
-                updateEditorLines(-1); // clear errors
+                updateEditorLines(-1);
                 toggleModal('modal-config', false);
                 
                 pushEventLog("კონფიგურაცია რედაქტორით შეიცვალა. სინტაქსი ვერიფიცირებულია.");
                 showToast("კონფიგურაცია განახლებულია!", "check-circle");
                 
             } catch (err) {
-                // Handle Error intelligently
                 let parsedErr = parseJsonError(editorArea.value, err.message);
                 
-                updateEditorLines(parsedErr.lineNum); // Highlight red line
+                updateEditorLines(parsedErr.lineNum);
                 errorMsg.innerHTML = `${parsedErr.geoMsg}<br><span class="text-[10px] text-red-500/70 mt-1 block">ტექნიკური დეტალი: ${parsedErr.raw}</span>`;
                 errorDisplay.classList.remove('hidden');
                 
-                // Auto-scroll to the problematic line (approx 22px per line)
                 editorArea.scrollTop = Math.max(0, (parsedErr.lineNum - 3) * 22);
             }
         }
@@ -968,29 +974,31 @@
             fileImportInput.click();
         }
 
-        fileImportInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
+        if (fileImportInput) {
+            fileImportInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
 
-            const reader = new FileReader();
-            reader.onload = function(evt) {
-                try {
-                    const parsed = JSON.parse(evt.target.result);
-                    appConfig = { ...appConfig, ...parsed };
-                    
-                    localStorage.setItem('teslaNeonColor', appConfig.neonColor);
-                    localStorage.setItem('teslaNeonIntensity', appConfig.neonIntensity);
-                    localStorage.setItem('teslaSimMode', appConfig.isSimulation);
-                    
-                    applyConfigToUI();
-                    pushEventLog(`კონფიგურაცია წარმატებით ჩაიტვირთა: ${file.name}`);
-                    showToast("კონფიგურაცია ჩაიტვირთა!", "check-circle");
-                } catch (err) {
-                    showToast("არავალიდური ფაილის სტრუქტურა.", "alert-circle");
-                }
-            };
-            reader.readAsText(file);
-        });
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    try {
+                        const parsed = JSON.parse(evt.target.result);
+                        appConfig = { ...appConfig, ...parsed };
+                        
+                        localStorage.setItem('teslaNeonColor', appConfig.neonColor);
+                        localStorage.setItem('teslaNeonIntensity', appConfig.neonIntensity);
+                        localStorage.setItem('teslaSimMode', appConfig.isSimulation);
+                        
+                        applyConfigToUI();
+                        pushEventLog(`კონფიგურაცია წარმატებით ჩაიტვირთა: ${file.name}`);
+                        showToast("კონფიგურაცია ჩაიტვირთა!", "check-circle");
+                    } catch (err) {
+                        showToast("არავალიდური ფაილის სტრუქტურა.", "alert-circle");
+                    }
+                };
+                reader.readAsText(file);
+            });
+        }
 
         function exportSettings() {
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appConfig, null, 4));
@@ -1001,9 +1009,8 @@
             showToast("ფაილი გადმოწერილია!", "check-circle");
         }
 
-        // NEW: Backup Export with VIN and Date format
         function exportBackup() {
-            const mockVin = "5YJYGCEE0LF001234"; // Fake VIN
+            const mockVin = "5YJYGCEE0LF001234";
             const now = new Date();
             
             const YYYY = now.getFullYear();
@@ -1031,31 +1038,33 @@
 
         // --- Simulation Logic (Dashboard & 0-100 Timer) ---
         function updateDashboardUI() {
-            speedEl.textContent = currentSpeed;
-            gearEl.textContent = gear;
-            socEl.textContent = "85";
-            voltEl.textContent = "395.2 V | 12.4 A";
-            powerEl.textContent = Math.floor(currentSpeed * 1.5) + " kW";
+            if (speedEl) speedEl.textContent = currentSpeed;
+            if (gearEl) gearEl.textContent = gear;
+            if (socEl) socEl.textContent = "85";
+            if (voltEl) voltEl.textContent = "395.2 V | 12.4 A";
+            if (powerEl) powerEl.textContent = Math.floor(currentSpeed * 1.5) + " kW";
         }
 
         function manageSimulation() {
             clearInterval(speedInterval);
+            const connStatus = document.getElementById('connection-status');
             if (appConfig.isSimulation) {
-                document.getElementById('connection-status').innerHTML = `<div class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div> სიმულაცია ჩართულია`;
-                document.getElementById('connection-status').className = "flex items-center gap-2 text-blue-500 text-sm";
+                if (connStatus) {
+                    connStatus.innerHTML = `<div class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div> სიმულაცია ჩართულია`;
+                    connStatus.className = "flex items-center gap-2 text-blue-500 text-sm";
+                }
                 
                 speedInterval = setInterval(() => {
                     if (gear === 'D') {
-                        // 0-100 Timer Logic
                         if (currentSpeed === 0 && !isTimerRunning) {
                             isTimerRunning = true;
                             timerStartMs = Date.now();
-                            timer0100El.textContent = "0.0 s";
+                            if (timer0100El) timer0100El.textContent = "0.0 s";
                         }
                         
                         currentSpeed = Math.min(currentSpeed + Math.floor(Math.random() * 5) + 2, 120);
                         
-                        if (isTimerRunning) {
+                        if (isTimerRunning && timer0100El) {
                             let elapsed = (Date.now() - timerStartMs) / 1000;
                             timer0100El.textContent = elapsed.toFixed(1) + " s";
                             if (currentSpeed >= 100) {
@@ -1073,38 +1082,43 @@
                 }, 100);
                 runSniffer();
             } else {
-                document.getElementById('connection-status').innerHTML = `<div class="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></div> ველით ტექნიკას...`;
-                document.getElementById('connection-status').className = "flex items-center gap-2 text-yellow-500 text-sm";
+                if (connStatus) {
+                    connStatus.innerHTML = `<div class="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></div> ველით ტექნიკას...`;
+                    connStatus.className = "flex items-center gap-2 text-yellow-500 text-sm";
+                }
                 currentSpeed = 0;
                 updateDashboardUI();
-                speedEl.textContent = "0";
-                socEl.textContent = "--";
-                voltEl.textContent = "-- V | -- A";
-                powerEl.textContent = "0 kW";
-                gearEl.textContent = "-";
+                if (speedEl) speedEl.textContent = "0";
+                if (socEl) socEl.textContent = "--";
+                if (voltEl) voltEl.textContent = "-- V | -- A";
+                if (powerEl) powerEl.textContent = "0 kW";
+                if (gearEl) gearEl.textContent = "-";
                 clearInterval(snifferInterval);
-                snifferTableBody.innerHTML = '';
+                if (snifferTableBody) snifferTableBody.innerHTML = '';
             }
         }
 
-        simToggle.addEventListener('change', (e) => {
-            appConfig.isSimulation = e.target.checked;
-            localStorage.setItem('teslaSimMode', appConfig.isSimulation);
-            manageSimulation();
-        });
+        if (simToggle) {
+            simToggle.addEventListener('change', (e) => {
+                appConfig.isSimulation = e.target.checked;
+                localStorage.setItem('teslaSimMode', appConfig.isSimulation);
+                manageSimulation();
+            });
+        }
 
-        gearEl.parentElement.addEventListener('click', () => {
-            if(!appConfig.isSimulation) return;
-            gear = gear === 'P' ? 'D' : 'P';
-            // Reset timer
-            if (gear === 'D') {
-                currentSpeed = 0;
-                isTimerRunning = false;
-                timer0100El.textContent = "0.0 s";
-            }
-            updateDashboardUI();
-            pushEventLog(`კოლოფი გადაირთო: ${gear}`);
-        });
+        if (gearEl && gearEl.parentElement) {
+            gearEl.parentElement.addEventListener('click', () => {
+                if(!appConfig.isSimulation) return;
+                gear = gear === 'P' ? 'D' : 'P';
+                if (gear === 'D') {
+                    currentSpeed = 0;
+                    isTimerRunning = false;
+                    if (timer0100El) timer0100El.textContent = "0.0 s";
+                }
+                updateDashboardUI();
+                pushEventLog(`კოლოფი გადაირთო: ${gear}`);
+            });
+        }
 
         // --- Other UI Utilities ---
         function triggerAction(text) {
@@ -1114,15 +1128,26 @@
 
         function triggerUDSRead() {
             showToast("მონაცემები ამოკითხულია 0x22 სერვისით", "search");
-            document.getElementById('uds-vin').textContent = "5YJYGCEE0LF001234";
-            document.getElementById('uds-vin').classList.add('text-green-400');
-            document.getElementById('uds-fw').textContent = "v12.0 (2024.14.9)";
-            document.getElementById('uds-fw').classList.add('text-green-400');
-            document.getElementById('uds-deg').textContent = "4.2%";
-            document.getElementById('uds-deg').classList.add('text-green-400');
+            const udsVin = document.getElementById('uds-vin');
+            const udsFw = document.getElementById('uds-fw');
+            const udsDeg = document.getElementById('uds-deg');
+            
+            if (udsVin) {
+                udsVin.textContent = "5YJYGCEE0LF001234";
+                udsVin.classList.add('text-green-400');
+            }
+            if (udsFw) {
+                udsFw.textContent = "v12.0 (2024.14.9)";
+                udsFw.classList.add('text-green-400');
+            }
+            if (udsDeg) {
+                udsDeg.textContent = "4.2%";
+                udsDeg.classList.add('text-green-400');
+            }
         }
 
         function writeToConsole(text, type = 'info') {
+            if (!udsConsole) return;
             const line = document.createElement('div');
             const now = new Date().toLocaleTimeString();
             line.className = type === 'error' ? 'text-red-500' : type === 'success' ? 'text-green-400' : 'text-gray-400';
@@ -1132,7 +1157,7 @@
         }
 
         function clearConsole() {
-            udsConsole.innerHTML = '<div>&gt; კონსოლი გასუფთავებულია. ველი ბრძანებას...</div>';
+            if (udsConsole) udsConsole.innerHTML = '<div>&gt; კონსოლი გასუფთავებულია. ველი ბრძანებას...</div>';
         }
 
         function triggerUDSCommand(cmd) {
@@ -1161,22 +1186,28 @@
             }
         }
 
-        // --- Screen Off / Sniffer Code from previous versions remains intact ---
+        // --- Screen Off / Sniffer Code ---
         function updateSaverClock() {
             const now = new Date();
-            saverClock.textContent = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+            if (saverClock) saverClock.textContent = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
         }
-        btnScreenOff.addEventListener('click', () => {
-            screenSaver.classList.remove('hidden');
-            setTimeout(() => { screenSaver.classList.add('opacity-100'); }, 50);
-            updateSaverClock();
-            window.clockTimer = setInterval(updateSaverClock, 1000);
-        });
-        screenSaver.addEventListener('click', () => {
-            screenSaver.classList.remove('opacity-100');
-            clearInterval(window.clockTimer);
-            setTimeout(() => { screenSaver.classList.add('hidden'); }, 500);
-        });
+        if (btnScreenOff) {
+            btnScreenOff.addEventListener('click', () => {
+                if (screenSaver) {
+                    screenSaver.classList.remove('hidden');
+                    setTimeout(() => { screenSaver.classList.add('opacity-100'); }, 50);
+                    updateSaverClock();
+                    window.clockTimer = setInterval(updateSaverClock, 1000);
+                }
+            });
+        }
+        if (screenSaver) {
+            screenSaver.addEventListener('click', () => {
+                screenSaver.classList.remove('opacity-100');
+                clearInterval(window.clockTimer);
+                setTimeout(() => { screenSaver.classList.add('hidden'); }, 500);
+            });
+        }
 
         const mockCanFrames = [
             { id: '0x101', dlc: 8, data: '04 8C 00 00 00 00 0F F2' },
@@ -1189,7 +1220,7 @@
             clearInterval(snifferInterval);
             if (!appConfig.isSimulation) return;
             snifferInterval = setInterval(() => {
-                if (isSnifferFrozen) return;
+                if (isSnifferFrozen || !snifferTableBody) return;
                 const frame = mockCanFrames[Math.floor(Math.random() * mockCanFrames.length)];
                 const row = document.createElement('tr');
                 row.className = 'hover:bg-gray-900/40 border-b border-gray-900/50';
@@ -1198,8 +1229,8 @@
                 if (snifferTableBody.children.length > snifferRowLimit) snifferTableBody.removeChild(snifferTableBody.lastChild);
             }, 300);
         }
-        btnFreezeSniffer.addEventListener('click', () => { isSnifferFrozen = !isSnifferFrozen; });
-        btnClearSniffer.addEventListener('click', () => { snifferTableBody.innerHTML = ''; });
+        if (btnFreezeSniffer) btnFreezeSniffer.addEventListener('click', () => { isSnifferFrozen = !isSnifferFrozen; });
+        if (btnClearSniffer) btnClearSniffer.addEventListener('click', () => { snifferTableBody.innerHTML = ''; });
     </script>
 </body>
 </html>
