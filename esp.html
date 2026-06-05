@@ -1,159 +1,552 @@
 <!DOCTYPE html>
 <html lang="ka">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tesla CAN Sniffer</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tesla Plaid - Digital Cluster</title>
     
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    
+    <!-- Tailwind & Fonts -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
 
     <style>
+        :root {
+            --bg: #000000;
+            --cyan: #00e5ff;
+            --green: #00ffaa;
+            --orange: #ff9f43;
+            --red: #ff4757;
+            --gray: #222222;
+            --text-main: #ffffff;
+            --text-muted: #888888;
+        }
+
         body {
-            font-family: 'Segoe UI', monospace, sans-serif;
-            background-color: #0a0a0a;
-            color: #00ffcc;
+            background-color: var(--bg);
+            color: var(--text-main);
+            font-family: 'Rajdhani', sans-serif;
             margin: 0;
-            padding: 20px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            user-select: none;
         }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: #111;
-            padding: 20px;
-            border-radius: 12px;
-            border: 1px solid #333;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.8);
-        }
-        h1 { color: #fff; text-align: center; }
-        
-        .vin-box {
-            background: #1a1a1a;
-            border: 2px solid #e82127;
-            padding: 15px;
-            border-radius: 8px;
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        .vin-title { color: #888; font-size: 14px; text-transform: uppercase; margin-bottom: 5px; }
-        .vin-value { color: #fff; font-size: 26px; font-weight: bold; letter-spacing: 3px; font-family: monospace; }
 
-        .btn-download {
-            display: block;
+        /* Top Status Bar */
+        .status-bar {
+            position: absolute;
+            top: 20px;
+            display: flex;
+            gap: 20px;
+            font-weight: 700;
+            font-size: 12px;
+            letter-spacing: 2px;
+            z-index: 50;
+        }
+        .status-pill {
+            padding: 6px 16px;
+            border-radius: 30px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--gray);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        /* 3-Column Dashboard Layout */
+        .cluster-grid {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 80px;
             width: 100%;
-            padding: 15px;
-            background-color: #2a2a2a;
-            color: white;
-            border: 1px solid #444;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-bottom: 20px;
-            transition: 0.2s;
+            max-width: 1200px;
         }
-        .btn-download:hover { background-color: #444; }
 
-        .log-box {
-            background: #000;
-            border: 1px solid #333;
-            padding: 15px;
-            height: 450px;
-            overflow-y: auto;
-            border-radius: 8px;
+        /* SVG Circular Gauges */
+        .gauge-wrapper {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
-        table { width: 100%; border-collapse: collapse; font-family: monospace; }
-        th { text-align: left; border-bottom: 2px solid #333; padding-bottom: 10px; color: #aaa; }
-        td { padding: 8px 0; border-bottom: 1px solid #222; }
-        .id-col { color: #ffaa00; font-weight: bold; width: 120px; }
-        .data-col { letter-spacing: 2px; }
+        
+        .svg-container {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .svg-container svg {
+            transform: rotate(-90deg); /* Start arc from top */
+        }
+
+        .circle-bg {
+            fill: none;
+            stroke: var(--gray);
+            stroke-width: 8;
+        }
+
+        .circle-fill {
+            fill: none;
+            stroke-width: 10;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 0.3s ease-out;
+        }
+
+        /* Internal Gauge Data */
+        .gauge-data {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .data-value {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .data-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-top: 4px;
+            font-weight: 700;
+        }
+
+        .data-sub {
+            font-size: 14px;
+            color: var(--text-main);
+            font-weight: 600;
+            margin-top: 8px;
+        }
+
+        /* Central Speedometer Specifics */
+        .speed-val {
+            font-size: 85px;
+            text-shadow: 0 0 30px rgba(0, 229, 255, 0.5);
+            margin-bottom: -5px;
+        }
+        .speed-unit { font-size: 14px; color: var(--cyan); letter-spacing: 2px; font-weight: 700; }
+        
+        .prnd {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 18px;
+            font-weight: 700;
+            color: #444;
+            letter-spacing: 12px;
+            margin-top: 10px;
+            margin-left: 12px;
+        }
+        .prnd span.active { color: #fff; text-shadow: 0 0 15px #fff; }
+
+        /* Power & Steering elements */
+        .power-kw {
+            font-size: 18px;
+            color: var(--cyan);
+            margin-top: 5px;
+        }
+        #steering-wheel {
+            width: 30px;
+            height: 30px;
+            opacity: 0.6;
+            margin-top: 15px;
+            transition: transform 0.1s linear;
+        }
+
+        /* Controls / Buttons under gauges */
+        .controls-row {
+            display: flex;
+            gap: 15px;
+            margin-top: 35px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-round {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 1px solid var(--gray);
+            background: rgba(255,255,255,0.02);
+            color: var(--text-muted);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+        .btn-round:active { transform: scale(0.9); }
+        
+        /* Seat Heaters */
+        .seat-level { position: absolute; bottom: 4px; font-size: 10px; font-weight: bold; }
+        .seat-1 { color: #ffd32a; border-color: #ffd32a; box-shadow: 0 0 15px rgba(255,211,42,0.2); }
+        .seat-2 { color: var(--orange); border-color: var(--orange); box-shadow: 0 0 15px rgba(255,159,67,0.2); }
+        .seat-3 { color: var(--red); border-color: var(--red); box-shadow: 0 0 15px rgba(255,71,87,0.2); }
+
+        /* Smart Door Padlock */
+        .btn-padlock {
+            width: 60px;
+            height: 60px;
+            border: 1px solid var(--gray);
+        }
+        .padlock-locked { color: var(--green); border-color: var(--green); box-shadow: 0 0 20px rgba(0,255,170,0.15); }
+        .padlock-unlocked { color: var(--red); border-color: var(--red); box-shadow: 0 0 20px rgba(255,71,87,0.15); }
+
+        /* Climate Power Button */
+        .clim-on { color: var(--orange); border-color: var(--orange); box-shadow: 0 0 15px rgba(255,159,67,0.2); }
+
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h1>📡 Tesla CAN Sniffer</h1>
-        
-        <!-- VIN კოდის ჩვენება -->
-        <div class="vin-box">
-            <div class="vin-title">ავტომობილის VIN კოდი</div>
-            <div class="vin-value" id="vin_display">იძებნება...</div>
+    <!-- Top Status Bar -->
+    <div class="status-bar">
+        <div id="ws-status" class="status-pill" style="color: var(--red); border-color: var(--red);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>
+            WS OFF
         </div>
-
-        <button class="btn-download" onclick="downloadLogs()">💾 ლოგების გადმოწერა (TXT)</button>
-
-        <div class="log-box">
-            <table id="log-table">
-                <thead>
-                    <tr>
-                        <th>CAN ID (Hex)</th>
-                        <th>Data (Bytes)</th>
-                    </tr>
-                </thead>
-                <tbody id="log-body">
-                    <tr><td colspan="2" style="text-align: center; color: #888;">მონაცემების მოლოდინი...</td></tr>
-                </tbody>
-            </table>
+        <div id="obd-status" class="status-pill" style="color: var(--orange); border-color: var(--orange);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+            OBD WAIT
         </div>
     </div>
 
-    <script>
-        const firebaseConfig = {
-            databaseURL: "https://tesla-telemetry-29fb6-default-rtdb.europe-west1.firebasedatabase.app/"
-        };
-        if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
-        const database = firebase.database();
+    <!-- Main Cluster Grid -->
+    <div class="cluster-grid">
         
-        // 1. VIN კოდის ცოცხალი წაკითხვა
-        database.ref('/Tesla/Telemetry/VIN').on('value', (snapshot) => {
-            const vin = snapshot.val();
-            if(vin) {
-                document.getElementById('vin_display').innerText = vin;
-            }
-        });
-
-        // 2. ლოგების წაკითხვა
-        const rawRef = database.ref('/Tesla/RawCAN');
-        let latestLogs = ""; 
-
-        rawRef.on('value', (snapshot) => {
-            const data = snapshot.val();
-            if(!data) return;
-
-            const tbody = document.getElementById('log-body');
-            tbody.innerHTML = '';
+        <!-- LEFT: Energy & Seats -->
+        <div class="gauge-wrapper">
+            <div class="svg-container">
+                <svg width="220" height="220">
+                    <circle class="circle-bg" cx="110" cy="110" r="95" stroke-dasharray="596" stroke-dashoffset="149"></circle>
+                    <circle class="circle-fill" cx="110" cy="110" r="95" stroke-dasharray="596" stroke-dashoffset="596" stroke="var(--green)" id="soc-arc" style="filter: drop-shadow(0 0 10px rgba(0,255,170,0.4));"></circle>
+                </svg>
+                <div class="gauge-data">
+                    <div class="data-value" id="v-soc" style="font-size: 42px; color: var(--green);">0<span style="font-size: 16px;">%</span></div>
+                    <div class="data-label">ENERGY</div>
+                    <div class="data-sub" id="v-volt" style="margin-top:4px;">0.0 V</div>
+                    <div class="data-sub" id="v-temp" style="margin-top:2px; font-size:12px; color:var(--text-muted);">Batt: 0°C</div>
+                </div>
+            </div>
             
-            // ვამატებთ VIN კოდს ტექსტური ფაილის თავში
-            const currentVin = document.getElementById('vin_display').innerText;
-            latestLogs = `Tesla Model Y - CAN Bus Dump\nVIN: ${currentVin}\n----------------------------\n`;
+            <div class="controls-row">
+                <button id="btn-seat-L" class="btn-round" onclick="toggleSeat('L')">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 18v-6a6 6 0 0 1 6-6h2a6 6 0 0 1 6 6v6"></path><path d="M5 18h14"></path><path d="M8 22v-4"></path><path d="M16 22v-4"></path></svg>
+                    <span class="seat-level" id="lbl-seat-L">L</span>
+                </button>
+                <button id="btn-seat-R" class="btn-round" onclick="toggleSeat('R')">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 18v-6a6 6 0 0 1 6-6h2a6 6 0 0 1 6 6v6"></path><path d="M5 18h14"></path><path d="M8 22v-4"></path><path d="M16 22v-4"></path></svg>
+                    <span class="seat-level" id="lbl-seat-R">R</span>
+                </button>
+            </div>
+        </div>
 
-            const sortedIds = Object.keys(data).sort();
+        <!-- CENTER: Speed, Power & Steering -->
+        <div class="gauge-wrapper" style="margin-top: -40px;">
+            <div class="svg-container">
+                <svg width="340" height="340">
+                    <circle class="circle-bg" cx="170" cy="170" r="150" stroke-dasharray="942" stroke-dashoffset="235"></circle>
+                    <circle class="circle-fill" cx="170" cy="170" r="150" stroke-dasharray="942" stroke-dashoffset="942" stroke="var(--cyan)" id="speed-arc" style="filter: drop-shadow(0 0 15px rgba(0,229,255,0.4)); stroke-width: 12px;"></circle>
+                </svg>
+                <div class="gauge-data">
+                    <div class="speed-unit">KM/H</div>
+                    <div class="data-value speed-val" id="v-speed">0</div>
+                    <div class="prnd" id="v-gear">
+                        <span id="g-p" class="active">P</span>
+                        <span id="g-r">R</span>
+                        <span id="g-n">N</span>
+                        <span id="g-d">D</span>
+                    </div>
+                    <div class="power-kw" id="v-power">0.0 kW</div>
+                    <svg id="steering-wheel" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M12 2v20M2 12h20"></path>
+                    </svg>
+                </div>
+            </div>
 
-            sortedIds.forEach(id => {
-                const hexData = data[id];
-                const tr = document.createElement('tr');
-                tr.innerHTML = `<td class="id-col">${id}</td><td class="data-col">${hexData}</td>`;
-                tbody.appendChild(tr);
+            <!-- Smart Padlock Command -->
+            <div class="controls-row">
+                <button id="smart-door-btn" class="btn-round btn-padlock padlock-locked" onclick="toggleDoors()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="door-icon">
+                        <!-- Default Locked -->
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
 
-                latestLogs += `${id} : ${hexData}\n`;
-            });
+        <!-- RIGHT: Climate Control -->
+        <div class="gauge-wrapper">
+            <div class="svg-container">
+                <svg width="220" height="220">
+                    <circle class="circle-bg" cx="110" cy="110" r="95" stroke-dasharray="596" stroke-dashoffset="149"></circle>
+                    <circle class="circle-fill" cx="110" cy="110" r="95" stroke-dasharray="596" stroke-dashoffset="596" stroke="var(--orange)" id="climate-arc" style="filter: drop-shadow(0 0 10px rgba(255,159,67,0.4));"></circle>
+                </svg>
+                <div class="gauge-data">
+                    <div class="data-value" id="v-climate" style="font-size: 42px; color: var(--text-main);">--<span style="font-size: 16px;">°</span></div>
+                    <div class="data-label">CLIMATE</div>
+                </div>
+            </div>
+
+            <div class="controls-row">
+                <button class="btn-round" onclick="adjustClimate(-1)">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                </button>
+                <button id="btn-clim-pwr" class="btn-round" onclick="toggleClimatePwr()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg>
+                </button>
+                <button class="btn-round" onclick="adjustClimate(1)">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                </button>
+            </div>
+        </div>
+        
+    </div>
+
+    <script>
+        // --- Firebase Configuration ---
+        const ESP_IP = "192.168.43.150"; 
+        const VIN_PATH = "/5YJYGDEF1LF009721";
+        
+        const fbConfig = {
+            apiKey: "AIzaSyAH3yVbBGrhvzbSx7J1GxNcVsl_ykX_OX0",
+            databaseURL: "https://tesla-telemetry-29fb6-default-rtdb.europe-west1.firebasedatabase.app"
+        };
+        firebase.initializeApp(fbConfig);
+        const db = firebase.database();
+
+        let socket;
+        let isWsActive = false;
+        
+        // --- State Control ---
+        let currentClimate = 21.0;
+        let isClimateOn = false;
+        let climateLock = null; 
+        
+        let areDoorsOpen = false;
+        let seatL = 0; let seatR = 0;
+        
+        // Rolling Counters for CAN security
+        let rollingCounters = { '0DA': 0, '141': 0, '338': 0 };
+
+        // --- Core Arc Math ---
+        function setArc(id, value, max, circumference, offsetCorrection) {
+            const circle = document.getElementById(id);
+            if(!circle) return;
+            // 75% fill for 270 degree arc setup
+            const fillAmount = Math.min(Math.max(value / max, 0), 1) * 0.75; 
+            const offset = circumference - (fillAmount * circumference) + offsetCorrection;
+            circle.style.strokeDashoffset = offset;
+        }
+
+        // --- CAN Cryptography (Checksum & Counter) based on Document ---
+        function generateTeslaFrame(canIdHex, actionByte, targetTemp = 0, seatMask = 0) {
+            let id = parseInt(canIdHex, 16);
+            let data = [0, 0, 0, 0, 0, 0, 0, 0];
+
+            if (canIdHex === '0DA') {
+                data[1] = actionByte; // 0x10 Unlatch, 0x20 Lock (Hypothetical mask)
+                data[3] = rollingCounters['0DA'] & 0x0F;
+                rollingCounters['0DA'] = (rollingCounters['0DA'] + 1) % 16;
+            } 
+            else if (canIdHex === '141') {
+                data[0] = actionByte; // 0x01 ON, 0x00 OFF
+                data[1] = targetTemp; // Decimal Temp translated to HEX
+                data[3] = rollingCounters['141'] & 0x0F;
+                rollingCounters['141'] = (rollingCounters['141'] + 1) % 16;
+            }
+            else if (canIdHex === '338') {
+                data[0] = seatMask; // e.g., Seat levels masked
+                data[3] = rollingCounters['338'] & 0x0F;
+                rollingCounters['338'] = (rollingCounters['338'] + 1) % 16;
+            }
+
+            // Document Algorithm: Checksum = ID + Sum(Data[0..6]) & 0xFF
+            let sum = id;
+            for(let i=0; i<7; i++) sum += data[i];
+            data[7] = sum & 0xFF;
+
+            return data.map(b => b.toString(16).padStart(2, '0').toUpperCase()).join(' ');
+        }
+
+        function sendSecureCmd(canIdHex, actionByte, temp = 0, seat = 0) {
+            const hexString = generateTeslaFrame(canIdHex, actionByte, temp, seat);
+            const unixTime = Math.floor(Date.now() / 1000);
+            const payload = `${canIdHex}|${hexString}|${unixTime}`;
+            db.ref(VIN_PATH + '/command').set(payload);
+            console.log("Secure Command Dispatched: " + payload);
+        }
+
+        // --- Data Processor ---
+        function updateDisplay(data) {
+            // Speed & Arcs
+            if (data.speed !== undefined) {
+                document.getElementById('v-speed').innerText = data.speed;
+                setArc('speed-arc', data.speed, 160, 942, 117); 
+            }
+            if (data.soc !== undefined) {
+                document.getElementById('v-soc').innerHTML = `${data.soc.toFixed(0)}<span style="font-size:16px">%</span>`;
+                setArc('soc-arc', data.soc, 100, 596, 74);
+            }
+            
+            // Power (kW) Calculation = (V * A) / 1000
+            if (data.volt !== undefined) {
+                document.getElementById('v-volt').innerText = `${data.volt.toFixed(1)} V`;
+                if(data.curr !== undefined) {
+                    const kw = (data.volt * data.curr) / 1000;
+                    document.getElementById('v-power').innerText = `${kw.toFixed(1)} kW`;
+                }
+            }
+
+            // Battery Temp
+            if(data.temp !== undefined) {
+                document.getElementById('v-temp').innerText = `Batt: ${data.temp.toFixed(1)}°C`;
+            }
+
+            // Steering Angle
+            if(data.steer !== undefined) {
+                document.getElementById('steering-wheel').style.transform = `rotate(${data.steer}deg)`;
+            }
+
+            // Gear PRND
+            if (data.gear) {
+                document.querySelectorAll('.prnd span').forEach(el => el.classList.remove('active'));
+                const gEl = document.getElementById(`g-${data.gear.toLowerCase()}`);
+                if(gEl) gEl.classList.add('active');
+            }
+
+            // Climate Update (Debounced)
+            if (data.climate && !climateLock) {
+                let climRaw = data.climate.replace("141 ", "").trim();
+                // Parsing logic would be applied based on real logs
+                // Placeholder for real parse logic
+            }
+        }
+
+        // --- Interactive Controls ---
+
+        function updateSmartDoorUI() {
+            const btn = document.getElementById('smart-door-btn');
+            if(areDoorsOpen) {
+                btn.className = "btn-round btn-padlock padlock-unlocked";
+                btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="22"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>`;
+            } else {
+                btn.className = "btn-round btn-padlock padlock-locked";
+                btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="22"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>`;
+            }
+        }
+
+        window.toggleDoors = function() {
+            areDoorsOpen = !areDoorsOpen;
+            updateSmartDoorUI();
+            // Document hypothetical mask: 0x10 unlatch, 0x20 lock
+            const action = areDoorsOpen ? 0x10 : 0x20; 
+            sendSecureCmd('0DA', action);
+        };
+
+        window.adjustClimate = function(delta) {
+            if(!isClimateOn) {
+                isClimateOn = true;
+                document.getElementById('btn-clim-pwr').classList.add('clim-on');
+            }
+            
+            currentClimate += delta;
+            if(currentClimate < 15) currentClimate = 15;
+            if(currentClimate > 30) currentClimate = 30;
+            
+            document.getElementById('v-climate').innerHTML = `${currentClimate.toFixed(1)}<span style="font-size: 16px;">°</span>`;
+            setArc('climate-arc', currentClimate - 15, 15, 596, 74);
+
+            clearTimeout(climateLock);
+            climateLock = setTimeout(() => { climateLock = null; }, 3000);
+            
+            sendSecureCmd('141', 0x01, currentClimate);
+        };
+
+        window.toggleClimatePwr = function() {
+            isClimateOn = !isClimateOn;
+            const btn = document.getElementById('btn-clim-pwr');
+            const arc = document.getElementById('climate-arc');
+            
+            if(isClimateOn) {
+                btn.classList.add('clim-on');
+                document.getElementById('v-climate').innerHTML = `${currentClimate.toFixed(1)}<span style="font-size: 16px;">°</span>`;
+                setArc('climate-arc', currentClimate - 15, 15, 596, 74);
+                sendSecureCmd('141', 0x01, currentClimate);
+            } else {
+                btn.classList.remove('clim-on');
+                document.getElementById('v-climate').innerHTML = `--<span style="font-size: 16px;">°</span>`;
+                arc.style.strokeDashoffset = 596; 
+                sendSecureCmd('141', 0x00, 0); // 0x00 for OFF
+            }
+        };
+
+        window.toggleSeat = function(side) {
+            if(side === 'L') {
+                seatL = (seatL + 1) % 4;
+                const btn = document.getElementById('btn-seat-L');
+                btn.className = `btn-round seat-${seatL}`;
+            } else {
+                seatR = (seatR + 1) % 4;
+                const btn = document.getElementById('btn-seat-R');
+                btn.className = `btn-round seat-${seatR}`;
+            }
+            // Byte combination for dual seats (example mask)
+            const seatMask = (seatL << 4) | seatR;
+            sendSecureCmd('338', seatMask);
+        };
+
+        // --- Fallback Networking ---
+        function initWS() {
+            if (window.location.protocol === 'https:') return;
+            try {
+                socket = new WebSocket(`ws://${ESP_IP}:81/`);
+                socket.onopen = () => {
+                    isWsActive = true;
+                    document.getElementById('ws-status').style.color = "var(--green)"; 
+                    document.getElementById('ws-status').style.borderColor = "var(--green)";
+                    document.getElementById('ws-status').innerHTML = "WS: LIVE";
+                };
+                socket.onmessage = (e) => {
+                    try { updateDisplay(JSON.parse(e.data)); } catch (err) {}
+                };
+                socket.onclose = () => {
+                    isWsActive = false;
+                    document.getElementById('ws-status').style.color = "var(--red)"; 
+                    document.getElementById('ws-status').style.borderColor = "var(--red)";
+                    document.getElementById('ws-status').innerHTML = "WS: OFF";
+                    setTimeout(initWS, 5000);
+                };
+            } catch(e) {}
+        }
+
+        db.ref(VIN_PATH + '/telemetry').on('value', (snap) => {
+            if (!isWsActive && snap.val()) {
+                updateDisplay(snap.val());
+                document.getElementById('obd-status').style.color = "var(--green)";
+                document.getElementById('obd-status').style.borderColor = "var(--green)";
+                document.getElementById('obd-status').innerHTML = "OBD: LIVE";
+            }
         });
 
-        // 3. გადმოწერის ფუნქცია
-        function downloadLogs() {
-            if(!latestLogs || latestLogs.length < 50) {
-                alert("ჯერ მონაცემები არ შემოსულა, დაელოდე რამდენიმე წამი!");
-                return;
-            }
-            const blob = new Blob([latestLogs], { type: 'text/plain' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'Tesla_CAN_Logs.txt';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-        }
+        initWS();
+        updateSmartDoorUI();
     </script>
 </body>
 </html>
