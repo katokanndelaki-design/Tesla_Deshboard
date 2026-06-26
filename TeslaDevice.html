@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tesla ESP32 - Cloud Dashboard</title>
+    <!-- Firebase V8 Compat SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    
+    <style>
+        :root { --tesla-red: #E82127; --bg-dark: #121212; --panel-bg: #1e1e1e; --text-light: #f4f4f4; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg-dark); color: var(--text-light); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        h1 { color: var(--tesla-red); letter-spacing: 2px; text-transform: uppercase; }
+        .dashboard { display: grid; grid-template-columns: 1fr; gap: 20px; width: 100%; max-width: 600px; }
+        .card { background-color: var(--panel-bg); padding: 20px; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.5); border-left: 4px solid var(--tesla-red); }
+        h3 { margin-top: 0; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        .btn-group { display: flex; flex-direction: column; gap: 10px; }
+        button { background-color: #333; color: white; border: none; padding: 15px; border-radius: 8px; cursor: pointer; font-size: 16px; transition: 0.3s; }
+        button:hover { background-color: #444; }
+        button.active { background-color: var(--tesla-red); font-weight: bold; }
+        input[type="text"] { width: 100%; padding: 12px; margin-top: 10px; border-radius: 6px; border: 1px solid #444; background: #2a2a2a; color: white; box-sizing: border-box; }
+        .status { font-size: 14px; color: #888; margin-top: 10px; text-align: center; }
+        .connected { color: #4CAF50; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <h1>Tesla ESP32 Control</h1>
+    <div class="status" id="db-status">კავშირი Firebase-თან: მიმდინარეობს...</div>
+
+    <div class="dashboard">
+        <!-- მოდულების კონტროლი -->
+        <div class="card">
+            <h3>აქტიური მოდული (Real-Time)</h3>
+            <div class="btn-group">
+                <button id="btn-telemetry" onclick="setModule('telemetry')">📊 CAN ტელემეტრია (Dashboard)</button>
+                <button id="btn-key_emulator" onclick="setModule('key_emulator')">🔑 BLE გასაღების კლონირება</button>
+                <button id="btn-tpms_spoof" onclick="setModule('tpms_spoof')">🛞 TPMS სენსორის სიმულაცია</button>
+            </div>
+        </div>
+
+        <!-- ონლაინ სეთინგების სინქრონიზაცია -->
+        <div class="card">
+            <h3>ღრუბლოვანი სეთინგები (Cloud Settings)</h3>
+            <label>FOTA Update URL (.bin):</label>
+            <input type="text" id="fota-input" placeholder="https://github.com/.../update.bin">
+            <button style="margin-top: 10px; background-color: #f39c12;" onclick="saveSettings()">💾 პარამეტრების შენახვა ბაზაში</button>
+            <p style="font-size: 12px; color: #aaa; margin-top: 10px;">* ESP32 ონლაინ გამოსვლისას წაიკითხავს ამ პარამეტრებს.</p>
+        </div>
+    </div>
+
+    <script>
+        // 1. Firebase კონფიგურაცია (Master Data-დან)
+        const firebaseConfig = {
+            apiKey: "AIzaSyAH3yVbBGrhvzbSx7J1GxNcVsl_ykX_OX0",
+            databaseURL: "https://tesla-telemetry-29fb6-default-rtdb.europe-west1.firebasedatabase.app"
+        };
+
+        // ინიციალიზაცია
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        // 2. Real-Time მოსმენა (Synchronization)
+        const modulePath = 'TeslaDevice/System/config/active_module';
+        const settingsPath = 'TeslaDevice/System/settings/fota_url';
+
+        db.ref(modulePath).on('value', (snapshot) => {
+            document.getElementById('db-status').innerHTML = 'კავშირი Firebase-თან: <span class="connected">აქტიურია</span>';
+            const activeModule = snapshot.val();
+            
+            // ღილაკების ვიზუალის განახლება
+            document.querySelectorAll('.btn-group button').forEach(btn => btn.classList.remove('active'));
+            if(activeModule) {
+                const activeBtn = document.getElementById('btn-' + activeModule);
+                if(activeBtn) activeBtn.classList.add('active');
+            }
+        });
+
+        db.ref(settingsPath).on('value', (snapshot) => {
+            const fotaUrl = snapshot.val();
+            if(fotaUrl) {
+                document.getElementById('fota-input').value = fotaUrl;
+            }
+        });
+
+        // 3. მონაცემების ბაზაში ჩაწერა
+        function setModule(moduleName) {
+            db.ref(modulePath).set(moduleName)
+              .then(() => console.log('მოდული შეიცვალა:', moduleName))
+              .catch(err => alert('შეცდომა: ' + err.message));
+        }
+
+        function saveSettings() {
+            const newFota = document.getElementById('fota-input').value;
+            db.ref(settingsPath).set(newFota)
+              .then(() => alert('სეთინგები წარმატებით შეინახა Cloud-ში!'))
+              .catch(err => alert('შეცდომა: ' + err.message));
+        }
+    </script>
+</body>
+</html>
