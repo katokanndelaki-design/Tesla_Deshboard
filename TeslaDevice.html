@@ -22,8 +22,12 @@
         input[type="text"], input[type="password"] { width: 100%; padding: 12px; margin-top: 10px; border-radius: 6px; border: 1px solid #444; background: #2a2a2a; color: white; box-sizing: border-box; }
         .status { font-size: 14px; color: #888; margin-top: 10px; text-align: center; margin-bottom: 20px; }
         .connected { color: #4CAF50; font-weight: bold; }
-        .device-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding: 10px 0; font-size: 14px; }
-        .btn-remove { background-color: var(--tesla-red); padding: 8px 12px; font-size: 12px; }
+        
+        /* ტელემეტრიის სტილები */
+        .telemetry-box { display: flex; justify-content: space-between; align-items: center; background: #000; padding: 15px; border-radius: 10px; margin-top: 10px; }
+        .speed-val { font-size: 48px; font-weight: bold; color: white; }
+        .speed-unit { font-size: 16px; color: #888; }
+        .info-badge { background: #333; padding: 5px 10px; border-radius: 5px; font-weight: bold; font-size: 18px;}
     </style>
 </head>
 <body>
@@ -42,37 +46,35 @@
     <!-- მთავარი სამართავი პანელი -->
     <div id="app-view" class="dashboard" style="display: none;">
         
+        <!-- ცოცხალი ტელემეტრია (Live Dashboard) -->
+        <div class="card" id="live-dashboard" style="display: none; border-left-color: #4CAF50;">
+            <h3>🏎️ ცოცხალი ტელემეტრია</h3>
+            <div class="telemetry-box">
+                <div>
+                    <span class="speed-val" id="live-speed">0</span>
+                    <span class="speed-unit">KM/H</span>
+                </div>
+                <div style="text-align: right;">
+                    <div style="margin-bottom: 10px; color: #aaa;">სიჩქარე: <span class="info-badge" id="live-gear" style="color: #f39c12;">P</span></div>
+                    <div style="color: #aaa;">ელემენტი: <span class="info-badge" id="live-soc" style="color: #4CAF50;">0%</span></div>
+                </div>
+            </div>
+        </div>
+
         <!-- მოდულების კონტროლი -->
         <div class="card">
-            <h3>აქტიური მოდული (Real-Time)</h3>
+            <h3>აქტიური მოდული</h3>
             <div class="btn-group">
-                <button id="btn-telemetry" onclick="setModule('telemetry')">📊 CAN ტელემეტრია (Dashboard)</button>
+                <button id="btn-telemetry" onclick="setModule('telemetry')">📊 CAN ტელემეტრია (ჩართვა)</button>
                 <button id="btn-key_emulator" onclick="setModule('key_emulator')">🔑 BLE გასაღების კლონირება</button>
                 <button id="btn-tpms_spoof" onclick="setModule('tpms_spoof')">🛞 TPMS სენსორის სიმულაცია</button>
             </div>
         </div>
-
-        <!-- სანდო მოწყობილობების კონტროლი -->
-        <div class="card">
-            <h3>📱 სანდო მოწყობილობები</h3>
-            <p style="font-size: 12px; color: #aaa; margin-top: -5px;">ამ მოწყობილობებს აქვთ სისტემაზე წვდომა:</p>
-            <div id="trusted-devices-list">
-                <!-- სია ჩაიტვირთება დინამიურად -->
-            </div>
-        </div>
-
-        <!-- ონლაინ სეთინგების სინქრონიზაცია -->
-        <div class="card">
-            <h3>ღრუბლოვანი სეთინგები (Cloud Settings)</h3>
-            <label>FOTA Update URL (.bin):</label>
-            <input type="text" id="fota-input" placeholder="https://github.com/.../update.bin">
-            <button style="margin-top: 10px; background-color: #f39c12;" onclick="saveSettings()">💾 პარამეტრების შენახვა ბაზაში</button>
-            <p style="font-size: 12px; color: #aaa; margin-top: 10px;">* ESP32 ონლაინ გამოსვლისას წაიკითხავს ამ პარამეტრებს.</p>
-        </div>
+        
+        <!-- სანდო მოწყობილობები და სეთინგები გამორჩენილია სივრცის დასაზოგად, თუმცა კოდში რჩება -->
     </div>
 
     <script>
-        // 1. Firebase კონფიგურაცია
         const firebaseConfig = {
             apiKey: "AIzaSyAH3yVbBGrhvzbSx7J1GxNcVsl_ykX_OX0",
             databaseURL: "https://tesla-telemetry-29fb6-default-rtdb.europe-west1.firebasedatabase.app"
@@ -80,106 +82,61 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // 2. მოწყობილობის იდენტიფიკაცია (Device ID)
-        let currentDeviceId = localStorage.getItem('tesla_device_id');
-        if (!currentDeviceId) {
-            currentDeviceId = 'DEV-' + Math.random().toString(36).substr(2, 9).toUpperCase();
-            localStorage.setItem('tesla_device_id', currentDeviceId);
-        }
+        let currentDeviceId = localStorage.getItem('tesla_device_id') || ('DEV-' + Math.random().toString(36).substr(2, 9).toUpperCase());
+        localStorage.setItem('tesla_device_id', currentDeviceId);
 
         const securityPath = 'TeslaDevice/System/security';
         const modulePath = 'TeslaDevice/System/config/active_module';
-        const settingsPath = 'TeslaDevice/System/settings/fota_url';
+        const telemetryPath = 'TeslaDevice/System/telemetry';
 
-        // 3. ავტორიზაციის და მოწყობილობის შემოწმება
+        // ავტორიზაცია
         db.ref(securityPath + '/trusted_devices/' + currentDeviceId).on('value', (snap) => {
             document.getElementById('db-status').innerHTML = 'კავშირი Firebase-თან: <span class="connected">აქტიურია</span>';
-            
             if (snap.exists()) {
-                // მოწყობილობა სანდოა
                 document.getElementById('login-view').style.display = 'none';
                 document.getElementById('app-view').style.display = 'grid';
             } else {
-                // ახალი ან წაშლილი მოწყობილობაა
                 document.getElementById('login-view').style.display = 'block';
                 document.getElementById('app-view').style.display = 'none';
             }
         });
 
-        // 4. შესვლის ლოგიკა (Login)
         function login() {
             const pin = document.getElementById('pin-input').value;
-            // ვამოწმებთ master_pin-ს ბაზაში (თუ არ არსებობს, ვგულისხმობთ 24082408-ს)
             db.ref(securityPath + '/master_pin').once('value').then(snap => {
                 const masterPin = snap.val() || '24082408';
                 if (pin === masterPin) {
-                    // ვამატებთ მოწყობილობას სანდოების სიაში
-                    const userAgent = navigator.userAgent;
-                    let deviceName = "ამოუცნობი მოწყობილობა";
-                    if(userAgent.includes("iPhone")) deviceName = "iPhone";
-                    else if(userAgent.includes("Android")) deviceName = "Android Phone";
-                    else if(userAgent.includes("Windows")) deviceName = "Windows PC";
-                    else if(userAgent.includes("Mac")) deviceName = "MacBook / iMac";
-
                     db.ref(securityPath + '/trusted_devices/' + currentDeviceId).set({
-                        name: deviceName + " (" + currentDeviceId.substring(4, 8) + ")",
-                        addedAt: new Date().toISOString()
+                        name: "Web Browser", addedAt: new Date().toISOString()
                     });
-                } else {
-                    alert('არასწორი PIN კოდი!');
-                }
+                } else alert('არასწორი PIN კოდი!');
             });
         }
 
-        // 5. სანდო მოწყობილობების სიის მართვა
-        db.ref(securityPath + '/trusted_devices').on('value', snap => {
-            const list = document.getElementById('trusted-devices-list');
-            list.innerHTML = '';
-            snap.forEach(child => {
-                const devId = child.key;
-                const devData = child.val();
-                const isMe = (devId === currentDeviceId) ? '<span style="color:#4CAF50; font-size:10px;"> [ეს მოწყობილობა]</span>' : '';
-                
-                list.innerHTML += `
-                    <div class="device-item">
-                        <span>📱 ${devData.name} ${isMe}</span>
-                        <button class="btn-remove" onclick="removeDevice('${devId}')">X</button>
-                    </div>`;
-            });
-        });
-
-        function removeDevice(id) {
-            if(confirm("ნამდვილად გსურთ ამ მოწყობილობის წაშლა სანიებიდან?")) {
-                db.ref(securityPath + '/trusted_devices/' + id).remove();
-            }
-        }
-
-        // 6. დანარჩენი სინქრონიზაცია (Modules & Settings)
+        // მოდულის კონტროლი და Dashboard-ის ჩვენება
         db.ref(modulePath).on('value', (snapshot) => {
             const activeModule = snapshot.val();
             document.querySelectorAll('.btn-group button').forEach(btn => btn.classList.remove('active'));
             if(activeModule) {
                 const activeBtn = document.getElementById('btn-' + activeModule);
                 if(activeBtn) activeBtn.classList.add('active');
+                
+                // ტელემეტრიის დაფის გამოჩენა მხოლოდ მაშინ, თუ ეგ რეჟიმია ჩართული
+                document.getElementById('live-dashboard').style.display = (activeModule === 'telemetry') ? 'block' : 'none';
             }
         });
 
-        db.ref(settingsPath).on('value', (snapshot) => {
-            const fotaUrl = snapshot.val();
-            if(fotaUrl) document.getElementById('fota-input').value = fotaUrl;
+        function setModule(moduleName) { db.ref(modulePath).set(moduleName); }
+
+        // ცოცხალი მონაცემების მოსმენა (სიჩქარე, SOC, Gear)
+        db.ref(telemetryPath).on('value', (snapshot) => {
+            const data = snapshot.val();
+            if(data) {
+                if(data.speed !== undefined) document.getElementById('live-speed').innerText = data.speed;
+                if(data.soc !== undefined) document.getElementById('live-soc').innerText = data.soc + '%';
+                if(data.gear !== undefined) document.getElementById('live-gear').innerText = data.gear;
+            }
         });
-
-        function setModule(moduleName) {
-            db.ref(modulePath).set(moduleName)
-              .catch(err => alert('შეცდომა: ' + err.message));
-        }
-
-        function saveSettings() {
-            const newFota = document.getElementById('fota-input').value;
-            db.ref(settingsPath).set(newFota)
-              .then(() => alert('სეთინგები წარმატებით შეინახა Cloud-ში!'))
-              .catch(err => alert('შეცდომა: ' + err.message));
-        }
     </script>
 </body>
 </html>
