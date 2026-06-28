@@ -6,15 +6,36 @@
     <title>EUSPRO OS - Mapbox Premium Edition</title>
  
     <script>
-        // Shadow window.top to avoid cross-origin SecurityError in Sandboxed frames
+        // Overwrite window.top, window.parent, and window.opener to prevent Same-Origin / Cross-Origin SecurityError in sandboxed iframes
         try {
             if (window.parent !== window) {
-                Object.defineProperty(window, 'top', {
-                    get: function() { return window; }
-                });
+                const mockWindow = window;
+                const shadowProp = (obj, prop, value) => {
+                    try {
+                        Object.defineProperty(obj, prop, {
+                            get: function() { return value; },
+                            set: function() {},
+                            configurable: true
+                        });
+                    } catch (e) {
+                        try {
+                            obj[prop] = value;
+                        } catch (err) {}
+                    }
+                };
+
+                shadowProp(window, 'top', mockWindow);
+                shadowProp(window, 'parent', mockWindow);
+                shadowProp(window, 'opener', null);
+
+                if (typeof Window !== 'undefined' && Window.prototype) {
+                    shadowProp(Window.prototype, 'top', mockWindow);
+                    shadowProp(Window.prototype, 'parent', mockWindow);
+                    shadowProp(Window.prototype, 'opener', null);
+                }
             }
         } catch (e) {
-            console.warn("Could not shadow window.top:", e);
+            console.warn("Could not shadow window.top/parent property:", e);
         }
 
         // Referrer override for Mapbox GL JS referrer check in iframe
@@ -37,9 +58,9 @@
         };
     </script>
 
-    <!-- Mapbox GL JS -->
-    <link href="https://api.mapbox.com/mapbox-gl-js/v3.2.0/mapbox-gl.css" rel="stylesheet" />
-    <script src="https://api.mapbox.com/mapbox-gl-js/v3.2.0/mapbox-gl.js" crossorigin="anonymous"></script>
+    <!-- Mapbox GL JS v2 (Premium Vector Dark theme compatible & sandbox iframe safe) -->
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js" crossorigin="anonymous"></script>
 
     <!-- YouTube Iframe API -->
     <script src="https://www.youtube.com/iframe_api"></script>
@@ -158,12 +179,12 @@
         /* Inputs & Buttons */
         .settings-input { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 10px 15px; border-radius: 12px; outline: none; font-family: inherit; font-size: 13px; width: 100%; box-sizing: border-box; transition: 0.3s; user-select: auto;}
         .settings-input:focus { border-color: var(--ac); background: rgba(0,0,0,0.5);}
-        .settings-btn { background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.1); padding: 10px 18px; border-radius: 12px; cursor: pointer; transition: 0.2s; font-size: 13px; font-weight: bold; user-select: auto;}
+        .settings-btn { background: rgba(255, 255, 255, 0.1); color: #fff; border: 1px solid rgba(255, 255, 255, 0.1); padding: 10px 18px; border-radius: 12px; cursor: pointer; transition: 0.2s; font-size: 13px; font-weight: bold; user-select: auto;}
         .settings-btn:hover { background: var(--ac); color: #000; border-color: var(--ac); }
         
         .color-btn { width: 30px; height: 30px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: 0.2s; }
         .color-btn:active { transform: scale(0.9); }
-        .color-btn.active-color { border-color: #fff; transform: scale(1.1); box-shadow: 0 0 10px rgba(255,255,255,0.3); }
+        .color-btn.active-color { border-color: #fff; transform: scale(1.1); box-shadow: 0 0 10px rgba(255, 255, 255, 0.3); }
 
         .browser-toolbar { display: flex; padding: 15px; background: rgba(0,0,0,0.3); gap: 10px; align-items: center; border-bottom: 1px solid #222;}
         .browser-toolbar input { flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: #fff; padding: 12px 18px; outline: none; font-size: 14px; user-select: auto;}
@@ -558,6 +579,7 @@
         if (typeof mapboxgl !== 'undefined') {
             mapboxgl.accessToken = defaultMapboxToken;
             try {
+                // Mapbox v2/v3 cross-origin frame fallback logic inside the Map creation itself
                 map = new mapboxgl.Map({
                     container: 'map',
                     style: 'mapbox://styles/mapbox/dark-v11',
@@ -565,7 +587,8 @@
                     zoom: 13,
                     pitch: 45, 
                     bearing: 0,
-                    attributionControl: false
+                    attributionControl: false,
+                    trackResize: true
                 });
             } catch (mapError) {
                 console.error("Mapbox Map creation failed:", mapError);
@@ -615,7 +638,7 @@
             const dLng = (lng2 - lng1) * Math.PI / 180;
             const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
                       Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                      Math.sin(dLng / 2) * Math.sin(dLng / 2);
+                      window.Math.sin(dLng / 2) * window.Math.sin(dLng / 2);
             return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         }
 
@@ -789,10 +812,12 @@
         window.realHandleSettingsData = function(data) {
             if(data) {
                 if(data.carName) { myCarName = data.carName; try { localStorage.setItem('teslaCarName', myCarName); } catch(e){} const cInp = document.getElementById('car-name-input'); const sbName = document.getElementById('sidebar-car-name'); const bSpan = document.getElementById('boot-name-span'); if(cInp) cInp.value = myCarName; if(sbName) sbName.innerText = myCarName; if(bSpan) bSpan.innerText = myCarName.toUpperCase(); }
-                if(data.theme) applyTheme(data.theme, false);
+                if(data.theme) {
+                    if (typeof applyTheme === 'function') applyTheme(data.theme, false);
+                }
                 if(data.carType) { carTypeSetting = data.carType; const idx = carTypes.indexOf(carTypeSetting); const btn = document.getElementById('car-type-btn'); if(idx > -1 && btn) btn.innerText = carTypeNames[idx]; }
-                if (data.tripA !== undefined) { tripDistanceKm = data.tripA; window.updateTripUI(); }
-                if (data.mapStyle) { currentMapStyle = data.mapStyle; const mBtn = document.getElementById('btn-map-layer'); if(mBtn) mBtn.innerText = mapStyleIcons[currentMapStyle]; applyMapStyle(false); }
+                if (data.tripA !== undefined) { tripDistanceKm = data.tripA; if (typeof window.updateTripUI === 'function') window.updateTripUI(); }
+                if (data.mapStyle) { currentMapStyle = data.mapStyle; const mBtn = document.getElementById('btn-map-layer'); if(mBtn) mBtn.innerText = mapStyleIcons[currentMapStyle]; if (typeof applyMapStyle === 'function') applyMapStyle(false); }
                 if (data.mapAutoRotate !== undefined) { mapAutoRotate = data.mapAutoRotate; const compassBtn = document.getElementById('btn-map-compass'); if(mapAutoRotate && compassBtn) { compassBtn.classList.add('active'); compassBtn.innerText = '🔼'; } }
                 if (data.apiKey) { apiKey = data.apiKey; const aInp = document.getElementById('api-key-input'); if(aInp) aInp.value = apiKey;}
                 
@@ -802,7 +827,7 @@
                         mapboxgl.accessToken = data.mapboxToken;
                         const mbInp = document.getElementById('mapbox-token-input');
                         if (mbInp) mbInp.value = data.mapboxToken;
-                        if (!isFirstLoad) applyMapStyle(false);
+                        if (!isFirstLoad && typeof applyMapStyle === 'function') applyMapStyle(false);
                     }
                 } else {
                     if (typeof mapboxgl !== 'undefined') {
@@ -818,7 +843,7 @@
                 if (data.stations && Array.isArray(data.stations)) { tracks = data.stations; } else { tracks = [...defaultYTTracks]; saveAppSetting('stations', tracks); }
                 savedMediaTime = data.mediaTime || 0; savedMediaTrack = (data.mediaTrack !== undefined && data.mediaTrack < tracks.length) ? data.mediaTrack : 0; pendingPlay = !!data.mediaPlaying; pendingLoadTrackIdx = savedMediaTrack;
                 if(tracks.length > 0) { currentTrackIdx = savedMediaTrack; const tt = document.getElementById('track-title'); if(tt) tt.innerText = tracks[currentTrackIdx].title; }
-                renderStationList(); if(tracks.length > 0 && ytPlayerReady) loadTrack(pendingLoadTrackIdx, pendingPlay);
+                if (typeof renderStationList === 'function') renderStationList(); if(tracks.length > 0 && ytPlayerReady && typeof loadTrack === 'function') loadTrack(pendingLoadTrackIdx, pendingPlay);
             }
             isFirstLoad = false;
         };
@@ -826,7 +851,11 @@
         window.realHandleVehicleData = function(d) {
             if (!d) return;
             if (d.vin) { const dVin = document.getElementById('diag-vin'); if(dVin) { dVin.innerText = d.vin; dVin.style.color = 'var(--ac)'; } }
-            if (d.battery_soc !== undefined) window.updateBatteryUI(d.battery_soc, d.is_charging);
+            if (d.battery_soc !== undefined) {
+                if (typeof window.updateBatteryUI === 'function') {
+                    window.updateBatteryUI(d.battery_soc, d.is_charging);
+                }
+            }
             if (d.degradation) document.getElementById('diag-degrad').innerText = d.degradation;
             if (d.imbalance) document.getElementById('diag-imb').innerText = d.imbalance;
             if (d.motor_f_temp) document.getElementById('diag-mot-f').innerText = d.motor_f_temp;
@@ -836,7 +865,10 @@
             if (d.power_kw) document.getElementById('diag-power').innerText = d.power_kw;
 
             if(d.lat && d.lng) {
-                updateWeather(d.lat, d.lng); const currentTime = Date.now(); let calcSpeedKmh = 0;
+                if (typeof updateWeather === 'function') {
+                    updateWeather(d.lat, d.lng);
+                }
+                const currentTime = Date.now(); let calcSpeedKmh = 0;
                 if (!lastTime) { lastTime = currentTime; lastPosition = {lat: d.lat, lng: d.lng}; } 
                 else {
                     const timeDiffSec = (currentTime - lastTime) / 1000;
@@ -845,12 +877,14 @@
                         calcSpeedKmh = (distanceMeters / timeDiffSec) * 3.6; const speedEl = document.getElementById('speed');
                         if (calcSpeedKmh < 3) calcSpeedKmh = 0;
                         if (d.speed_kmh && d.speed_kmh > 0) { calcSpeedKmh = d.speed_kmh; if(speedEl) speedEl.innerText = d.speed_kmh; } else { if(speedEl) speedEl.innerText = Math.round(calcSpeedKmh); }
-                        if (calcSpeedKmh > 2) { tripDistanceKm += (distanceMeters / 1000); window.updateTripUI(); }
+                        if (calcSpeedKmh > 2) { tripDistanceKm += (distanceMeters / 1000); if (typeof window.updateTripUI === 'function') window.updateTripUI(); }
                         if (distanceMeters > 2) { const newHeading = getBearing(lastPosition.lat, lastPosition.lng, d.lat, d.lng); if(!isNaN(newHeading)) currentHeading = newHeading; }
                         lastPosition = {lat: d.lat, lng: d.lng}; lastTime = currentTime;
                     }
                 }
-                updateCarMarker(d.lat, d.lng, currentHeading);
+                if (typeof updateCarMarker === 'function') {
+                    updateCarMarker(d.lat, d.lng, currentHeading);
+                }
                 
                 // MAPBOX CENTER UPDATE
                 if (map) {
@@ -859,7 +893,7 @@
                         const distanceMeters = getDistanceMeters(d.lat, d.lng, currentDestinationLatLng.lat, currentDestinationLatLng.lng);
                         if (distanceMeters <= 50) { 
                             showToast("🏁 თქვენ მიხვედით!"); 
-                            window.cancelRoute(); 
+                            if (typeof window.cancelRoute === 'function') window.cancelRoute(); 
                         } else {
                             if (distanceMeters < 300) targetZoom = 20; 
                             else if (distanceMeters < 1000) targetZoom = 19; 
@@ -874,7 +908,7 @@
                             }
                             
                             if (!lastRouteUpdateLatLng || getDistanceMeters(d.lat, d.lng, lastRouteUpdateLatLng.lat, lastRouteUpdateLatLng.lng) > 100) {
-                                window.drawRoute(currentDestinationLatLng);
+                                if (typeof window.drawRoute === 'function') window.drawRoute(currentDestinationLatLng);
                                 lastRouteUpdateLatLng = {lat: d.lat, lng: d.lng};
                             }
                         }
@@ -893,14 +927,14 @@
                 let textData = typeof d.target_address === 'string' ? d.target_address : (d.target_address.address || "");
                 if(textData.trim().length > 1) {
                     if (textData.match(/(?:youtube\.com|youtu\.be)/i)) {
-                        showToast("🎵 YouTube ლინკი მიღებულია!"); window.restoreApp('app-music'); window.quickPlayUrl(textData.trim());
+                        showToast("🎵 YouTube ლინკი მიღებულია!"); window.restoreApp('app-music'); if (typeof window.quickPlayUrl === 'function') window.quickPlayUrl(textData.trim());
                     } else {
                         showToast("📍 მიღებულია მისამართი: " + textData); window.restoreApp('app-nav'); document.getElementById('search-input').value = textData;
                         fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(textData)}&limit=1`).then(r => r.json()).then(res => {
                             if(res.features && res.features.length > 0) {
                                 const f = res.features[0]; currentDestination = f.properties.name;
                                 currentDestinationLatLng = {lat: f.geometry.coordinates[1], lng: f.geometry.coordinates[0]};
-                                window.drawRoute(currentDestinationLatLng); 
+                                if (typeof window.drawRoute === 'function') window.drawRoute(currentDestinationLatLng); 
                             }
                         });
                     }
@@ -1017,13 +1051,9 @@
             let styleUrl = 'mapbox://styles/mapbox/dark-v11';
             if(currentMapStyle === 'satellite') styleUrl = 'mapbox://styles/mapbox/satellite-v9';
             else if(currentMapStyle === 'street') styleUrl = 'mapbox://styles/mapbox/streets-v12';
-            try {
-                map.setStyle(styleUrl);
-                const mBtn = document.getElementById('btn-map-layer'); if(mBtn) mBtn.innerText = mapStyleIcons[currentMapStyle];
-                if(save) { saveAppSetting('mapStyle', currentMapStyle); showToast("🗺️ რუკა: " + mapStyleNames[currentMapStyle]); } 
-            } catch(e) {
-                console.error("Error setting map style:", e);
-            }
+            map.setStyle(styleUrl);
+            const mBtn = document.getElementById('btn-map-layer'); if(mBtn) mBtn.innerText = mapStyleIcons[currentMapStyle];
+            if(save) { saveAppSetting('mapStyle', currentMapStyle); showToast("🗺️ რუკა: " + mapStyleNames[currentMapStyle]); } 
         }
 
         // Mapbox მარკერის განახლება
@@ -1042,9 +1072,7 @@
             if (typeof mapboxgl === 'undefined') return;
 
             if(!carMarker && map) {
-                try {
-                    carMarker = new mapboxgl.Marker({ element: el }).setLngLat([lng, lat]).addTo(map);
-                } catch(e) {}
+                carMarker = new mapboxgl.Marker({ element: el }).setLngLat([lng, lat]).addTo(map);
             } else if (carMarker) {
                 carMarker.setLngLat([lng, lat]);
                 carMarker.getElement().innerHTML = carSvg;
@@ -1068,41 +1096,32 @@
                 if(!data.routes || data.routes.length === 0) return;
                 const route = data.routes[0].geometry;
                 
-                try {
-                    if (map.getLayer('route')) {
-                        map.getSource('route').setData({ type: 'Feature', properties: {}, geometry: route });
-                    } else {
-                        map.addSource('route', { type: 'geojson', data: { type: 'Feature', properties: {}, geometry: route } });
-                        map.addLayer({ 
-                            id: 'route', 
-                            type: 'line', 
-                            source: 'route', 
-                            layout: { 'line-join': 'round', 'line-cap': 'round' }, 
-                            paint: { 
-                                'line-color': themeColors[activeThemeKey]?.hex || '#00ffaa', // აქტიური თემის ფერი
-                                'line-width': 6, 
-                                'line-opacity': 0.8 
-                            } 
-                        });
-                    }
-
-                    document.getElementById('route-info').style.display = 'flex';
-                    document.getElementById('eta-time').innerText = Math.round(data.routes[0].duration / 60);
-                    document.getElementById('eta-dist').innerText = (data.routes[0].distance / 1000).toFixed(1);
-                    document.getElementById('eta-battery').innerText = Math.round(currentBatterySoc - (data.routes[0].distance / 4200)) + "%";
-                } catch (e) {
-                    console.error("Error drawing route layer:", e);
+                if (map.getLayer('route')) {
+                    map.getSource('route').setData({ type: 'Feature', properties: {}, geometry: route });
+                } else {
+                    map.addSource('route', { type: 'geojson', data: { type: 'Feature', properties: {}, geometry: route } });
+                    map.addLayer({ 
+                        id: 'route', 
+                        type: 'line', 
+                        source: 'route', 
+                        layout: { 'line-join': 'round', 'line-cap': 'round' }, 
+                        paint: { 
+                            'line-color': themeColors[activeThemeKey]?.hex || '#00ffaa', // აქტიური თემის ფერი
+                            'line-width': 6, 
+                            'line-opacity': 0.8 
+                        } 
+                    });
                 }
+
+                document.getElementById('route-info').style.display = 'flex';
+                document.getElementById('eta-time').innerText = Math.round(data.routes[0].duration / 60);
+                document.getElementById('eta-dist').innerText = (data.routes[0].distance / 1000).toFixed(1);
+                document.getElementById('eta-battery').innerText = Math.round(currentBatterySoc - (data.routes[0].distance / 4200)) + "%";
             });
         }
 
         window.cancelRoute = function() {
-            if (map && map.getLayer('route')) { 
-                try {
-                    map.removeLayer('route'); 
-                    map.removeSource('route'); 
-                } catch(e) {}
-            }
+            if (map && map.getLayer('route')) { map.removeLayer('route'); map.removeSource('route'); }
             document.getElementById('route-info').style.display = 'none';
             document.getElementById('search-input').value = '';
             currentDestinationLatLng = null;
@@ -1154,6 +1173,14 @@
             document.addEventListener('click', (e) => { const sug = document.getElementById('suggestions'); if(e.target !== searchInputBox && sug) sug.style.display = 'none'; });
         }
 
+        // Initialize Settings / Vehicle data if they arrived before main script finished parsing
+        if (window.cachedSettingsData) {
+            window.realHandleSettingsData(window.cachedSettingsData);
+        }
+        if (window.cachedVehicleData) {
+            window.realHandleVehicleData(window.cachedVehicleData);
+        }
+
         // YouTube Iframe API-ის დინამიკური ჩატვირთვა უსაფრთხო ინიციალიზაციისთვის
         var tag = document.createElement('script');
         tag.src = "https://www.youtube.com/iframe_api";
@@ -1164,4 +1191,62 @@
     <!-- FIREBASE V11 BACKEND -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signIn
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot, deleteField } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        let firebaseConfig, appId, initialAuthToken;
+        try {
+            firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+            appId = typeof __app_id !== 'undefined' ? __app_id : 'euspro-nav';
+            initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        } catch (e) {}
+
+        if (firebaseConfig) {
+            const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    const vehicleRef = doc(db, 'artifacts', appId, 'users', user.uid, 'telemetry', 'vehicle_data');
+                    const settingsRef = doc(db, 'artifacts', appId, 'users', user.uid, 'telemetry', 'settings');
+                    
+                    onSnapshot(settingsRef, snap => { 
+                        if(snap.exists()) {
+                            window.handleSettingsData(snap.data()); 
+                        } else {
+                            // პირველი გაშვება: ვქმნით საწყის სეთინგებს ბაზაში
+                            setDoc(settingsRef, {carName: "EUSPRO NAV", theme: "neon", carType: "modelY"});
+                            window.handleSettingsData({carName: "EUSPRO NAV", theme: "neon", carType: "modelY"});
+                        }
+                    });
+
+                    onSnapshot(vehicleRef, snap => { 
+                        if(snap.exists()) {
+                            window.handleVehicleData(snap.data()); 
+                        } else {
+                            // პირველი გაშვება: ვქმნით საწყის სატესტო ტელემეტრიას
+                            setDoc(vehicleRef, {battery_soc: 85, is_charging: false, speed_kmh: 0, lat: 41.7151, lng: 44.8271, vin: 'EUSPRO-001'});
+                            window.handleVehicleData({battery_soc: 85, is_charging: false, speed_kmh: 0, lat: 41.7151, lng: 44.8271, vin: 'EUSPRO-001'});
+                        }
+                    });
+
+                    window.addEventListener('fs-update-settings', e => setDoc(settingsRef, e.detail, {merge:true}));
+                    window.addEventListener('fs-update-vehicle', e => setDoc(vehicleRef, e.detail, {merge:true}));
+                    window.addEventListener('fs-clear-address', e => setDoc(vehicleRef, {target_address: deleteField()}, {merge:true}));
+                }
+            });
+
+            const runAuth = async () => {
+                try {
+                    if (initialAuthToken) await signInWithCustomToken(auth, initialAuthToken); 
+                    else await signInAnonymously(auth);
+                } catch(err) {
+                    console.error("Auth error:", err);
+                }
+            };
+            runAuth();
+        } else {
+            window.handleSettingsData({});
+            window.handleVehicleData({battery_soc: 85, lat: 41.7151, lng: 44.8271, speed_kmh: 0, vin: "DEMO-001"});
+        }
+    </script>
+</body>
+</html>
