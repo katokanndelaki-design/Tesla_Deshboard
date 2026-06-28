@@ -158,8 +158,8 @@
         .resizer::after { content: ''; position: absolute; right: 12px; bottom: 12px; width: 10px; height: 10px; border-right: 3px solid rgba(255,255,255,0.3); border-bottom: 3px solid rgba(255,255,255,0.3); border-bottom-right-radius: 3px; transition: 0.2s; }
         .resizer:hover::after, .resizer:active::after { border-color: var(--ac); }
 
-        .mini-player { position: absolute; bottom: 130px; left: 24px; width: 340px; background: var(--glass-bg); backdrop-filter: var(--glass-blur); border-radius: 24px; border: 1px solid var(--glass-border); display: none; flex-direction: column; padding: 15px 20px; gap: 10px; box-shadow: 0 15px 40px rgba(0,0,0,0.7); z-index: 900; transition: opacity 0.5s ease;}
-        .mini-player.active-session { display: flex; }
+        /* კომპაქტური მინი პლეიერი */
+        .mini-player { position: absolute; bottom: 130px; left: 24px; width: 300px; background: var(--glass-bg); backdrop-filter: var(--glass-blur); border-radius: 20px; border: 1px solid var(--glass-border); display: none; flex-direction: column; padding: 12px 18px; box-shadow: 0 15px 40px rgba(0,0,0,0.7); z-index: 900; transition: opacity 0.5s ease;}
 
         .app-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 25px; cursor: move; background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--glass-border); touch-action: none; }
         .app-title { font-size: 14px; color: #888; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; pointer-events: none; margin:0;}
@@ -227,7 +227,7 @@
 </head>
 <body>
 
-    <!-- FIREBASE BRIDGES (Canvas API Integration) -->
+    <!-- FIREBASE BRIDGES -->
     <script>
         window.EUSPRO = {
             updateSettings: function(data) { window.dispatchEvent(new CustomEvent('fs-update-settings', {detail: data})); },
@@ -243,7 +243,7 @@
 
     <script>
         let myCarName = "EUSPRO NAV";
-        try { myCarName = localStorage.getItem('teslaCarName') || "EUSPRO NAV"; } catch(e) { console.log("Local Storage Error"); }
+        try { myCarName = localStorage.getItem('teslaCarName') || "EUSPRO NAV"; } catch(e) { }
     </script>
 
     <div id="boot-screen">
@@ -254,13 +254,9 @@
     <script>
         const bootSpan = document.getElementById('boot-name-span');
         if(bootSpan) bootSpan.innerText = myCarName.toUpperCase();
-        
         setTimeout(() => {
             const boot = document.getElementById('boot-screen');
-            if(boot) {
-                boot.style.opacity = '0';
-                setTimeout(() => boot.style.display = 'none', 1000);
-            }
+            if(boot) { boot.style.opacity = '0'; setTimeout(() => boot.style.display = 'none', 1000); }
         }, 1500);
     </script>
 
@@ -297,6 +293,24 @@
             <div class="speed-block"><div class="speed-value" id="speed">0</div><div class="speed-limit">60</div></div>
             <div class="trip-text" id="trip-text">TRIP A: 0.0 KM</div>
             <div class="prnd-text"><span>P</span><span>R</span><span>N</span><span style="color:#fff;">D</span></div>
+        </div>
+        
+        <!-- მინი პლეიერი ახლა მხოლოდ მაშინ ჩანს როცა active-session კლასი აქვს -->
+        <div class="mini-player" id="mini-player">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div class="mini-player-header" onclick="restoreApp('app-music')" style="flex:1; cursor:pointer; display:flex; align-items:center;">
+                    <div style="font-size:18px; margin-right:10px; background:rgba(255,255,255,0.1); width:32px; height:32px; border-radius:8px; display:flex; justify-content:center; align-items:center;">🎵</div>
+                    <div style="flex:1; overflow:hidden;">
+                        <div id="mini-track-title" style="font-size:13px; font-weight:bold; color:var(--ac); white-space:nowrap;">Loading...</div>
+                    </div>
+                </div>
+                <button onclick="document.getElementById('mini-player').classList.remove('active-session')" style="background:transparent; border:none; color:#888; font-size:22px; cursor:pointer; padding:0 5px; line-height:1;">&times;</button>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin: 10px 0;">
+                <span id="mini-time-current" style="font-size: 10px; color: #aaa; width: 30px; text-align: right;">0:00</span>
+                <input type="range" id="mini-progress-bar" class="progress-slider" min="0" max="100" value="0" oninput="onProgressDrag()" onchange="onProgressDrop()">
+                <span id="mini-time-total" style="font-size: 10px; color: #aaa; width: 30px;">0:00</span>
+            </div>
         </div>
 
         <div id="charging-panel">
@@ -394,24 +408,26 @@
         <div class="resizer"></div>
     </div>
     
-    <!-- Mini Player -->
+    <!-- Mini Player (კომპაქტური ვერსია + გათიშვის ღილაკით) -->
     <div class="mini-player" id="mini-player">
-        <div class="mini-player-header" onclick="restoreApp('app-music')">
-            <div style="font-size:22px; margin-right:12px; background:rgba(255,255,255,0.1); width:36px; height:36px; border-radius:10px; display:flex; justify-content:center; align-items:center;">🎵</div>
-            <div style="flex:1; overflow:hidden;">
-                <div id="mini-track-title" style="font-size:14px; font-weight:bold; color:var(--ac); white-space:nowrap;">Loading...</div>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div class="mini-player-header" onclick="restoreApp('app-music')" style="flex:1; cursor:pointer; display:flex; align-items:center;">
+                <div style="font-size:18px; margin-right:10px; background:rgba(255,255,255,0.1); width:32px; height:32px; border-radius:8px; display:flex; justify-content:center; align-items:center;">🎵</div>
+                <div style="flex:1; overflow:hidden;">
+                    <div id="mini-track-title" style="font-size:13px; font-weight:bold; color:var(--ac); white-space:nowrap;">Loading...</div>
+                </div>
             </div>
-            <span style="color:#555; font-size:18px;">⤢</span>
+            <button onclick="document.getElementById('mini-player').style.display='none'" style="background:transparent; border:none; color:#888; font-size:22px; cursor:pointer; padding:0 5px; line-height:1;">&times;</button>
         </div>
-        <div style="display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; padding: 0 5px; box-sizing: border-box; margin-bottom: 5px; margin-top: 5px;">
-            <span id="mini-time-current" style="font-size: 11px; color: #aaa; width: 32px; text-align: right;">0:00</span>
+        <div style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin: 10px 0;">
+            <span id="mini-time-current" style="font-size: 10px; color: #aaa; width: 30px; text-align: right;">0:00</span>
             <input type="range" id="mini-progress-bar" class="progress-slider" min="0" max="100" value="0" oninput="onProgressDrag()" onchange="onProgressDrop()">
-            <span id="mini-time-total" style="font-size: 11px; color: #aaa; width: 32px;">0:00</span>
+            <span id="mini-time-total" style="font-size: 10px; color: #aaa; width: 30px;">0:00</span>
         </div>
-        <div class="mini-player-controls">
-            <button class="music-ctrl-btn mini-ctrl-btn" onclick="prevTrack()">⏮</button>
-            <button class="music-ctrl-btn play-btn mini-play-btn" onclick="togglePlay()" id="mini-play-btn">▶</button>
-            <button class="music-ctrl-btn mini-ctrl-btn" onclick="nextTrack()">⏭</button>
+        <div class="mini-player-controls" style="display:flex; justify-content:center; gap:15px;">
+            <button class="music-ctrl-btn mini-ctrl-btn" onclick="prevTrack()" style="width:36px; height:36px; font-size:14px;">⏮</button>
+            <button class="music-ctrl-btn play-btn mini-play-btn" onclick="togglePlay()" id="mini-play-btn" style="width:44px; height:44px; font-size:18px;">▶</button>
+            <button class="music-ctrl-btn mini-ctrl-btn" onclick="nextTrack()" style="width:36px; height:36px; font-size:14px;">⏭</button>
         </div>
     </div>
 
@@ -440,7 +456,7 @@
                 </div>
             </div>
 
-            <!-- MAPBOX CONFIGURATION SECTION -->
+            <!-- MAPBOX CONFIGURATION -->
             <div class="settings-section">
                 <div class="settings-title">Mapbox კონფიგურაცია</div>
                 <div class="setting-item" style="flex-direction: column; align-items: flex-start; gap: 8px;">
@@ -452,7 +468,7 @@
                         </div>
                     </div>
                     <div style="font-size:11px; color:#888; align-self:flex-end;">
-                        არ გაქვთ პირადი ტოკენი? <a href="https://account.mapbox.com/auth/signup/" target="_blank" style="color:var(--ac); text-decoration:none; font-weight:bold; letter-spacing:0.5px;">შექმენით უფასოდ Mapbox-ზე</a>
+                        არ გაქვთ პირადი ტოკენი? <a href="https://account.mapbox.com/auth/signup/" target="_blank" style="color:var(--ac); text-decoration:none; font-weight:bold; letter-spacing:0.5px;">შექმენით უფასოდ</a>
                     </div>
                 </div>
             </div>
@@ -471,6 +487,11 @@
                 <div class="setting-item">
                     <span>რუკის მარკერი</span>
                     <button class="settings-btn" id="car-type-btn" onclick="cycleCarType()">Model Y</button>
+                </div>
+                <!-- ახალი სლაიდერი: მარკერის ზომის კონტროლი -->
+                <div class="setting-item">
+                    <span>მარკერის ზომა</span>
+                    <input type="range" id="car-size-slider" class="progress-slider" style="width:120px;" min="20" max="150" value="50" oninput="updateCarSize(this.value)">
                 </div>
             </div>
 
@@ -572,14 +593,12 @@
             'orange': { hex: '#ff9f43', rgb: '255, 159, 67' } 
         };
 
-        // დეფოლტ ტოკენი
         const defaultMapboxToken = 'pk.eyJ1Ijoic2Fya21tZyIsImEiOiJjbXBsMWFwdjIyMHJ0MnBxdnNteDk1ejdyIn0.D-DH-vZZEwNiIaFMO2SeGQ';
         
         let map = null;
         if (typeof mapboxgl !== 'undefined') {
             mapboxgl.accessToken = defaultMapboxToken;
             try {
-                // Mapbox v2/v3 cross-origin frame fallback logic inside the Map creation itself
                 map = new mapboxgl.Map({
                     container: 'map',
                     style: 'mapbox://styles/mapbox/dark-v11',
@@ -605,7 +624,7 @@
         let currentDestination = "";
         let currentDestinationLatLng = null; 
         let lastRouteUpdateLatLng = null;    
-        let activeThemeKey = 'neon'; // აქტიური თემის იდენტიფიკატორი
+        let activeThemeKey = 'neon'; 
         
         let targetTemp = 22.0;
         let tripDistanceKm = 0.0;
@@ -619,7 +638,7 @@
         let carTypes = ['modelY', 'model3', 'arrow', 'dot'];
         let carTypeNames = ['Model Y (წითელი)', 'Model 3 (თეთრი)', 'ნავიგაციის ისარი', 'წერტილი'];
         let carTypeSetting = 'modelY';
-        let carSizeSetting = 50;
+        let carSizeSetting = 50; // სტანდარტული ზომა
 
         const defaultYTTracks = [
             { title: "Lofi Girl (Live)", type: "video", ytId: "jfKfPfyJRdk" },
@@ -631,7 +650,6 @@
         let ytPlayer; let ytPlayerReady = false; let pendingLoadTrackIdx = 0; let pendingPlay = false; let savedMediaTime = 0; let savedMediaTrack = -1;
         let isDraggingProgress = false; let isFirstLoad = true; let unsavedYtData = null;
 
-        // მანძილის გამოთვლის ფორმულა
         function getDistanceMeters(lat1, lng1, lat2, lng2) {
             const R = 6371000;
             const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -648,21 +666,42 @@
             t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000); 
         }
 
+        // --- ფანჯრების მართვის ლოგიკა ---
         window.toggleApp = function(id) {
             const win = document.getElementById(id); if (!win) return;
             const isVisible = win.style.display === 'flex';
+            
             document.querySelectorAll('.app-window').forEach(w => w.style.display = 'none');
             document.querySelectorAll('.dock-icon').forEach(i => i.classList.remove('active'));
+            
+            // მინი პლეიერის ლოგიკა: ვმალავთ თუ სრულ პლეიერს ვხსნით
             const miniPlayerEl = document.getElementById('mini-player');
-            if (miniPlayerEl) {
-                if (id === 'app-music') miniPlayerEl.classList.remove('active-session');
-                else if (tracks && tracks.length > 0 || unsavedYtData) miniPlayerEl.classList.add('active-session');
+            if (id === 'app-music') miniPlayerEl.classList.remove('active-session');
+            
+            if (!isVisible) { 
+                win.style.display = 'flex'; 
+                const dockIcon = document.getElementById('dock-' + id.split('-')[1]); 
+                if (dockIcon) dockIcon.classList.add('active'); 
             }
-            if (!isVisible) { win.style.display = 'flex'; const dockIcon = document.getElementById('dock-' + id.split('-')[1]); if (dockIcon) dockIcon.classList.add('active'); }
         }
         
-        window.restoreApp = function(id) { if (id === 'app-music') { const mp = document.getElementById('mini-player'); if(mp) mp.classList.remove('active-session'); } window.toggleApp(id); }
-        window.collapseToMini = function(id) { const el = document.getElementById(id); if(el) el.style.display = 'none'; const dIcon = document.getElementById('dock-' + id.split('-')[1]); if(dIcon) dIcon.classList.remove('active'); if (id === 'app-music') { const mp = document.getElementById('mini-player'); if(mp) mp.classList.add('active-session'); } }
+        window.restoreApp = function(id) { 
+            if (id === 'app-music') { 
+                const mp = document.getElementById('mini-player'); 
+                if(mp) mp.classList.remove('active-session'); 
+            } 
+            window.toggleApp(id); 
+        }
+        
+        window.collapseToMini = function(id) { 
+            const el = document.getElementById(id); if(el) el.style.display = 'none'; 
+            const dIcon = document.getElementById('dock-' + id.split('-')[1]); if(dIcon) dIcon.classList.remove('active'); 
+            if (id === 'app-music') { 
+                const mp = document.getElementById('mini-player'); 
+                if(mp) mp.classList.add('active-session'); // მხოლოდ აქ გავხსნათ მინი პლეიერი
+            } 
+        }
+
         window.toggleZenMode = function() { document.body.classList.toggle('zen-mode'); const btn = document.getElementById('btn-zen'); if(document.body.classList.contains('zen-mode')) { btn.classList.add('active'); showToast("🔲 სრული ეკრანის რეჟიმი"); } else btn.classList.remove('active'); }
         window.cycleHeat = function(el) { let lvl = parseInt(el.getAttribute('data-level')) || 0; lvl = (lvl + 1) % 4; el.setAttribute('data-level', lvl); }
         window.adjTemp = function(val) { targetTemp += val; document.getElementById('climate-temp').innerText = targetTemp.toFixed(1) + "°"; }
@@ -775,10 +814,18 @@
         window.deleteStation = function(index) { pendingDeleteIdx = index; const mod = document.getElementById('confirm-modal'); if(mod) mod.style.display = 'flex'; }
         window.confirmDelete = function(yes) { const mod = document.getElementById('confirm-modal'); if(mod) mod.style.display = 'none'; if(yes && pendingDeleteIdx > -1) { tracks.splice(pendingDeleteIdx, 1); if(tracks.length === 0) { if(ytPlayerReady) ytPlayer.stopVideo(); const tt = document.getElementById('track-title'); if(tt) tt.innerText = "სია ცარიელია"; currentTrackIdx = 0; updateMiniPlayer(); } else { if(currentTrackIdx === pendingDeleteIdx) { currentTrackIdx = 0; loadTrack(0, false); } else if (currentTrackIdx > pendingDeleteIdx) { currentTrackIdx--; } } saveAppSetting('stations', tracks); renderStationList(); showToast("🗑️ წაიშალა"); } pendingDeleteIdx = -1; }
 
-        // პარამეტრები
+        // პარამეტრები და მარკერის ზომა
         window.saveCarName = function() { const cInp = document.getElementById('car-name-input'); const val = (cInp ? cInp.value.trim() : "") || "EUSPRO NAV"; try { localStorage.setItem('teslaCarName', val); } catch(e){} myCarName = val; const sbName = document.getElementById('sidebar-car-name'); const bootName = document.getElementById('boot-name-span'); if(sbName) sbName.innerText = myCarName; if(bootName) bootName.innerText = myCarName.toUpperCase(); dbSettings.update({ carName: myCarName }); showToast("✅ სახელი შენახულია"); }
         window.applyTheme = function(themeKey, save = true) { if(!themeColors[themeKey]) themeKey = 'neon'; activeThemeKey = themeKey; document.documentElement.style.setProperty('--ac', themeColors[themeKey].hex); document.documentElement.style.setProperty('--ac-rgb', themeColors[themeKey].rgb); document.querySelectorAll('.color-btn').forEach(btn => btn.classList.remove('active-color')); const activeBtn = document.querySelector(`.color-btn[data-theme="${themeKey}"]`); if(activeBtn) activeBtn.classList.add('active-color'); if(save) dbSettings.update({ theme: themeKey }); if(lastPosition) updateCarMarker(lastPosition.lat, lastPosition.lng, currentHeading); }
         window.cycleCarType = function() { let idx = carTypes.indexOf(carTypeSetting); idx = (idx + 1) % carTypes.length; carTypeSetting = carTypes[idx]; const btn = document.getElementById('car-type-btn'); if(btn) btn.innerText = carTypeNames[idx]; dbSettings.update({ carType: carTypeSetting }); if(lastPosition) updateCarMarker(lastPosition.lat, lastPosition.lng, currentHeading); }
+        
+        window.updateCarSize = function(val) {
+            carSizeSetting = parseInt(val);
+            if(lastPosition) updateCarMarker(lastPosition.lat, lastPosition.lng, currentHeading);
+            clearTimeout(window.carSizeTimer);
+            window.carSizeTimer = setTimeout(() => saveAppSetting('carSize', carSizeSetting), 500);
+        }
+
         window.saveApiKey = function() { const apiInp = document.getElementById('api-key-input'); const key = apiInp ? apiInp.value.trim() : ""; if(key.length > 20) { apiKey = key; saveAppSetting('apiKey', key); showToast("✅ API გასაღები შენახულია"); if(apiInp) apiInp.value = apiKey; } else showToast("❌ არასწორი გასაღები", true); }
         
         // MAPBOX TOKEN SAVING LOGIC
@@ -812,29 +859,25 @@
         window.realHandleSettingsData = function(data) {
             if(data) {
                 if(data.carName) { myCarName = data.carName; try { localStorage.setItem('teslaCarName', myCarName); } catch(e){} const cInp = document.getElementById('car-name-input'); const sbName = document.getElementById('sidebar-car-name'); const bSpan = document.getElementById('boot-name-span'); if(cInp) cInp.value = myCarName; if(sbName) sbName.innerText = myCarName; if(bSpan) bSpan.innerText = myCarName.toUpperCase(); }
-                if(data.theme) {
-                    if (typeof applyTheme === 'function') applyTheme(data.theme, false);
-                }
+                if(data.theme) { if (typeof applyTheme === 'function') applyTheme(data.theme, false); }
                 if(data.carType) { carTypeSetting = data.carType; const idx = carTypes.indexOf(carTypeSetting); const btn = document.getElementById('car-type-btn'); if(idx > -1 && btn) btn.innerText = carTypeNames[idx]; }
+                
+                // მარკერის ზომის ინიციალიზაცია 
+                if (data.carSize !== undefined) { 
+                    carSizeSetting = data.carSize; 
+                    const sSlider = document.getElementById('car-size-slider'); 
+                    if(sSlider) sSlider.value = carSizeSetting; 
+                }
+
                 if (data.tripA !== undefined) { tripDistanceKm = data.tripA; if (typeof window.updateTripUI === 'function') window.updateTripUI(); }
                 if (data.mapStyle) { currentMapStyle = data.mapStyle; const mBtn = document.getElementById('btn-map-layer'); if(mBtn) mBtn.innerText = mapStyleIcons[currentMapStyle]; if (typeof applyMapStyle === 'function') applyMapStyle(false); }
                 if (data.mapAutoRotate !== undefined) { mapAutoRotate = data.mapAutoRotate; const compassBtn = document.getElementById('btn-map-compass'); if(mapAutoRotate && compassBtn) { compassBtn.classList.add('active'); compassBtn.innerText = '🔼'; } }
                 if (data.apiKey) { apiKey = data.apiKey; const aInp = document.getElementById('api-key-input'); if(aInp) aInp.value = apiKey;}
                 
-                // Mapbox Token-ის დაყენება ბაზიდან
                 if (data.mapboxToken) {
-                    if (typeof mapboxgl !== 'undefined') {
-                        mapboxgl.accessToken = data.mapboxToken;
-                        const mbInp = document.getElementById('mapbox-token-input');
-                        if (mbInp) mbInp.value = data.mapboxToken;
-                        if (!isFirstLoad && typeof applyMapStyle === 'function') applyMapStyle(false);
-                    }
+                    if (typeof mapboxgl !== 'undefined') { mapboxgl.accessToken = data.mapboxToken; const mbInp = document.getElementById('mapbox-token-input'); if (mbInp) mbInp.value = data.mapboxToken; if (!isFirstLoad && typeof applyMapStyle === 'function') applyMapStyle(false); }
                 } else {
-                    if (typeof mapboxgl !== 'undefined') {
-                        mapboxgl.accessToken = defaultMapboxToken;
-                        const mbInp = document.getElementById('mapbox-token-input');
-                        if (mbInp) mbInp.value = "";
-                    }
+                    if (typeof mapboxgl !== 'undefined') { mapboxgl.accessToken = defaultMapboxToken; const mbInp = document.getElementById('mapbox-token-input'); if (mbInp) mbInp.value = ""; }
                 }
 
                 if (data.lastUrl) { const uInp = document.getElementById('url-input'); const frm = document.getElementById('browser-iframe'); if(uInp) uInp.value = data.lastUrl; if(frm) frm.src = data.lastUrl; }
@@ -851,11 +894,7 @@
         window.realHandleVehicleData = function(d) {
             if (!d) return;
             if (d.vin) { const dVin = document.getElementById('diag-vin'); if(dVin) { dVin.innerText = d.vin; dVin.style.color = 'var(--ac)'; } }
-            if (d.battery_soc !== undefined) {
-                if (typeof window.updateBatteryUI === 'function') {
-                    window.updateBatteryUI(d.battery_soc, d.is_charging);
-                }
-            }
+            if (d.battery_soc !== undefined) { if (typeof window.updateBatteryUI === 'function') { window.updateBatteryUI(d.battery_soc, d.is_charging); } }
             if (d.degradation) document.getElementById('diag-degrad').innerText = d.degradation;
             if (d.imbalance) document.getElementById('diag-imb').innerText = d.imbalance;
             if (d.motor_f_temp) document.getElementById('diag-mot-f').innerText = d.motor_f_temp;
@@ -865,9 +904,7 @@
             if (d.power_kw) document.getElementById('diag-power').innerText = d.power_kw;
 
             if(d.lat && d.lng) {
-                if (typeof updateWeather === 'function') {
-                    updateWeather(d.lat, d.lng);
-                }
+                if (typeof updateWeather === 'function') { updateWeather(d.lat, d.lng); }
                 const currentTime = Date.now(); let calcSpeedKmh = 0;
                 if (!lastTime) { lastTime = currentTime; lastPosition = {lat: d.lat, lng: d.lng}; } 
                 else {
@@ -886,7 +923,6 @@
                     updateCarMarker(d.lat, d.lng, currentHeading);
                 }
                 
-                // MAPBOX CENTER UPDATE
                 if (map) {
                     let targetZoom = 18; if (calcSpeedKmh > 100) targetZoom = 16; else if (calcSpeedKmh > 60) targetZoom = 17;
                     if (currentDestinationLatLng) {
@@ -901,28 +937,17 @@
                             else if (distanceMeters < 10000) targetZoom = 17; 
                             else targetZoom = 16;
                             
-                            if (mapAutoRotate) {
-                                map.easeTo({ center: [d.lng, d.lat], zoom: targetZoom, bearing: (360 - currentHeading), duration: 1000 });
-                            } else {
-                                map.easeTo({ center: [d.lng, d.lat], zoom: targetZoom, duration: 1000 });
-                            }
-                            
+                            if (mapAutoRotate) { map.easeTo({ center: [d.lng, d.lat], zoom: targetZoom, bearing: (360 - currentHeading), duration: 1000 }); } else { map.easeTo({ center: [d.lng, d.lat], zoom: targetZoom, duration: 1000 }); }
                             if (!lastRouteUpdateLatLng || getDistanceMeters(d.lat, d.lng, lastRouteUpdateLatLng.lat, lastRouteUpdateLatLng.lng) > 100) {
-                                if (typeof window.drawRoute === 'function') window.drawRoute(currentDestinationLatLng);
-                                lastRouteUpdateLatLng = {lat: d.lat, lng: d.lng};
+                                if (typeof window.drawRoute === 'function') window.drawRoute(currentDestinationLatLng); lastRouteUpdateLatLng = {lat: d.lat, lng: d.lng};
                             }
                         }
                     } else {
-                        if (mapAutoRotate) {
-                            map.easeTo({ center: [d.lng, d.lat], zoom: targetZoom, bearing: (360 - currentHeading), duration: 1000 });
-                        } else {
-                            map.easeTo({ center: [d.lng, d.lat], zoom: targetZoom, duration: 1000 });
-                        }
+                        if (mapAutoRotate) { map.easeTo({ center: [d.lng, d.lat], zoom: targetZoom, bearing: (360 - currentHeading), duration: 1000 }); } else { map.easeTo({ center: [d.lng, d.lat], zoom: targetZoom, duration: 1000 }); }
                     }
                 }
             }
             
-            // Share logic
             if (d.target_address) {
                 let textData = typeof d.target_address === 'string' ? d.target_address : (d.target_address.address || "");
                 if(textData.trim().length > 1) {
@@ -944,12 +969,8 @@
         };
 
         // Initialize Settings / Vehicle data if they arrived before main script finished parsing
-        if (window.cachedSettingsData) {
-            window.realHandleSettingsData(window.cachedSettingsData);
-        }
-        if (window.cachedVehicleData) {
-            window.realHandleVehicleData(window.cachedVehicleData);
-        }
+        if (window.cachedSettingsData) { window.realHandleSettingsData(window.cachedSettingsData); }
+        if (window.cachedVehicleData) { window.realHandleVehicleData(window.cachedVehicleData); }
 
         window.updateBatteryUI = function(soc, chargingStr) {
             currentBatterySoc = soc; const cStr = String(chargingStr).toLowerCase(); isCharging = (cStr === 'true' || cStr === '1' || cStr === 'yes' || cStr === 'on');
@@ -982,6 +1003,43 @@
                 }
             }
         }, 1000);
+
+        // მარკერის განახლების ლოგიკის სრულყოფა: პროპორციული SVG-ს ზომები
+        window.updateCarMarker = function(lat, lng, heading) {
+            let validHeading = typeof heading === 'number' ? heading : 0;
+            let markerRotation = mapAutoRotate ? 0 : validHeading;
+            let carSvg = ""; 
+            
+            // ზომების გაანგარიშება Slider-ის მნიშვნელობის საფუძველზე
+            let baseSize = parseInt(carSizeSetting) || 50; 
+            let w = baseSize; 
+            let h = baseSize * 2; 
+
+            if(carTypeSetting === 'modelY') {
+                carSvg = `<svg width="${w}" height="${h}" viewBox="0 0 100 200" style="transform: rotate(${markerRotation}deg); transition: transform 0.2s;"><rect x="25" y="20" width="50" height="160" rx="20" fill="#e74c3c" /><path d="M 30 70 L 70 70 L 65 95 L 35 95 Z" fill="#111" /><rect x="30" y="25" width="12" height="6" rx="3" fill="#fff" /><rect x="58" y="25" width="12" height="6" rx="3" fill="#fff" /></svg>`;
+            } else if(carTypeSetting === 'model3') {
+                carSvg = `<svg width="${w}" height="${h}" viewBox="0 0 100 200" style="transform: rotate(${markerRotation}deg); transition: transform 0.2s;"><rect x="25" y="20" width="50" height="160" rx="20" fill="#f5f6fa" /><path d="M 30 70 L 70 70 L 65 95 L 35 95 Z" fill="#111" /><rect x="30" y="25" width="12" height="6" rx="3" fill="#e74c3c" /><rect x="58" y="25" width="12" height="6" rx="3" fill="#e74c3c" /></svg>`;
+            } else if(carTypeSetting === 'arrow') {
+                h = baseSize; // კვადრატული
+                carSvg = `<svg width="${w}" height="${h}" viewBox="0 0 100 100" style="transform: rotate(${markerRotation}deg);"><polygon points="50,10 90,90 50,70 10,90" fill="var(--ac)" stroke="#fff" stroke-width="4"/></svg>`;
+            } else if(carTypeSetting === 'dot') {
+                h = baseSize; // კვადრატული
+                carSvg = `<svg width="${w}" height="${h}" viewBox="0 0 100 100" style="filter: drop-shadow(0px 5px 10px rgba(0,0,0,0.8));"><circle cx="50" cy="50" r="40" fill="var(--ac)" stroke="#fff" stroke-width="6"/><circle cx="50" cy="50" r="15" fill="#fff" /></svg>`;
+            }
+
+            const el = document.createElement('div'); el.className = 'mapbox-car-marker'; el.innerHTML = carSvg;
+
+            if (typeof mapboxgl === 'undefined') return;
+
+            if(!carMarker && map) {
+                try {
+                    carMarker = new mapboxgl.Marker({ element: el }).setLngLat([lng, lat]).addTo(map);
+                } catch(e) {}
+            } else if (carMarker) {
+                carMarker.setLngLat([lng, lat]);
+                carMarker.getElement().innerHTML = carSvg;
+            }
+        }
 
         window.toggleMapRotation = function() { 
             mapAutoRotate = !mapAutoRotate; 
@@ -1051,134 +1109,13 @@
             let styleUrl = 'mapbox://styles/mapbox/dark-v11';
             if(currentMapStyle === 'satellite') styleUrl = 'mapbox://styles/mapbox/satellite-v9';
             else if(currentMapStyle === 'street') styleUrl = 'mapbox://styles/mapbox/streets-v12';
-            map.setStyle(styleUrl);
-            const mBtn = document.getElementById('btn-map-layer'); if(mBtn) mBtn.innerText = mapStyleIcons[currentMapStyle];
-            if(save) { saveAppSetting('mapStyle', currentMapStyle); showToast("🗺️ რუკა: " + mapStyleNames[currentMapStyle]); } 
-        }
-
-        // Mapbox მარკერის განახლება
-        function updateCarMarker(lat, lng, heading) {
-            let validHeading = typeof heading === 'number' ? heading : 0;
-            let markerRotation = mapAutoRotate ? 0 : validHeading;
-            let carSvg = ""; let s = carSizeSetting; let w = s; let h = s * 2;
-
-            if(carTypeSetting === 'modelY') carSvg = `<svg width="${w}" height="${h}" viewBox="0 0 100 200" style="transform: rotate(${markerRotation}deg); transition: transform 0.2s;"><rect x="25" y="20" width="50" height="160" rx="20" fill="#e74c3c" /><path d="M 30 70 L 70 70 L 65 95 L 35 95 Z" fill="#111" /><rect x="30" y="25" width="12" height="6" rx="3" fill="#fff" /><rect x="58" y="25" width="12" height="6" rx="3" fill="#fff" /></svg>`;
-            else if(carTypeSetting === 'model3') carSvg = `<svg width="${w}" height="${h}" viewBox="0 0 100 200" style="transform: rotate(${markerRotation}deg); transition: transform 0.2s;"><rect x="25" y="20" width="50" height="160" rx="20" fill="#f5f6fa" /><path d="M 30 70 L 70 70 L 65 95 L 35 95 Z" fill="#111" /><rect x="30" y="25" width="12" height="6" rx="3" fill="#e74c3c" /><rect x="58" y="25" width="12" height="6" rx="3" fill="#e74c3c" /></svg>`;
-            else if(carTypeSetting === 'arrow') carSvg = `<svg width="${w}" height="${h}" viewBox="0 0 100 100" style="transform: rotate(${markerRotation}deg);"><polygon points="50,10 90,90 50,70 10,90" fill="var(--ac)" stroke="#fff" stroke-width="4"/></svg>`;
-            else if(carTypeSetting === 'dot') carSvg = `<svg width="${w}" height="${h}" viewBox="0 0 100 100" style="filter: drop-shadow(0px 5px 10px rgba(0,0,0,0.8));"><circle cx="50" cy="50" r="40" fill="var(--ac)" stroke="#fff" stroke-width="6"/><circle cx="50" cy="50" r="15" fill="#fff" /></svg>`;
-
-            const el = document.createElement('div'); el.className = 'mapbox-car-marker'; el.innerHTML = carSvg;
-
-            if (typeof mapboxgl === 'undefined') return;
-
-            if(!carMarker && map) {
-                carMarker = new mapboxgl.Marker({ element: el }).setLngLat([lng, lat]).addTo(map);
-            } else if (carMarker) {
-                carMarker.setLngLat([lng, lat]);
-                carMarker.getElement().innerHTML = carSvg;
+            try {
+                map.setStyle(styleUrl);
+                const mBtn = document.getElementById('btn-map-layer'); if(mBtn) mBtn.innerText = mapStyleIcons[currentMapStyle];
+                if(save) { saveAppSetting('mapStyle', currentMapStyle); showToast("🗺️ რუკა: " + mapStyleNames[currentMapStyle]); } 
+            } catch(e) {
+                console.error("Error setting map style:", e);
             }
-        }
-
-        // მარშრუტის დახატვა
-        window.drawRoute = function(end) {
-            if (!map || typeof mapboxgl === 'undefined') return;
-            const start = carMarker ? carMarker.getLngLat() : map.getCenter();
-            
-            // დაცული კოორდინატების ამოღება ნებისმიერი ტიპის ობიექტიდან
-            const startLng = start.lng !== undefined ? start.lng : (start[0] !== undefined ? start[0] : 44.8271);
-            const startLat = start.lat !== undefined ? start.lat : (start[1] !== undefined ? start[1] : 41.7151);
-            const endLng = end.lng !== undefined ? end.lng : (end[0] !== undefined ? end[0] : 44.8271);
-            const endLat = end.lat !== undefined ? end.lat : (end[1] !== undefined ? end[1] : 41.7151);
-
-            const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${startLng},${startLat};${endLng},${endLat}?geometries=geojson&access_token=${mapboxgl.accessToken}`;
-            
-            fetch(url).then(r => r.json()).then(data => {
-                if(!data.routes || data.routes.length === 0) return;
-                const route = data.routes[0].geometry;
-                
-                if (map.getLayer('route')) {
-                    map.getSource('route').setData({ type: 'Feature', properties: {}, geometry: route });
-                } else {
-                    map.addSource('route', { type: 'geojson', data: { type: 'Feature', properties: {}, geometry: route } });
-                    map.addLayer({ 
-                        id: 'route', 
-                        type: 'line', 
-                        source: 'route', 
-                        layout: { 'line-join': 'round', 'line-cap': 'round' }, 
-                        paint: { 
-                            'line-color': themeColors[activeThemeKey]?.hex || '#00ffaa', // აქტიური თემის ფერი
-                            'line-width': 6, 
-                            'line-opacity': 0.8 
-                        } 
-                    });
-                }
-
-                document.getElementById('route-info').style.display = 'flex';
-                document.getElementById('eta-time').innerText = Math.round(data.routes[0].duration / 60);
-                document.getElementById('eta-dist').innerText = (data.routes[0].distance / 1000).toFixed(1);
-                document.getElementById('eta-battery').innerText = Math.round(currentBatterySoc - (data.routes[0].distance / 4200)) + "%";
-            });
-        }
-
-        window.cancelRoute = function() {
-            if (map && map.getLayer('route')) { map.removeLayer('route'); map.removeSource('route'); }
-            document.getElementById('route-info').style.display = 'none';
-            document.getElementById('search-input').value = '';
-            currentDestinationLatLng = null;
-            showToast("🛑 მარშრუტი გაუქმებულია");
-        }
-
-        function getBearing(lat1, lng1, lat2, lng2) { const toRad = (deg) => deg * Math.PI / 180; const toDeg = (rad) => rad * 180 / Math.PI; const dLng = toRad(lng2 - lng1); const y = Math.sin(dLng) * Math.cos(toRad(lat2)); const x = Math.cos(toRad(lat1)) * Math.sin(toRad(lat2)) - Math.sin(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.cos(dLng); return (toDeg(Math.atan2(y, x)) + 360) % 360; }
-        
-        function updateWeather(lat, lng) {
-            fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current_weather=true&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=auto`).then(r => r.json()).then(data => {
-                const temp = data.current_weather ? Math.round(data.current_weather.temperature) : '--';
-                document.getElementById('weather-widget').innerHTML = `<span>${temp}°C</span> ⛅`;
-            }).catch(e => {});
-        }
-
-        // AI
-        async function fetchGemini(url, payload) { const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); return await response.json(); }
-        async function callGemini(text, systemPrompt = "თქვენ ხართ EUSPRO-ს ასისტენტი. უპასუხეთ ქართულად.") { if (!apiKey) return "გთხოვთ დაამატოთ API გასაღები სეთინგებში."; const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`; try { const data = await fetchGemini(url, { systemInstruction: { parts: [{ text: systemPrompt }] }, contents: [{ role: "user", parts: [{ text: text }] }] }); return data.candidates?.[0]?.content?.parts?.[0]?.text || "პასუხი ვერ მიიღო."; } catch(e) { return `Error`; } }
-        window.sendToAI = async function() { const input = document.getElementById('ai-input'); const chat = document.getElementById('ai-chat'); const text = input.value.trim(); if(!text) return; chat.innerHTML += `<div class="msg user" style="text-align:right; color:#ccc;">${text}</div>`; input.value = ''; const res = await callGemini(text); chat.innerHTML += `<div class="msg bot" style="background:rgba(255,255,255,0.1); padding:12px; border-radius:12px; max-width:80%; margin-top:10px;">${res.replace(/\n/g, '<br>')}</div>`; chat.scrollTop = chat.scrollHeight; }
-        window.getAIStatus = async function() { window.restoreApp('app-ai'); const res = await callGemini(`ბატარეა: ${currentBatterySoc}%. შეაფასე ქართულად.`); document.getElementById('ai-chat').innerHTML += `<div class="msg bot" style="background:rgba(255,255,255,0.1); padding:12px; border-radius:12px; max-width:80%; margin-top:10px;">${res}</div>`; }
-        window.getAIRouteAnalysis = async function() { window.restoreApp('app-ai'); const res = await callGemini(`მივდივარ აქ: ${currentDestination}.`); document.getElementById('ai-chat').innerHTML += `<div class="msg bot" style="background:rgba(255,255,255,0.1); padding:12px; border-radius:12px; max-width:80%; margin-top:10px;">${res}</div>`; }
-
-        const searchInputBox = document.getElementById('search-input');
-        if(searchInputBox) {
-            searchInputBox.addEventListener('input', (e) => {
-                const query = e.target.value.trim(); const sug = document.getElementById('suggestions');
-                if(query.length < 2) { if(sug) sug.style.display = 'none'; return; }
-                fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=5`).then(r => r.json()).then(res => {
-                    if(sug) sug.innerHTML = '';
-                    if(res.features && res.features.length > 0) {
-                        res.features.forEach(feature => {
-                            const name = [feature.properties.name, feature.properties.city].filter(Boolean).join(', ');
-                            const li = document.createElement('li'); li.textContent = name;
-                            li.onclick = () => { 
-                                currentDestination = name; 
-                                currentDestinationLatLng = { lat: feature.geometry.coordinates[1], lng: feature.geometry.coordinates[0] }; 
-                                lastRouteUpdateLatLng = null; 
-                                searchInputBox.value = name; 
-                                if(sug) sug.style.display = 'none'; 
-                                window.drawRoute(currentDestinationLatLng); 
-                            };
-                            if(sug) sug.appendChild(li);
-                        });
-                        if(sug) sug.style.display = 'block';
-                    } else { if(sug) sug.style.display = 'none'; }
-                }).catch(err => { if(sug) sug.style.display = 'none'; });
-            });
-            searchInputBox.addEventListener('keydown', (e) => { if(e.key === 'Escape' || (e.key === 'Backspace' && searchInputBox.value.length === 1)) window.cancelRoute(); });
-            document.addEventListener('click', (e) => { const sug = document.getElementById('suggestions'); if(e.target !== searchInputBox && sug) sug.style.display = 'none'; });
-        }
-
-        // Initialize Settings / Vehicle data if they arrived before main script finished parsing
-        if (window.cachedSettingsData) {
-            window.realHandleSettingsData(window.cachedSettingsData);
-        }
-        if (window.cachedVehicleData) {
-            window.realHandleVehicleData(window.cachedVehicleData);
         }
 
         // YouTube Iframe API-ის დინამიკური ჩატვირთვა უსაფრთხო ინიციალიზაციისთვის
@@ -1208,26 +1145,22 @@
                     const vehicleRef = doc(db, 'artifacts', appId, 'users', user.uid, 'telemetry', 'vehicle_data');
                     const settingsRef = doc(db, 'artifacts', appId, 'users', user.uid, 'telemetry', 'settings');
                     
-                    onSnapshot(settingsRef, snap => { 
-                        if(snap.exists()) {
-                            window.handleSettingsData(snap.data()); 
-                        } else {
-                            // პირველი გაშვება: ვქმნით საწყის სეთინგებს ბაზაში
-                            setDoc(settingsRef, {carName: "EUSPRO NAV", theme: "neon", carType: "modelY"});
-                            window.handleSettingsData({carName: "EUSPRO NAV", theme: "neon", carType: "modelY"});
+                    // შემოწმება და პირველადი მონაცემების შექმნა
+                    try {
+                        const vSnap = await getDoc(vehicleRef);
+                        if(!vSnap.exists()) {
+                            await setDoc(vehicleRef, {battery_soc: 85, is_charging: false, speed_kmh: 0, lat: 41.7151, lng: 44.8271, vin: 'EUSPRO-001'});
                         }
-                    });
-
-                    onSnapshot(vehicleRef, snap => { 
-                        if(snap.exists()) {
-                            window.handleVehicleData(snap.data()); 
-                        } else {
-                            // პირველი გაშვება: ვქმნით საწყის სატესტო ტელემეტრიას
-                            setDoc(vehicleRef, {battery_soc: 85, is_charging: false, speed_kmh: 0, lat: 41.7151, lng: 44.8271, vin: 'EUSPRO-001'});
-                            window.handleVehicleData({battery_soc: 85, is_charging: false, speed_kmh: 0, lat: 41.7151, lng: 44.8271, vin: 'EUSPRO-001'});
+                        const sSnap = await getDoc(settingsRef);
+                        if(!sSnap.exists()) {
+                            await setDoc(settingsRef, {carName: "EUSPRO NAV", theme: "neon", carType: "modelY", carSize: 50});
                         }
-                    });
+                    } catch(err) {
+                        console.error("Firebase init docs error:", err);
+                    }
 
+                    onSnapshot(settingsRef, snap => { if(snap.exists()) window.handleSettingsData(snap.data()); });
+                    onSnapshot(vehicleRef, snap => { if(snap.exists()) window.handleVehicleData(snap.data()); });
                     window.addEventListener('fs-update-settings', e => setDoc(settingsRef, e.detail, {merge:true}));
                     window.addEventListener('fs-update-vehicle', e => setDoc(vehicleRef, e.detail, {merge:true}));
                     window.addEventListener('fs-clear-address', e => setDoc(vehicleRef, {target_address: deleteField()}, {merge:true}));
