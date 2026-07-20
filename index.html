@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="ka">
 <head>
@@ -178,6 +179,11 @@
 
         #confirm-modal { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center; backdrop-filter: blur(5px);}
         .confirm-box { background: #1a1a1a; padding: 30px; border-radius: 24px; border: 1px solid #333; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.8); max-width: 350px;}
+        
+        /* Toast Notification */
+        .toast { position: fixed; top: -60px; left: 50%; transform: translateX(-50%); background: rgba(20,20,20,0.95); backdrop-filter: blur(10px); color: #fff; padding: 12px 25px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.1); font-size: 14px; font-weight: 600; z-index: 999999; transition: top 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; align-items: center; gap: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .toast.show { top: 30px; }
+        .toast.error { border-color: #ff4757; color: #ff4757; }
     </style>
 </head>
 <body>
@@ -215,6 +221,7 @@
     </div>
 
     <div class="map-floating-controls">
+        <div class="map-btn" id="btn-map-locate" onclick="locateMeFromBrowser()" title="ჩემი ლოკაცია">📍</div>
         <div class="map-btn" id="btn-map-compass" onclick="toggleMapRotation()">🧭</div>
         <div class="map-btn" id="btn-map-traffic" onclick="toggleTraffic()">🚦</div>
         <div class="map-btn" id="btn-map-layer" onclick="cycleMapStyle()">🗺️</div>
@@ -534,6 +541,8 @@
         let carTypeNames = ['Model Y (წითელი)', 'Model 3 (თეთრი)', 'ნავიგაციის ისარი', 'წერტილი'];
         let carTypeSetting = 'modelY';
         let carSizeSetting = 50;
+
+        let browserWatchId = null; // გეოლოკაციის ID ბრაუზერიდან
 
         // YouTube მედია სისტემა
         const defaultYTTracks = [
@@ -1153,8 +1162,8 @@
             if (d.brake_temp) { const dbk = document.getElementById('diag-brake'); if(dbk) dbk.innerText = d.brake_temp; }
             if (d.power_kw) { const dp = document.getElementById('diag-power'); if(dp) dp.innerText = d.power_kw; }
 
-            // ლოკაცია & სიჩქარე
-            if(d.lat && d.lng) {
+            // ლოკაცია & სიჩქარე (მხოლოდ თუ ბრაუზერის გეოლოკაცია არ არის ჩართული)
+            if(d.lat && d.lng && !browserWatchId) {
                 const ll = L.latLng(d.lat, d.lng); updateWeather(d.lat, d.lng); 
                 const currentTime = Date.now(); let calcSpeedKmh = 0;
 
@@ -1240,6 +1249,85 @@
             else { if(btn) { btn.classList.remove('active'); btn.innerText = '🧭'; } showToast("🧭 ჩრდილოეთი ზემოთაა"); map.setBearing(0); }
             saveAppSetting('mapAutoRotate', mapAutoRotate); if(lastPosition) updateCarMarker(lastPosition.lat, lastPosition.lng, currentHeading); 
         }
+
+        // --- ბრაუზერის გეოლოკაცია (GPS) ლოგიკა ---
+        function locateMeFromBrowser() {
+            if (!navigator.geolocation) {
+                showToast("❌ თქვენი ბრაუზერი არ უჭერს მხარს გეოლოკაციას", true);
+                return;
+            }
+            
+            showToast("⏳ ლოკაციის მოძიება (დართეთ ნებართვა)...");
+            const locBtn = document.getElementById('btn-map-locate');
+            if (locBtn) locBtn.classList.add('active');
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    const heading = position.coords.heading || currentHeading; 
+                    
+                    showToast("✅ ლოკაცია დადგენილია!");
+                    
+                    const ll = L.latLng(lat, lng);
+                    lastPosition = ll;
+                    if (heading !== null && !isNaN(heading)) currentHeading = heading;
+                    
+                    map.setView(ll, 17);
+                    updateCarMarker(lat, lng, currentHeading);
+                    updateWeather(lat, lng);
+
+                    // მუდმივი თვალთვალის ჩართვა ბრაუზერიდან (revolt.ge-ს მსგავსად)
+                    if(!browserWatchId) {
+                        browserWatchId = navigator.geolocation.watchPosition(updateFromBrowser, geoError, {
+                            enableHighAccuracy: true,
+                            maximumAge: 0,
+                            timeout: 5000
+                        });
+                    }
+                },
+                geoError,
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            );
+        }
+
+        function updateFromBrowser(position) {
+             const lat = position.coords.latitude;
+             const lng = position.coords.longitude;
+             const heading = position.coords.heading;
+             const speedMs = position.coords.speed;
+             
+             const ll = L.latLng(lat, lng);
+             lastPosition = ll;
+             
+             if(heading !== null && !isNaN(heading)) currentHeading = heading;
+             
+             // სიჩქარის განახლება ბრაუზერიდან თუ ხელმისაწვდომია (მ/წმ -> კმ/სთ)
+             if (speedMs !== null) {
+                 const speedKmh = Math.round(speedMs * 3.6);
+                 const speedEl = document.getElementById('speed');
+                 if(speedEl) speedEl.innerText = speedKmh;
+             }
+             
+             updateCarMarker(lat, lng, currentHeading);
+        }
+
+        function geoError(error) {
+            const locBtn = document.getElementById('btn-map-locate');
+            if (locBtn) locBtn.classList.remove('active');
+            let msg = "❌ ლოკაციის შეცდომა";
+            if (error.code === 1) msg = "❌ ლოკაციაზე წვდომა უარყოფილია (Permission Denied)";
+            else if (error.code === 2) msg = "❌ ლოკაციის დადგენა შეუძლებელია";
+            else if (error.code === 3) msg = "❌ ლოკაციის მოთხოვნის დრო ამოიწურა";
+            showToast(msg, true);
+        }
+
+        // საიტის ჩატვირთვისას ავტომატურად ვთხოვოთ ლოკაცია
+        window.addEventListener('load', () => {
+            setTimeout(locateMeFromBrowser, 2000); 
+        });
+
+        // ----------------------------------------
 
         let isLongPressActive = false;
 
@@ -1476,3 +1564,5 @@
     </script>
 </body>
 </html>
+
+```
