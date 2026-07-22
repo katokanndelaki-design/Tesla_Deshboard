@@ -5,6 +5,14 @@
   "display": "standalone",
   "background_color": "#0a0a0a",
   "theme_color": "#00ffaa",
+  "icons": [
+    {
+      "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='120' fill='%230a0a0a'/><path d='M110 130 C200 110, 312 110, 402 130 L402 165 C320 145, 192 145, 110 165 Z' fill='%2300ffaa'/><path d='M220 180 L292 180 L292 390 C292 410, 280 430, 256 440 C232 430, 220 410, 220 390 Z' fill='%23ffffff'/><circle cx='256' cy='85' r='18' fill='%2300ffaa'/></svg>",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
   "share_target": {
     "action": "/index.html",
     "method": "GET",
