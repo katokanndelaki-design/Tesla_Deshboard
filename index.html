@@ -4,16 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tesla Remote</title>
+    <title>Tesla OS - Universal PWA & Full Remote</title>
  
-    <!-- Manifest Link -->
-    <link rel="manifest" href="manifest.json">
-
-    <!-- High Quality App Icon (PNG Data URI) for Chrome Home Screen & Favicon -->
-    <link rel="icon" type="image/png" sizes="192x192" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='120' fill='%230a0a0a'/><path d='M110 130 C200 110, 312 110, 402 130 L402 165 C320 145, 192 145, 110 165 Z' fill='%2300ffaa'/><path d='M220 180 L292 180 L292 390 C292 410, 280 430, 256 440 C232 430, 220 410, 220 390 Z' fill='%23ffffff'/><circle cx='256' cy='85' r='18' fill='%2300ffaa'/></svg>">
-    <link rel="apple-touch-icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='120' fill='%230a0a0a'/><path d='M110 130 C200 110, 312 110, 402 130 L402 165 C320 145, 192 145, 110 165 Z' fill='%2300ffaa'/><path d='M220 180 L292 180 L292 390 C292 410, 280 430, 256 440 C232 430, 220 410, 220 390 Z' fill='%23ffffff'/><circle cx='256' cy='85' r='18' fill='%2300ffaa'/></svg>">
-    
-    <meta name="mobile-web-app-capable" content="yes">
+    <!-- Tesla OS Futuristic Favicon & App Icons (SVG Data URIs) -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='120' fill='%230a0a0a'/><path d='M110 130 C200 110, 312 110, 402 130 L402 165 C320 145, 192 145, 110 165 Z' fill='%2300ffaa'/><path d='M220 180 L292 180 L292 390 C292 410, 280 430, 256 440 C232 430, 220 410, 220 390 Z' fill='%23ffffff'/><circle cx='256' cy='85' r='18' fill='%2300ffaa'/></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='120' fill='%230a0a0a'/><path d='M110 130 C200 110, 312 110, 402 130 L402 165 C320 145, 192 145, 110 165 Z' fill='%2300ffaa'/><path d='M220 180 L292 180 L292 390 C292 410, 280 430, 256 440 C232 430, 220 410, 220 390 Z' fill='%23ffffff'/><circle cx='256' cy='85' r='18' fill='%2300ffaa'/></svg>">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#0a0a0a">
@@ -83,23 +78,32 @@
         .app-title { font-size: 13px; color: #888; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; margin:0; }
         .app-content { padding: 20px; flex: 1; overflow-y: auto; }
 
-        /* YOUTUBE MUSIC 85% EXPANDED WINDOW */
+        /* SPECIFIC: YOUTUBE MUSIC 85% LARGE EXPANDED WINDOW */
         #app-music {
-            width: 85vw !important; height: 85vh !important;
-            top: 50% !important; left: 50% !important;
-            transform: translate(-50%, -50%) !important; right: auto !important;
-            border-radius: 28px !important; background: rgba(10, 10, 10, 0.98) !important;
-            border: 1px solid rgba(255, 255, 255, 0.15) !important; z-index: 2000 !important;
+            width: 85vw !important;
+            height: 85vh !important;
+            top: 50% !important;
+            left: 50% !important;
+            transform: translate(-50%, -50%) !important;
+            right: auto !important;
+            border-radius: 28px !important;
+            background: rgba(10, 10, 10, 0.98) !important;
+            border: 1px solid rgba(255, 255, 255, 0.15) !important;
+            z-index: 2000 !important;
         }
 
-        .music-nav-bar { display: flex; gap: 10px; padding: 10px 20px; background: rgba(255,255,255,0.03); border-bottom: 1px solid rgba(255,255,255,0.08); align-items: center; }
-        .music-tab-btn { background: rgba(255,255,255,0.08); border: none; color: #fff; padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .music-nav-bar {
+            display: flex; gap: 10px; padding: 10px 20px; background: rgba(255,255,255,0.03); border-bottom: 1px solid rgba(255,255,255,0.08); align-items: center;
+        }
+        .music-tab-btn {
+            background: rgba(255,255,255,0.08); border: none; color: #fff; padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: bold; cursor: pointer; transition: 0.2s;
+        }
         .music-tab-btn.active { background: #ff0000; color: #fff; }
 
         .mini-player { position: absolute; bottom: 130px; left: 24px; width: 340px; background: var(--glass-bg); backdrop-filter: var(--glass-blur); border-radius: 24px; border: 1px solid var(--glass-border); display: none; flex-direction: column; padding: 12px 18px; gap: 10px; z-index: 900; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
         .mini-player.active-session { display: flex; }
 
-        /* --- MOBILE REMOTE UI (📱 ≤ 768px) --- */
+        /* --- MOBILE REMOTE & FULL SETTINGS UI (📱 ≤ 768px) --- */
         #mobile-app-view { display: none; width: 100vw; height: 100vh; background: #0a0a0a; overflow-y: auto; position: fixed; top: 0; left: 0; z-index: 999999; box-sizing: border-box; padding: 18px; }
         
         @media (max-width: 768px) {
@@ -122,6 +126,7 @@
         .tab-item.active { background: var(--ac); color: #000; }
 
         .m-setting-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-size: 13px; color: #ddd; }
+
         .station-item-m { display: flex; align-items: center; justify-content: space-between; padding: 10px; background: rgba(255,255,255,0.03); border-radius: 10px; margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.05); }
 
         input[type=range] { -webkit-appearance: none; background: rgba(255,255,255,0.1); height: 6px; border-radius: 5px; outline: none; }
@@ -135,7 +140,7 @@
 
     <div id="toast" class="toast">შეტყობინება...</div>
 
-    <!-- CAR DISPLAY UI -->
+    <!-- 1. CAR DISPLAY INTERFACE (DESKTOP/TABLET) -->
     <div id="boot-screen">
         <svg width="80" height="80" viewBox="0 0 512 512" style="margin-bottom:15px;">
             <path d="M110 130 C200 110, 312 110, 402 130 L402 165 C320 145, 192 145, 110 165 Z" fill="#00ffaa"/>
@@ -200,12 +205,15 @@
             <button class="music-tab-btn" onclick="switchMusicView('embed')">▶ YouTube Player</button>
         </div>
         <div class="app-content" style="padding:0; display:flex; flex-direction:column; height:calc(100% - 100px);">
+            <!-- Web YouTube Music Viewer -->
             <iframe id="ytm-web-iframe" src="https://music.youtube.com" style="width:100%; height:100%; border:none; background:#000;" allow="autoplay; encrypted-media"></iframe>
+            
+            <!-- Embedded Player Container (Background & MiniSync) -->
             <div id="yt-player-container" style="display:none; width:100%; height:100%;"><div id="yt-player"></div></div>
         </div>
     </div>
 
-    <!-- MINI PLAYER -->
+    <!-- MINI PLAYER (COLLAPSED IN BOTTOM CORNER) -->
     <div class="mini-player active-session" id="mini-player">
         <div onclick="restoreApp('app-music')" style="display:flex; align-items:center; cursor:pointer; justify-content:space-between;">
             <div style="display:flex; align-items:center; gap:10px;">
@@ -239,7 +247,7 @@
     <div class="app-window" id="app-weather"><div class="app-header"><h3 class="app-title">⛅ ამინდი</h3><button style="background:none; border:none; color:#fff;" onclick="toggleApp('app-weather')">×</button></div><div class="app-content"></div></div>
 
 
-    <!-- MOBILE REMOTE UI -->
+    <!-- 2. MOBILE REMOTE & FULL SETTINGS UI (📱 ≤ 768px) -->
     <div id="mobile-app-view">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
             <div style="display:flex; align-items:center; gap:10px;">
@@ -259,7 +267,7 @@
             <div class="tab-item" onclick="switchMobileTab('tab-admin', this)">🔐 ADMIN</div>
         </div>
 
-        <!-- TAB 1: SHARE -->
+        <!-- TAB 1: SHARE & MEDIA LAUNCH -->
         <div id="tab-share" class="tab-page">
             <div class="mobile-card">
                 <h3>🎵 YouTube-ის გაზიარება</h3>
@@ -296,7 +304,7 @@
             </div>
         </div>
 
-        <!-- TAB 3: FULL SETTINGS -->
+        <!-- TAB 3: FULL CAR SETTINGS -->
         <div id="tab-settings" class="tab-page" style="display:none;">
             <div class="mobile-card">
                 <h3>🚘 მანქანის იდენტიფიკაცია</h3>
@@ -346,6 +354,7 @@
                 </div>
             </div>
 
+            <!-- YouTube Playlist Manager -->
             <div class="mobile-card">
                 <h3>🎵 YouTube პლეილისტის მართვა</h3>
                 <div id="m-playlist-container" style="max-height:180px; overflow-y:auto; margin-bottom:12px;"></div>
@@ -358,7 +367,7 @@
             </div>
         </div>
 
-        <!-- TAB 4: ADMIN PANEL -->
+        <!-- TAB 4: ADMIN PANEL (PIN PROTECTED) -->
         <div id="tab-admin" class="tab-page" style="display:none;">
             <div id="admin-auth-card" class="mobile-card">
                 <h3>🔐 შეიყვანეთ ADMIN PIN</h3>
@@ -421,22 +430,6 @@
             if(t) { t.innerText = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000); }
         }
 
-        // --- URL PARSER FOR INCOMING SHARED LINKS ---
-        function handleIncomingShareURL() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const sharedUrl = urlParams.get('m-yt-url') || urlParams.get('url') || urlParams.get('text');
-            if (sharedUrl) {
-                const cleanUrl = sharedUrl.match(/https?:\/\/[^\s]+/)?.[0] || sharedUrl;
-                if (cleanUrl.includes('youtu') || cleanUrl.includes('music.youtube')) {
-                    document.getElementById('m-yt-url').value = cleanUrl;
-                    sendSharedData('youtube');
-                } else if (cleanUrl.includes('map') || cleanUrl.includes('yandex') || cleanUrl.includes('goo.gl')) {
-                    document.getElementById('m-map-url').value = cleanUrl;
-                    sendSharedData('navigation');
-                }
-            }
-        }
-
         // --- YOUTUBE MUSIC CONTROLS ---
         function switchMusicView(view) {
             const ytmIframe = document.getElementById('ytm-web-iframe');
@@ -489,7 +482,6 @@
                 if(badge) { badge.innerText = "CONNECTED"; badge.style.background = "#00ffaa"; badge.style.color = "#000"; }
 
                 startRealtimeSync();
-                handleIncomingShareURL();
             } catch(e) {
                 console.error("Firebase Init Error", e);
             }
@@ -784,5 +776,3 @@
     </script>
 </body>
 </html>
-
-```
