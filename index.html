@@ -72,12 +72,35 @@
         .dock-icon { width: 46px; height: 46px; border-radius: 50%; background: rgba(255,255,255,0.05); display: flex; justify-content: center; align-items: center; font-size: 20px; cursor: pointer; transition: 0.3s; }
         .dock-icon.active { border: 1px solid var(--ac); color: var(--ac); background: rgba(var(--ac-rgb), 0.1); }
 
+        /* App Windows General */
         .app-window { position: absolute; top: 24px; right: 90px; width: 440px; height: calc(100vh - 160px); background: rgba(15, 15, 15, 0.95); backdrop-filter: var(--glass-blur); border-radius: 30px; border: 1px solid var(--glass-border); z-index: 500; display: none; flex-direction: column; overflow: hidden; box-shadow: -15px 25px 60px rgba(0,0,0,0.8); }
         .app-header { display: flex; justify-content: space-between; align-items: center; padding: 18px 22px; background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--glass-border); }
         .app-title { font-size: 13px; color: #888; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; margin:0; }
         .app-content { padding: 20px; flex: 1; overflow-y: auto; }
 
-        .mini-player { position: absolute; bottom: 130px; left: 24px; width: 320px; background: var(--glass-bg); backdrop-filter: var(--glass-blur); border-radius: 24px; border: 1px solid var(--glass-border); display: none; flex-direction: column; padding: 15px 20px; gap: 10px; z-index: 900; }
+        /* SPECIFIC: YOUTUBE MUSIC 85% LARGE EXPANDED WINDOW */
+        #app-music {
+            width: 85vw !important;
+            height: 85vh !important;
+            top: 50% !important;
+            left: 50% !important;
+            transform: translate(-50%, -50%) !important;
+            right: auto !important;
+            border-radius: 28px !important;
+            background: rgba(10, 10, 10, 0.98) !important;
+            border: 1px solid rgba(255, 255, 255, 0.15) !important;
+            z-index: 2000 !important;
+        }
+
+        .music-nav-bar {
+            display: flex; gap: 10px; padding: 10px 20px; background: rgba(255,255,255,0.03); border-bottom: 1px solid rgba(255,255,255,0.08); align-items: center;
+        }
+        .music-tab-btn {
+            background: rgba(255,255,255,0.08); border: none; color: #fff; padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: bold; cursor: pointer; transition: 0.2s;
+        }
+        .music-tab-btn.active { background: #ff0000; color: #fff; }
+
+        .mini-player { position: absolute; bottom: 130px; left: 24px; width: 340px; background: var(--glass-bg); backdrop-filter: var(--glass-blur); border-radius: 24px; border: 1px solid var(--glass-border); display: none; flex-direction: column; padding: 12px 18px; gap: 10px; z-index: 900; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
         .mini-player.active-session { display: flex; }
 
         /* --- MOBILE REMOTE & FULL SETTINGS UI (📱 ≤ 768px) --- */
@@ -168,20 +191,44 @@
         </div>
     </div>
 
-    <!-- YouTube Player Window -->
+    <!-- YOUTUBE MUSIC EXPANDED (85% FULL SCREEN WEB PLAYER) -->
     <div class="app-window" id="app-music">
-        <div class="app-header"><h3 class="app-title">🎵 YouTube Media</h3><button style="background:none; border:none; color:#fff;" onclick="collapseToMini('app-music')">⤢</button></div>
-        <div class="app-content">
-            <div id="yt-player-container" style="width:100%; height:200px; background:#000; border-radius:15px; overflow:hidden;"><div id="yt-player"></div></div>
-            <h4 id="track-title" style="text-align:center; margin-top:15px;">მზადაა დაკვრისთვის</h4>
+        <div class="app-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <span style="font-size:20px;">🔴</span>
+                <h3 class="app-title" style="color:#fff;">YOUTUBE MUSIC</h3>
+            </div>
+            <button style="background:rgba(255,255,255,0.1); border:none; color:#fff; width:36px; height:36px; border-radius:50%; font-size:18px; cursor:pointer;" onclick="collapseToMini('app-music')">⤢</button>
+        </div>
+        <div class="music-nav-bar">
+            <button class="music-tab-btn active" onclick="switchMusicView('ytm')">🎵 YouTube Music Web</button>
+            <button class="music-tab-btn" onclick="switchMusicView('embed')">▶ YouTube Player</button>
+        </div>
+        <div class="app-content" style="padding:0; display:flex; flex-direction:column; height:calc(100% - 100px);">
+            <!-- Web YouTube Music Viewer -->
+            <iframe id="ytm-web-iframe" src="https://music.youtube.com" style="width:100%; height:100%; border:none; background:#000;" allow="autoplay; encrypted-media"></iframe>
+            
+            <!-- Embedded Player Container (Background & MiniSync) -->
+            <div id="yt-player-container" style="display:none; width:100%; height:100%;"><div id="yt-player"></div></div>
         </div>
     </div>
 
+    <!-- MINI PLAYER (COLLAPSED IN BOTTOM CORNER) -->
     <div class="mini-player active-session" id="mini-player">
-        <div onclick="restoreApp('app-music')" style="display:flex; align-items:center; cursor:pointer;">
-            <div style="font-size:20px; margin-right:10px;">🎵</div>
-            <div id="mini-track-title" style="font-size:13px; font-weight:bold; color:var(--ac); flex:1; overflow:hidden; white-space:nowrap;">YouTube Media</div>
-            <span style="color:#555;">⤢</span>
+        <div onclick="restoreApp('app-music')" style="display:flex; align-items:center; cursor:pointer; justify-content:space-between;">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <div style="font-size:20px; background:rgba(255,0,0,0.2); width:32px; height:32px; border-radius:8px; display:flex; justify-content:center; align-items:center;">🎵</div>
+                <div>
+                    <div id="mini-track-title" style="font-size:13px; font-weight:bold; color:var(--ac);">YouTube Music</div>
+                    <div style="font-size:10px; color:#888;">ფონური დაკვრა</div>
+                </div>
+            </div>
+            <span style="color:#aaa; font-size:18px;">⤢</span>
+        </div>
+        <div style="display:flex; justify-content:center; gap:15px; margin-top:6px;">
+            <button style="background:none; border:none; color:#fff; font-size:16px; cursor:pointer;" onclick="controlPlayer('prev')">⏮</button>
+            <button style="background:var(--ac); border:none; color:#000; width:34px; height:34px; border-radius:50%; font-size:16px; cursor:pointer; font-weight:bold;" onclick="controlPlayer('toggle')">▶</button>
+            <button style="background:none; border:none; color:#fff; font-size:16px; cursor:pointer;" onclick="controlPlayer('next')">⏭</button>
         </div>
     </div>
 
@@ -224,7 +271,7 @@
         <div id="tab-share" class="tab-page">
             <div class="mobile-card">
                 <h3>🎵 YouTube-ის გაზიარება</h3>
-                <input type="text" id="m-yt-url" class="m-input" placeholder="ჩასვი YouTube ლინკი...">
+                <input type="text" id="m-yt-url" class="m-input" placeholder="ჩასვი YouTube / YT Music ლინკი...">
                 <button class="m-btn" onclick="sendSharedData('youtube')">მანქანაში დაკვრა</button>
             </div>
 
@@ -257,7 +304,7 @@
             </div>
         </div>
 
-        <!-- TAB 3: FULL CAR SETTINGS (MOBILE FULL CONTROL) -->
+        <!-- TAB 3: FULL CAR SETTINGS -->
         <div id="tab-settings" class="tab-page" style="display:none;">
             <div class="mobile-card">
                 <h3>🚘 მანქანის იდენტიფიკაცია</h3>
@@ -307,7 +354,7 @@
                 </div>
             </div>
 
-            <!-- YouTube Playlist / Stations Manager -->
+            <!-- YouTube Playlist Manager -->
             <div class="mobile-card">
                 <h3>🎵 YouTube პლეილისტის მართვა</h3>
                 <div id="m-playlist-container" style="max-height:180px; overflow-y:auto; margin-bottom:12px;"></div>
@@ -360,8 +407,8 @@
         let db = null;
         let dbSettingsRef = null;
         let map, player;
+        let isPlaying = false;
         
-        // Settings State
         let settingsState = {
             carName: "MODEL Y",
             theme: "neon",
@@ -372,10 +419,7 @@
             apiKey: "",
             climateTemp: 22.0,
             tripA: 0.0,
-            stations: [
-                { title: "Lofi Girl (Live)", type: "video", ytId: "jfKfPfyJRdk" },
-                { title: "Synthwave Radio", type: "video", ytId: "4xDzrUhVKcg" }
-            ]
+            stations: []
         };
 
         const carTypesArr = ['modelY', 'model3', 'arrow', 'dot'];
@@ -384,6 +428,37 @@
         function showToast(msg) {
             const t = document.getElementById('toast');
             if(t) { t.innerText = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000); }
+        }
+
+        // --- YOUTUBE MUSIC CONTROLS ---
+        function switchMusicView(view) {
+            const ytmIframe = document.getElementById('ytm-web-iframe');
+            const embedContainer = document.getElementById('yt-player-container');
+            const btns = document.querySelectorAll('.music-tab-btn');
+
+            btns.forEach(b => b.classList.remove('active'));
+
+            if (view === 'ytm') {
+                ytmIframe.style.display = 'block';
+                embedContainer.style.display = 'none';
+                btns[0].classList.add('active');
+            } else {
+                ytmIframe.style.display = 'none';
+                embedContainer.style.display = 'block';
+                btns[1].classList.add('active');
+            }
+        }
+
+        function controlPlayer(action) {
+            if (!player) return;
+            if (action === 'toggle') {
+                if (isPlaying) { player.pauseVideo(); isPlaying = false; }
+                else { player.playVideo(); isPlaying = true; }
+            } else if (action === 'next') {
+                if (player.nextVideo) player.nextVideo();
+            } else if (action === 'prev') {
+                if (player.previousVideo) player.previousVideo();
+            }
         }
 
         // --- FIREBASE INITIALIZATION & REALTIME SYNC ---
@@ -428,8 +503,10 @@
                 if(url && window.innerWidth > 768) {
                     let ytId = extractYouTubeId(url);
                     if(ytId && player && player.loadVideoById) {
+                        switchMusicView('embed');
                         toggleApp('app-music');
                         player.loadVideoById(ytId);
+                        isPlaying = true;
                         showToast("🎵 YouTube ჩაირთო ტელეფონიდან");
                     }
                 }
@@ -685,7 +762,16 @@
         }
 
         function onYouTubeIframeAPIReady() {
-            player = new YT.Player('yt-player', { height: '100%', width: '100%', playerVars: { 'autoplay': 1, 'controls': 1 } });
+            player = new YT.Player('yt-player', { 
+                height: '100%', width: '100%', 
+                playerVars: { 'autoplay': 1, 'controls': 1 },
+                events: {
+                    'onStateChange': (e) => {
+                        if (e.data === YT.PlayerState.PLAYING) isPlaying = true;
+                        else if (e.data === YT.PlayerState.PAUSED) isPlaying = false;
+                    }
+                }
+            });
         }
     </script>
 </body>
