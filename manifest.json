@@ -1,0 +1,17 @@
+{
+  "name": "Tesla Remote",
+  "short_name": "Tesla Remote",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#00ffaa",
+  "share_target": {
+    "action": "/index.html",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "m-yt-url"
+    }
+  }
+}
