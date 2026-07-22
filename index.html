@@ -1,10 +1,18 @@
+```html
 <!DOCTYPE html>
 <html lang="ka">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tesla OS - Universal PWA & Remote</title>
+    <title>Tesla OS - Universal PWA & Full Remote</title>
  
+    <!-- Tesla OS Futuristic Favicon & App Icons (SVG Data URIs) -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='120' fill='%230a0a0a'/><path d='M110 130 C200 110, 312 110, 402 130 L402 165 C320 145, 192 145, 110 165 Z' fill='%2300ffaa'/><path d='M220 180 L292 180 L292 390 C292 410, 280 430, 256 440 C232 430, 220 410, 220 390 Z' fill='%23ffffff'/><circle cx='256' cy='85' r='18' fill='%2300ffaa'/></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='120' fill='%230a0a0a'/><path d='M110 130 C200 110, 312 110, 402 130 L402 165 C320 145, 192 145, 110 165 Z' fill='%2300ffaa'/><path d='M220 180 L292 180 L292 390 C292 410, 280 430, 256 440 C232 430, 220 410, 220 390 Z' fill='%23ffffff'/><circle cx='256' cy='85' r='18' fill='%2300ffaa'/></svg>">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0a0a0a">
+
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -13,6 +21,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-rotate@0.2.8/dist/leaflet-rotate-src.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
 
     <!-- YouTube Iframe API -->
     <script src="https://www.youtube.com/iframe_api"></script>
@@ -28,7 +37,7 @@
 
         body { margin: 0; padding: 0; overflow: hidden; background-color: #000; font-family: system-ui, -apple-system, sans-serif; color: #fff; user-select: none; }
         
-        /* --- CAR DISPLAY UI (DESKTOP / TABLET) --- */
+        /* --- CAR DISPLAY UI (DESKTOP / TABLET > 768px) --- */
         #map { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; background: #111; }
         .leaflet-routing-container, .leaflet-control-zoom, .leaflet-control-attribution { display: none !important; }
 
@@ -38,7 +47,7 @@
             display: flex; flex-direction: column; justify-content: center; align-items: center; 
             transition: opacity 0.8s ease-in-out; pointer-events: none; 
         }
-        .boot-logo { font-size: 50px; color: var(--ac); letter-spacing: 6px; font-weight: 300; text-transform: uppercase; }
+        .boot-logo { font-size: 55px; color: var(--ac); letter-spacing: 6px; font-weight: 300; text-transform: uppercase; }
 
         .bottom-info-bar { position: absolute; bottom: 24px; left: 24px; z-index: 10; background: var(--glass-bg); backdrop-filter: var(--glass-blur); padding: 14px 28px; border-radius: 30px; border: 1px solid var(--glass-border); font-size: 20px; font-weight: 600; display: flex; align-items: center; gap: 18px; box-shadow: 0 10px 40px rgba(0,0,0,0.6); }
         .date-display { font-size: 14px; color: #aaa; font-weight: 400; text-transform: uppercase; }
@@ -47,6 +56,7 @@
         .map-floating-controls { position: absolute; top: 24px; right: 24px; z-index: 400; display: flex; flex-direction: column; gap: 10px; background: var(--glass-bg); backdrop-filter: var(--glass-blur); padding: 8px; border-radius: 24px; border: 1px solid var(--glass-border); }
         .map-btn { width: 44px; height: 44px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 18px; cursor: pointer; transition: 0.2s; color: #e0e0e0; }
         .map-btn.active { color: var(--ac); background: rgba(var(--ac-rgb), 0.15); }
+        .map-divider { height: 1px; background: rgba(255,255,255,0.1); margin: 2px 6px; }
 
         .sidebar { position: absolute; top: 24px; left: 24px; width: 280px; background: var(--glass-bg); backdrop-filter: var(--glass-blur); border-radius: 30px; border: 1px solid var(--glass-border); z-index: 10; padding: 30px 25px; display: flex; flex-direction: column; gap: 18px; box-shadow: 0 15px 50px rgba(0,0,0,0.6); }
         .header-status { text-align: center; color: #999; font-size: 11px; font-weight: bold; letter-spacing: 3px; display: flex; align-items: center; justify-content: center;}
@@ -68,9 +78,10 @@
         .app-content { padding: 20px; flex: 1; overflow-y: auto; }
 
         .mini-player { position: absolute; bottom: 130px; left: 24px; width: 320px; background: var(--glass-bg); backdrop-filter: var(--glass-blur); border-radius: 24px; border: 1px solid var(--glass-border); display: none; flex-direction: column; padding: 15px 20px; gap: 10px; z-index: 900; }
+        .mini-player.active-session { display: flex; }
 
-        /* --- MOBILE REMOTE & ADMIN UI (📱 ≤ 768px) --- */
-        #mobile-app-view { display: none; width: 100vw; height: 100vh; background: #0a0a0a; overflow-y: auto; position: fixed; top: 0; left: 0; z-index: 999999; box-sizing: border-box; padding: 20px; }
+        /* --- MOBILE REMOTE & FULL SETTINGS UI (📱 ≤ 768px) --- */
+        #mobile-app-view { display: none; width: 100vw; height: 100vh; background: #0a0a0a; overflow-y: auto; position: fixed; top: 0; left: 0; z-index: 999999; box-sizing: border-box; padding: 18px; }
         
         @media (max-width: 768px) {
             #mobile-app-view { display: block; }
@@ -78,18 +89,25 @@
         }
 
         .mobile-card { background: #141414; border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; padding: 18px; margin-bottom: 16px; }
-        .mobile-card h3 { margin-top: 0; font-size: 16px; color: var(--ac); text-transform: uppercase; letter-spacing: 1px; display: flex; align-items: center; justify-content: space-between; }
+        .mobile-card h3 { margin-top: 0; font-size: 15px; color: var(--ac); text-transform: uppercase; letter-spacing: 1px; display: flex; align-items: center; justify-content: space-between; }
         
-        .m-input { background: #1e1e1e; border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 12px 14px; border-radius: 12px; width: 100%; box-sizing: border-box; outline: none; margin-bottom: 10px; font-size: 14px; }
+        .m-input { background: #1e1e1e; border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 12px 14px; border-radius: 12px; width: 100%; box-sizing: border-box; outline: none; margin-bottom: 10px; font-size: 13px; }
         .m-input:focus { border-color: var(--ac); }
-        .m-btn { background: var(--ac); color: #000; border: none; padding: 12px; width: 100%; border-radius: 12px; font-weight: bold; font-size: 14px; cursor: pointer; transition: 0.2s; }
+        .m-btn { background: var(--ac); color: #000; border: none; padding: 12px; width: 100%; border-radius: 12px; font-weight: bold; font-size: 13px; cursor: pointer; transition: 0.2s; }
         .m-btn:active { transform: scale(0.98); opacity: 0.9; }
         .m-btn.secondary { background: rgba(255,255,255,0.1); color: #fff; }
         .m-btn.danger { background: #ff4757; color: #fff; }
 
-        .tab-bar { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; }
-        .tab-item { flex: 1; text-align: center; padding: 10px; border-radius: 10px; background: rgba(255,255,255,0.05); color: #888; font-size: 13px; font-weight: bold; cursor: pointer; }
+        .tab-bar { display: flex; gap: 8px; margin-bottom: 18px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; overflow-x: auto; }
+        .tab-item { flex: 1; text-align: center; padding: 10px 12px; border-radius: 10px; background: rgba(255,255,255,0.05); color: #888; font-size: 12px; font-weight: bold; cursor: pointer; white-space: nowrap; }
         .tab-item.active { background: var(--ac); color: #000; }
+
+        .m-setting-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-size: 13px; color: #ddd; }
+
+        .station-item-m { display: flex; align-items: center; justify-content: space-between; padding: 10px; background: rgba(255,255,255,0.03); border-radius: 10px; margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.05); }
+
+        input[type=range] { -webkit-appearance: none; background: rgba(255,255,255,0.1); height: 6px; border-radius: 5px; outline: none; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 18px; height: 18px; border-radius: 50%; background: var(--ac); cursor: pointer; }
 
         .toast { position: fixed; top: -60px; left: 50%; transform: translateX(-50%); background: rgba(20,20,20,0.95); color: #fff; padding: 12px 25px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.1); font-size: 14px; font-weight: 600; z-index: 9999999; transition: top 0.4s; }
         .toast.show { top: 20px; }
@@ -99,15 +117,25 @@
 
     <div id="toast" class="toast">შეტყობინება...</div>
 
-    <!-- 1. CAR DISPLAY INTERFACE -->
-    <div id="boot-screen"><div class="boot-logo">TESLA OS</div></div>
+    <!-- 1. CAR DISPLAY INTERFACE (DESKTOP/TABLET) -->
+    <div id="boot-screen">
+        <svg width="80" height="80" viewBox="0 0 512 512" style="margin-bottom:15px;">
+            <path d="M110 130 C200 110, 312 110, 402 130 L402 165 C320 145, 192 145, 110 165 Z" fill="#00ffaa"/>
+            <path d="M220 180 L292 180 L292 390 C292 410, 280 430, 256 440 C232 430, 220 410, 220 390 Z" fill="#ffffff"/>
+            <circle cx="256" cy="85" r="18" fill="#00ffaa"/>
+        </svg>
+        <div class="boot-logo">TESLA OS</div>
+    </div>
+    
     <div id="map"></div>
 
     <div class="map-floating-controls">
-        <div class="map-btn active" id="btn-map-follow" onclick="toggleFollowMode()">🎯</div>
-        <div class="map-btn" onclick="locateMeFromBrowser()">📍</div>
-        <div class="map-btn" onclick="map.zoomIn()">+</div>
-        <div class="map-btn" onclick="map.zoomOut()">−</div>
+        <div class="map-btn active" id="btn-map-follow" onclick="toggleFollowMode()" title="მიყოლა">🎯</div>
+        <div class="map-btn" onclick="locateMeFromBrowser()" title="ლოკაცია">📍</div>
+        <div class="map-btn" id="btn-map-compass" onclick="toggleMapRotation()" title="კომპასი">🧭</div>
+        <div class="map-divider"></div>
+        <div class="map-btn" onclick="map.zoomIn()" style="font-size:22px; font-weight:bold;">+</div>
+        <div class="map-btn" onclick="map.zoomOut()" style="font-size:22px; font-weight:bold;">−</div>
     </div>
 
     <div class="bottom-info-bar">
@@ -119,16 +147,19 @@
     </div>
 
     <div class="sidebar">
-        <div class="header-status"><span class="status-dot"></span> MODEL Y ONLINE</div>
+        <div class="header-status"><span class="status-dot"></span> <span id="sidebar-car-name">MODEL Y</span> ONLINE</div>
         <div class="speed-block"><div class="speed-value" id="speed">0</div><div class="speed-limit">60</div></div>
-        <div style="margin-top: 20px;">
-            <div id="battery-text" style="font-size:24px; font-weight:bold;">55%</div>
+        <div id="trip-text" style="font-size:12px; color:var(--ac); text-align:center; margin-top:5px;">TRIP A: 0.0 KM</div>
+        <div style="margin-top: 15px;">
+            <div id="battery-text" style="font-size:24px; font-weight:bold; text-align:center;">55%</div>
         </div>
     </div>
 
     <div class="dock-container">
         <div class="climate-panel">
+            <button style="background:none; border:none; color:#888; font-size:24px;" onclick="changeClimateTemp(-0.5)">‹</button>
             <span id="climate-temp">22.0°</span>
+            <button style="background:none; border:none; color:#888; font-size:24px;" onclick="changeClimateTemp(0.5)">›</button>
         </div>
         <div class="dock">
             <div class="dock-icon" id="dock-nav" onclick="toggleApp('app-nav')">📍</div>
@@ -139,14 +170,22 @@
 
     <!-- YouTube Player Window -->
     <div class="app-window" id="app-music">
-        <div class="app-header"><h3 class="app-title">🎵 YouTube Media</h3><button style="background:none; border:none; color:#fff;" onclick="toggleApp('app-music')">×</button></div>
+        <div class="app-header"><h3 class="app-title">🎵 YouTube Media</h3><button style="background:none; border:none; color:#fff;" onclick="collapseToMini('app-music')">⤢</button></div>
         <div class="app-content">
-            <div id="yt-player-container" style="width:100%; height:220px; background:#000; border-radius:15px; overflow:hidden;"><div id="yt-player"></div></div>
+            <div id="yt-player-container" style="width:100%; height:200px; background:#000; border-radius:15px; overflow:hidden;"><div id="yt-player"></div></div>
             <h4 id="track-title" style="text-align:center; margin-top:15px;">მზადაა დაკვრისთვის</h4>
         </div>
     </div>
 
-    <!-- Navigation Window (Maps/Yandex Viewer) -->
+    <div class="mini-player active-session" id="mini-player">
+        <div onclick="restoreApp('app-music')" style="display:flex; align-items:center; cursor:pointer;">
+            <div style="font-size:20px; margin-right:10px;">🎵</div>
+            <div id="mini-track-title" style="font-size:13px; font-weight:bold; color:var(--ac); flex:1; overflow:hidden; white-space:nowrap;">YouTube Media</div>
+            <span style="color:#555;">⤢</span>
+        </div>
+    </div>
+
+    <!-- Navigation Window -->
     <div class="app-window" id="app-nav">
         <div class="app-header"><h3 class="app-title">📍 ნავიგაცია</h3><button style="background:none; border:none; color:#fff;" onclick="toggleApp('app-nav')">×</button></div>
         <div class="app-content" style="padding:0;">
@@ -156,30 +195,37 @@
 
     <div class="app-window" id="app-settings">
         <div class="app-header"><h3 class="app-title">⚙️ პარამეტრები</h3><button style="background:none; border:none; color:#fff;" onclick="toggleApp('app-settings')">×</button></div>
-        <div class="app-content"><p>სისტემა სინქრონიზებულია მობილურ აპლიკაციასთან.</p></div>
+        <div class="app-content"><p style="color:#aaa; font-size:13px;">სისტემა სრულ სინქრონშია მობილურ აპლიკაციასთან Realtime Database-ით.</p></div>
     </div>
     <div class="app-window" id="app-weather"><div class="app-header"><h3 class="app-title">⛅ ამინდი</h3><button style="background:none; border:none; color:#fff;" onclick="toggleApp('app-weather')">×</button></div><div class="app-content"></div></div>
 
 
-    <!-- 2. MOBILE REMOTE & ADMIN PANEL UI (📱) -->
+    <!-- 2. MOBILE REMOTE & FULL SETTINGS UI (📱 ≤ 768px) -->
     <div id="mobile-app-view">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-            <h2 style="margin:0; font-size:20px; color:#fff;">TESLA REMOTE</h2>
-            <span id="firebase-status-badge" style="font-size:10px; padding:4px 8px; border-radius:10px; background:#ff4757; color:#fff;">DISCONNECTED</span>
+            <div style="display:flex; align-items:center; gap:10px;">
+                <svg width="28" height="28" viewBox="0 0 512 512">
+                    <path d="M110 130 C200 110, 312 110, 402 130 L402 165 C320 145, 192 145, 110 165 Z" fill="#00ffaa"/>
+                    <path d="M220 180 L292 180 L292 390 C292 410, 280 430, 256 440 C232 430, 220 410, 220 390 Z" fill="#ffffff"/>
+                </svg>
+                <h2 style="margin:0; font-size:18px; color:#fff; letter-spacing:1px;">TESLA REMOTE</h2>
+            </div>
+            <span id="firebase-status-badge" style="font-size:10px; padding:4px 8px; border-radius:10px; background:#ff4757; color:#fff; font-weight:bold;">OFFLINE</span>
         </div>
 
         <div class="tab-bar">
-            <div class="tab-item active" onclick="switchMobileTab('tab-share')">🚀 გაზიარება</div>
-            <div class="tab-item" onclick="switchMobileTab('tab-controls')">🎛️ მართვა</div>
-            <div class="tab-item" onclick="switchMobileTab('tab-admin')">🔐 ADMIN</div>
+            <div class="tab-item active" onclick="switchMobileTab('tab-share', this)">🚀 გაზიარება</div>
+            <div class="tab-item" onclick="switchMobileTab('tab-controls', this)">🎛️ მართვა</div>
+            <div class="tab-item" onclick="switchMobileTab('tab-settings', this)">⚙️ სეთინგები</div>
+            <div class="tab-item" onclick="switchMobileTab('tab-admin', this)">🔐 ADMIN</div>
         </div>
 
-        <!-- TAB 1: SHARE LINKS -->
+        <!-- TAB 1: SHARE & MEDIA LAUNCH -->
         <div id="tab-share" class="tab-page">
             <div class="mobile-card">
                 <h3>🎵 YouTube-ის გაზიარება</h3>
                 <input type="text" id="m-yt-url" class="m-input" placeholder="ჩასვი YouTube ლინკი...">
-                <button class="m-btn" onclick="sendSharedData('youtube')">მანქანაში ჩართვა</button>
+                <button class="m-btn" onclick="sendSharedData('youtube')">მანქანაში დაკვრა</button>
             </div>
 
             <div class="mobile-card">
@@ -193,122 +239,204 @@
         <div id="tab-controls" class="tab-page" style="display:none;">
             <div class="mobile-card">
                 <h3>🌡️ კლიმატ-კონტროლი</h3>
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <button class="m-btn secondary" style="width:50px;" onclick="changeRemoteTemp(-0.5)">-</button>
-                    <span id="m-temp-display" style="font-size:24px; font-weight:bold;">22.0°C</span>
-                    <button class="m-btn secondary" style="width:50px;" onclick="changeRemoteTemp(0.5)">+</button>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
+                    <button class="m-btn secondary" style="width:50px; font-size:18px;" onclick="changeClimateTemp(-0.5)">-</button>
+                    <span id="m-temp-display" style="font-size:26px; font-weight:bold; color:var(--ac);">22.0°C</span>
+                    <button class="m-btn secondary" style="width:50px; font-size:18px;" onclick="changeClimateTemp(0.5)">+</button>
                 </div>
             </div>
 
             <div class="mobile-card">
                 <h3>🎨 თემის ფერი</h3>
-                <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px;">
-                    <button class="m-btn" style="background:#00ffaa;" onclick="setRemoteTheme('neon')"></button>
-                    <button class="m-btn" style="background:#ff4757;" onclick="setRemoteTheme('red')"></button>
-                    <button class="m-btn" style="background:#00a8ff;" onclick="setRemoteTheme('blue')"></button>
-                    <button class="m-btn" style="background:#ff9f43;" onclick="setRemoteTheme('orange')"></button>
+                <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; margin-top:10px;">
+                    <button class="m-btn" style="background:#00ffaa; height:40px;" onclick="updateRemoteSetting('theme', 'neon')"></button>
+                    <button class="m-btn" style="background:#ff4757; height:40px;" onclick="updateRemoteSetting('theme', 'red')"></button>
+                    <button class="m-btn" style="background:#00a8ff; height:40px;" onclick="updateRemoteSetting('theme', 'blue')"></button>
+                    <button class="m-btn" style="background:#ff9f43; height:40px;" onclick="updateRemoteSetting('theme', 'orange')"></button>
                 </div>
             </div>
         </div>
 
-        <!-- TAB 3: ADMIN PANEL (PIN PROTECTED) -->
+        <!-- TAB 3: FULL CAR SETTINGS (MOBILE FULL CONTROL) -->
+        <div id="tab-settings" class="tab-page" style="display:none;">
+            <div class="mobile-card">
+                <h3>🚘 მანქანის იდენტიფიკაცია</h3>
+                <div style="display:flex; gap:8px; margin-top:10px;">
+                    <input type="text" id="m-car-name-input" class="m-input" placeholder="მაგ. MODEL Y" style="margin:0;">
+                    <button class="m-btn" style="width:100px;" onclick="updateRemoteSetting('carName', document.getElementById('m-car-name-input').value.trim())">შენახვა</button>
+                </div>
+            </div>
+
+            <div class="mobile-card">
+                <h3>🗺️ ნავიგაციისა და მარკერის მართვა</h3>
+                
+                <div class="m-setting-item">
+                    <span>მარკერის ტიპი</span>
+                    <button class="m-btn secondary" id="m-car-type-btn" style="width:140px; padding:8px;" onclick="cycleCarTypeRemote()">Model Y</button>
+                </div>
+
+                <div class="m-setting-item">
+                    <span>მარკერის ზომა (<span id="m-car-size-val">50</span>px)</span>
+                    <input type="range" id="m-car-size-slider" min="30" max="100" value="50" style="width:120px;" oninput="updateRemoteSetting('carSize', this.value)">
+                </div>
+
+                <div class="m-setting-item">
+                    <span>ავტო-ზუმი სიჩქარით</span>
+                    <button class="m-btn secondary" id="m-autozoom-btn" style="width:100px; padding:8px;" onclick="toggleAutoZoomRemote()">ჩართული</button>
+                </div>
+
+                <div style="margin-top:15px;">
+                    <span style="font-size:12px; color:#aaa; display:block; margin-bottom:5px;">MapBox Access Token (Box API)</span>
+                    <div style="display:flex; gap:8px;">
+                        <input type="password" id="m-mapbox-input" class="m-input" placeholder="pk.eyJ1I..." style="margin:0;">
+                        <button class="m-btn" style="width:90px;" onclick="updateRemoteSetting('mapboxToken', document.getElementById('m-mapbox-input').value.trim())">შენახვა</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mobile-card">
+                <h3>✨ AI & სისტემური გასაღებები</h3>
+                <span style="font-size:12px; color:#aaa; display:block; margin-bottom:5px;">Gemini API Key</span>
+                <div style="display:flex; gap:8px;">
+                    <input type="password" id="m-gemini-input" class="m-input" placeholder="AIzaSy..." style="margin:0;">
+                    <button class="m-btn" style="width:90px;" onclick="updateRemoteSetting('apiKey', document.getElementById('m-gemini-input').value.trim())">შენახვა</button>
+                </div>
+                
+                <div style="margin-top:15px;">
+                    <button class="m-btn danger" onclick="updateRemoteSetting('tripA', 0)">🚗 ტრიპის განულება (Reset Trip)</button>
+                </div>
+            </div>
+
+            <!-- YouTube Playlist / Stations Manager -->
+            <div class="mobile-card">
+                <h3>🎵 YouTube პლეილისტის მართვა</h3>
+                <div id="m-playlist-container" style="max-height:180px; overflow-y:auto; margin-bottom:12px;"></div>
+                
+                <div style="background:rgba(0,0,0,0.3); padding:12px; border-radius:12px; border:1px solid rgba(255,255,255,0.05);">
+                    <input type="text" id="m-new-track-title" class="m-input" placeholder="სიმღერის / პლეილისტის სახელი">
+                    <input type="text" id="m-new-track-url" class="m-input" placeholder="YouTube URL ლინკი">
+                    <button class="m-btn" onclick="addRemoteStation()">➕ სიაში დამატება</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: ADMIN PANEL (PIN PROTECTED) -->
         <div id="tab-admin" class="tab-page" style="display:none;">
-            <!-- PIN Auth -->
             <div id="admin-auth-card" class="mobile-card">
-                <h3>🔐 შეიყვანეთ PIN კოდი</h3>
+                <h3>🔐 შეიყვანეთ ADMIN PIN</h3>
                 <input type="password" id="admin-pin-input" class="m-input" maxlength="4" placeholder="****" style="text-align:center; font-size:24px; letter-spacing:8px;">
                 <button class="m-btn" onclick="verifyAdminPin()">შესვლა</button>
             </div>
 
-            <!-- Admin Content -->
             <div id="admin-content-card" style="display:none;">
                 <div class="mobile-card">
-                    <h3>⚡ Firebase Configuration API</h3>
-                    <p style="font-size:11px; color:#888;">შეიყვანეთ თქვენი Firebase-ის მონაცემები:</p>
+                    <h3>⚡ Firebase API Configuration</h3>
                     <input type="text" id="fb-apiKey" class="m-input" placeholder="API Key">
                     <input type="text" id="fb-authDomain" class="m-input" placeholder="Auth Domain">
-                    <input type="text" id="fb-databaseURL" class="m-input" placeholder="Database URL (https://...)">
+                    <input type="text" id="fb-databaseURL" class="m-input" placeholder="Database URL">
                     <input type="text" id="fb-projectId" class="m-input" placeholder="Project ID">
-                    <button class="m-btn" onclick="saveFirebaseConfig()">Firebase-ის შენახვა & დაკავშირება</button>
+                    <button class="m-btn" onclick="saveFirebaseConfig()">შენახვა & დაკავშირება</button>
                 </div>
 
                 <div class="mobile-card">
-                    <h3>🗄️ JSON & Database Controller</h3>
-                    <button class="m-btn secondary" onclick="fetchRawDatabase()" style="margin-bottom:10px;">ბაზის მონაცემების წაკითხვა</button>
-                    <textarea id="db-json-editor" class="m-input" style="height:150px; font-family:monospace; font-size:11px;" placeholder="Raw Realtime DB JSON..."></textarea>
+                    <h3>🗄️ Raw Realtime Database JSON</h3>
+                    <button class="m-btn secondary" onclick="fetchRawDatabase()" style="margin-bottom:10px;">ბაზის წაკითხვა</button>
+                    <textarea id="db-json-editor" class="m-input" style="height:140px; font-family:monospace; font-size:11px;" placeholder="JSON..."></textarea>
                     <div style="display:flex; gap:10px;">
                         <button class="m-btn" onclick="updateDatabaseFromJSON()">JSON განახლება</button>
-                        <button class="m-btn danger" onclick="clearDatabaseQueue()">ბაზის გასუფთავება</button>
+                        <button class="m-btn danger" onclick="clearDatabaseQueue()">გაწმენდა</button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- LOGIC -->
+    <!-- MAIN JAVASCRIPT LOGIC -->
     <script>
-        let db = null;
-        let currentTemp = 22.0;
+        const VIN = "5YJYGDEF1LF009721";
         const DEFAULT_PIN = "0304";
+        const defaultMapboxToken = "pk.eyJ1Ijoic2Fya21tZyIsImEiOiJjbXBsMWFwdjIyMHJ0MnBxdnNteDk1ejdyIn0.D-DH-vZZEwNiIaFMO2SeGQ";
+
+        let db = null;
+        let dbSettingsRef = null;
+        let map, player;
+        
+        // Settings State
+        let settingsState = {
+            carName: "MODEL Y",
+            theme: "neon",
+            carType: "modelY",
+            carSize: 50,
+            autoZoom: true,
+            mapboxToken: defaultMapboxToken,
+            apiKey: "",
+            climateTemp: 22.0,
+            tripA: 0.0,
+            stations: [
+                { title: "Lofi Girl (Live)", type: "video", ytId: "jfKfPfyJRdk" },
+                { title: "Synthwave Radio", type: "video", ytId: "4xDzrUhVKcg" }
+            ]
+        };
+
+        const carTypesArr = ['modelY', 'model3', 'arrow', 'dot'];
+        const carTypeNamesArr = ['Model Y (წითელი)', 'Model 3 (თეთრი)', 'ნავიგაციის ისარი', 'წერტილი'];
 
         function showToast(msg) {
             const t = document.getElementById('toast');
-            t.innerText = msg; t.classList.add('show');
-            setTimeout(() => t.classList.remove('show'), 3000);
+            if(t) { t.innerText = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000); }
         }
 
-        // --- FIREBASE DYNAMIC INITIALIZATION ---
+        // --- FIREBASE INITIALIZATION & REALTIME SYNC ---
         function initFirebaseSystem() {
+            const defaultFbConfig = {
+                apiKey: "AIzaSyAH3yVbBGrhvzbSx7J1GxNcVsl_ykX_OX0",
+                authDomain: "tesla-telemetry-29fb6.firebaseapp.com",
+                databaseURL: "https://tesla-telemetry-29fb6-default-rtdb.europe-west1.firebasedatabase.app",
+                projectId: "tesla-telemetry-29fb6"
+            };
+
             const savedConfig = localStorage.getItem('teslaFirebaseConfig');
-            if (savedConfig) {
-                try {
-                    const config = JSON.parse(savedConfig);
-                    if (!firebase.apps.length) {
-                        firebase.initializeApp(config);
-                    }
-                    db = firebase.database();
-                    document.getElementById('firebase-status-badge').innerText = "CONNECTED";
-                    document.getElementById('firebase-status-badge').style.background = "#00ffaa";
-                    document.getElementById('firebase-status-badge').style.color = "#000";
-                    listenToRemoteEvents();
-                } catch(e) {
-                    console.error("Firebase init error:", e);
-                }
+            const fbConfig = savedConfig ? JSON.parse(savedConfig) : defaultFbConfig;
+
+            try {
+                if (!firebase.apps.length) { firebase.initializeApp(fbConfig); }
+                db = firebase.database();
+                dbSettingsRef = db.ref(VIN + '/settings');
+
+                const badge = document.getElementById('firebase-status-badge');
+                if(badge) { badge.innerText = "CONNECTED"; badge.style.background = "#00ffaa"; badge.style.color = "#000"; }
+
+                startRealtimeSync();
+            } catch(e) {
+                console.error("Firebase Init Error", e);
             }
         }
 
-        function saveFirebaseConfig() {
-            const config = {
-                apiKey: document.getElementById('fb-apiKey').value.trim(),
-                authDomain: document.getElementById('fb-authDomain').value.trim(),
-                databaseURL: document.getElementById('fb-databaseURL').value.trim(),
-                projectId: document.getElementById('fb-projectId').value.trim()
-            };
-            localStorage.setItem('teslaFirebaseConfig', JSON.stringify(config));
-            showToast("✅ Firebase-ის კონფიგურაცია შენახულია!");
-            location.reload();
-        }
+        function startRealtimeSync() {
+            if(!dbSettingsRef) return;
 
-        // --- REMOTE LISTENERS (FOR CAR DISPLAY) ---
-        function listenToRemoteEvents() {
-            if(!db) return;
+            dbSettingsRef.on('value', snapshot => {
+                const data = snapshot.val();
+                if(data) {
+                    settingsState = { ...settingsState, ...data };
+                    applySettingsToUI();
+                }
+            });
 
-            // YouTube Sync
-            db.ref('shared/youtube').on('value', snapshot => {
-                const url = snapshot.val();
-                if(url) {
-                    let videoId = extractYouTubeId(url);
-                    if(videoId && window.innerWidth > 768) {
+            db.ref(VIN + '/shared/youtube').on('value', s => {
+                const url = s.val();
+                if(url && window.innerWidth > 768) {
+                    let ytId = extractYouTubeId(url);
+                    if(ytId && player && player.loadVideoById) {
                         toggleApp('app-music');
-                        if(player && player.loadVideoById) player.loadVideoById(videoId);
+                        player.loadVideoById(ytId);
                         showToast("🎵 YouTube ჩაირთო ტელეფონიდან");
                     }
                 }
             });
 
-            // Navigation Sync
-            db.ref('shared/navigation').on('value', snapshot => {
-                const url = snapshot.val();
+            db.ref(VIN + '/shared/navigation').on('value', s => {
+                const url = s.val();
                 if(url && window.innerWidth > 768) {
                     const navIframe = document.getElementById('nav-iframe');
                     if(navIframe) navIframe.src = url;
@@ -316,28 +444,117 @@
                     showToast("📍 ლოკაცია მიღებულია ტელეფონიდან");
                 }
             });
+        }
 
-            // Settings Sync
-            db.ref('settings/climateTemp').on('value', snapshot => {
-                const val = snapshot.val();
-                if(val) {
-                    currentTemp = val;
-                    document.getElementById('climate-temp').innerText = val.toFixed(1) + "°";
-                    document.getElementById('m-temp-display').innerText = val.toFixed(1) + "°C";
-                }
+        function updateRemoteSetting(key, value) {
+            settingsState[key] = value;
+            if(dbSettingsRef) {
+                let updates = {}; updates[key] = value;
+                dbSettingsRef.update(updates);
+                showToast("✅ განახლდა რეალურ დროში");
+            }
+        }
+
+        function applySettingsToUI() {
+            const themeColors = { 'neon': '#00ffaa', 'red': '#ff4757', 'blue': '#00a8ff', 'orange': '#ff9f43' };
+            const hex = themeColors[settingsState.theme] || '#00ffaa';
+            document.documentElement.style.setProperty('--ac', hex);
+
+            const nameEl = document.getElementById('sidebar-car-name');
+            if(nameEl) nameEl.innerText = settingsState.carName;
+            const mNameInp = document.getElementById('m-car-name-input');
+            if(mNameInp && document.activeElement !== mNameInp) mNameInp.value = settingsState.carName;
+
+            const cTempEl = document.getElementById('climate-temp');
+            if(cTempEl) cTempEl.innerText = settingsState.climateTemp.toFixed(1) + "°";
+            const mTempEl = document.getElementById('m-temp-display');
+            if(mTempEl) mTempEl.innerText = settingsState.climateTemp.toFixed(1) + "°C";
+
+            const idx = carTypesArr.indexOf(settingsState.carType);
+            const mTypeBtn = document.getElementById('m-car-type-btn');
+            if(mTypeBtn) mTypeBtn.innerText = carTypeNamesArr[idx > -1 ? idx : 0];
+
+            const mSizeSlider = document.getElementById('m-car-size-slider');
+            if(mSizeSlider) mSizeSlider.value = settingsState.carSize;
+            const mSizeVal = document.getElementById('m-car-size-val');
+            if(mSizeVal) mSizeVal.innerText = settingsState.carSize;
+
+            const mAzBtn = document.getElementById('m-autozoom-btn');
+            if(mAzBtn) mAzBtn.innerText = settingsState.autoZoom ? "ჩართული" : "გამორთული";
+
+            const mMpInp = document.getElementById('m-mapbox-input');
+            if(mMpInp && document.activeElement !== mMpInp) mMpInp.value = settingsState.mapboxToken || "";
+            const mGemInp = document.getElementById('m-gemini-input');
+            if(mGemInp && document.activeElement !== mGemInp) mGemInp.value = settingsState.apiKey || "";
+
+            const tripEl = document.getElementById('trip-text');
+            if(tripEl) tripEl.innerText = `TRIP A: ${parseFloat(settingsState.tripA || 0).toFixed(1)} KM`;
+
+            renderMobileStations();
+
+            if(map && lastPosition) updateCarMarker(lastPosition.lat, lastPosition.lng, currentHeading);
+        }
+
+        function renderMobileStations() {
+            const container = document.getElementById('m-playlist-container');
+            if(!container) return;
+            container.innerHTML = '';
+
+            const list = settingsState.stations || [];
+            list.forEach((st, i) => {
+                const item = document.createElement('div');
+                item.className = 'station-item-m';
+                item.innerHTML = `<span style="font-size:12px; font-weight:bold; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;">${st.title}</span>
+                <button class="m-btn danger" style="padding:4px 8px; font-size:11px; width:auto;" onclick="deleteRemoteStation(${i})">❌</button>`;
+                container.appendChild(item);
             });
         }
 
-        // --- SENDER (FOR MOBILE) ---
+        function addRemoteStation() {
+            const titleEl = document.getElementById('m-new-track-title');
+            const urlEl = document.getElementById('m-new-track-url');
+            if(!titleEl || !urlEl) return;
+            const title = titleEl.value.trim(); const url = urlEl.value.trim();
+            if(!title || !url) { showToast("⚠️ შეავსეთ სახელი და ლინკი!"); return; }
+            let ytId = extractYouTubeId(url);
+            if(!ytId) { showToast("⚠️ არასწორი YouTube URL"); return; }
+
+            let list = [...(settingsState.stations || [])];
+            list.push({ title: title, type: 'video', ytId: ytId });
+            updateRemoteSetting('stations', list);
+            titleEl.value = ''; urlEl.value = '';
+        }
+
+        function deleteRemoteStation(index) {
+            let list = [...(settingsState.stations || [])];
+            list.splice(index, 1);
+            updateRemoteSetting('stations', list);
+        }
+
+        function cycleCarTypeRemote() {
+            let idx = carTypesArr.indexOf(settingsState.carType);
+            let nextType = carTypesArr[(idx + 1) % carTypesArr.length];
+            updateRemoteSetting('carType', nextType);
+        }
+
+        function toggleAutoZoomRemote() {
+            updateRemoteSetting('autoZoom', !settingsState.autoZoom);
+        }
+
+        function changeClimateTemp(delta) {
+            let newTemp = (settingsState.climateTemp || 22.0) + delta;
+            updateRemoteSetting('climateTemp', newTemp);
+        }
+
         function sendSharedData(type) {
-            if(!db) { showToast("❌ ჯერ დააკავშირეთ Firebase ადმინ პანელიდან!"); return; }
+            if(!db) { showToast("❌ Firebase არ არის დაკავშირებული"); return; }
             if(type === 'youtube') {
                 const val = document.getElementById('m-yt-url').value;
-                db.ref('shared/youtube').set(val);
+                db.ref(VIN + '/shared/youtube').set(val);
                 showToast("🚀 YouTube გაიგზავნა მანქანაში!");
             } else if(type === 'navigation') {
                 const val = document.getElementById('m-map-url').value;
-                db.ref('shared/navigation').set(val);
+                db.ref(VIN + '/shared/navigation').set(val);
                 showToast("🚀 ლოკაცია გაიგზავნა მანქანაში!");
             }
         }
@@ -348,22 +565,19 @@
             return (match && match[2].length === 11) ? match[2] : null;
         }
 
-        // --- ADMIN PANEL CONTROLS ---
         function verifyAdminPin() {
             const pin = document.getElementById('admin-pin-input').value;
             if(pin === DEFAULT_PIN) {
                 document.getElementById('admin-auth-card').style.display = 'none';
                 document.getElementById('admin-content-card').style.display = 'block';
                 showToast("🔓 წვდომა დაშვებულია");
-            } else {
-                showToast("❌ არასწორი PIN კოდი!");
-            }
+            } else showToast("❌ არასწორი PIN!");
         }
 
         function fetchRawDatabase() {
             if(!db) return;
-            db.ref().once('value').then(snapshot => {
-                document.getElementById('db-json-editor').value = JSON.stringify(snapshot.val(), null, 2);
+            db.ref(VIN).once('value').then(s => {
+                document.getElementById('db-json-editor').value = JSON.stringify(s.val(), null, 2);
             });
         }
 
@@ -371,34 +585,38 @@
             if(!db) return;
             try {
                 const json = JSON.parse(document.getElementById('db-json-editor').value);
-                db.ref().set(json);
+                db.ref(VIN).set(json);
                 showToast("✅ ბაზა განახლდა!");
-            } catch(e) {
-                showToast("❌ არასწორი JSON ფორმატი!");
-            }
+            } catch(e) { showToast("❌ არასწორი JSON ფორმატი!"); }
         }
 
         function clearDatabaseQueue() {
             if(!db) return;
-            db.ref('shared').remove();
+            db.ref(VIN + '/shared').remove();
             showToast("🗑️ გაზიარებების ისტორია გასუფთავდა");
         }
 
-        function switchMobileTab(tabId) {
+        function saveFirebaseConfig() {
+            const config = {
+                apiKey: document.getElementById('fb-apiKey').value.trim(),
+                authDomain: document.getElementById('fb-authDomain').value.trim(),
+                databaseURL: document.getElementById('fb-databaseURL').value.trim(),
+                projectId: document.getElementById('fb-projectId').value.trim()
+            };
+            localStorage.setItem('teslaFirebaseConfig', JSON.stringify(config));
+            showToast("✅ Firebase Config შენახულია!");
+            location.reload();
+        }
+
+        function switchMobileTab(tabId, el) {
             document.querySelectorAll('.tab-page').forEach(p => p.style.display = 'none');
             document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
             document.getElementById(tabId).style.display = 'block';
-            event.target.classList.add('active');
+            el.classList.add('active');
         }
 
-        function changeRemoteTemp(delta) {
-            currentTemp += delta;
-            if(db) db.ref('settings/climateTemp').set(currentTemp);
-        }
-
-        // --- CAR MAP & UI CORE ---
-        let map, player;
-        const mapboxToken = "pk.eyJ1Ijoic2Fya21tZyIsImEiOiJjbXBsMWFwdjIyMHJ0MnBxdnNteDk1ejdyIn0.D-DH-vZZEwNiIaFMO2SeGQ";
+        // --- CAR MAP CORE LOGIC ---
+        let lastPosition = null; let currentHeading = 0; let mapFollowMode = true; let carMarker = null;
 
         window.addEventListener('load', () => {
             initFirebaseSystem();
@@ -410,7 +628,8 @@
                 }, 1200);
 
                 map = L.map('map', {zoomControl:false}).setView([41.71, 44.82], 13);
-                L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/dark-v11/tiles/256/{z}/{x}/{y}@2x?access_token=${mapboxToken}`).addTo(map);
+                const mbToken = settingsState.mapboxToken || defaultMapboxToken;
+                L.tileLayer(`https://api.mapbox.com/styles/v1/mapbox/dark-v11/tiles/256/{z}/{x}/{y}@2x?access_token=${mbToken}`).addTo(map);
                 
                 locateMeFromBrowser();
             }
@@ -429,15 +648,31 @@
             document.querySelectorAll('.app-window').forEach(w => w.style.display = 'none');
             if (!isVisible) win.style.display = 'flex';
         }
+        function collapseToMini(id) { document.getElementById(id).style.display = 'none'; document.getElementById('mini-player').style.display = 'flex'; }
+        function restoreApp(id) { document.getElementById('mini-player').style.display = 'none'; toggleApp(id); }
 
         function locateMeFromBrowser() {
             if (navigator.geolocation && map) {
                 navigator.geolocation.getCurrentPosition(pos => {
                     const lat = pos.coords.latitude, lng = pos.coords.longitude;
+                    lastPosition = L.latLng(lat, lng);
                     map.panTo([lat, lng]);
+                    updateCarMarker(lat, lng, currentHeading);
                     updateWeatherByCoords(lat, lng);
                 });
             }
+        }
+
+        function updateCarMarker(lat, lng, heading) {
+            const ll = L.latLng(lat, lng); 
+            let w = parseInt(settingsState.carSize || 50); let h = w * 2; 
+
+            let svg = `<svg width="${w}" height="${h}" viewBox="0 0 100 200" style="transform: rotate(${heading}deg); transition: transform 0.3s;"><rect x="25" y="20" width="50" height="160" rx="20" fill="var(--ac)" /></svg>`;
+            if(settingsState.carType === 'arrow') svg = `<svg width="${w}" height="${w}" viewBox="0 0 100 100" style="transform: rotate(${heading}deg);"><polygon points="50,10 90,90 50,70 10,90" fill="var(--ac)" /></svg>`;
+
+            if(!carMarker) carMarker = L.marker(ll, { icon: L.divIcon({ html: svg, className: '', iconSize: [w, h], iconAnchor: [w/2, h/2] }) }).addTo(map);
+            else { carMarker.setLatLng(ll); carMarker.setIcon(L.divIcon({ html: svg, className: '', iconSize: [w, h], iconAnchor: [w/2, h/2] })); }
+            if (mapFollowMode) map.panTo(ll);
         }
 
         function updateWeatherByCoords(lat, lng) {
@@ -450,10 +685,7 @@
         }
 
         function onYouTubeIframeAPIReady() {
-            player = new YT.Player('yt-player', {
-                height: '100%', width: '100%',
-                playerVars: { 'autoplay': 1, 'controls': 1 }
-            });
+            player = new YT.Player('yt-player', { height: '100%', width: '100%', playerVars: { 'autoplay': 1, 'controls': 1 } });
         }
     </script>
 </body>
