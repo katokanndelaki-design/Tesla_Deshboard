@@ -9,9 +9,10 @@
     <!-- Manifest Link -->
     <link rel="manifest" href="manifest.json">
 
-    <!-- Icons & PWA Meta -->
-    <link rel="icon" type="image/png" sizes="192x192" href="https://upload.wikimedia.org/wikipedia/commons/thumb/b/bb/Tesla_T_symbol.svg/192px-Tesla_T_symbol.svg.png">
-    <link rel="apple-touch-icon" href="https://upload.wikimedia.org/wikipedia/commons/thumb/b/bb/Tesla_T_symbol.svg/192px-Tesla_T_symbol.svg.png">
+    <!-- High Quality App Icon (PNG Data URI) for Chrome Home Screen & Favicon -->
+    <link rel="icon" type="image/png" sizes="192x192" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='120' fill='%230a0a0a'/><path d='M110 130 C200 110, 312 110, 402 130 L402 165 C320 145, 192 145, 110 165 Z' fill='%2300ffaa'/><path d='M220 180 L292 180 L292 390 C292 410, 280 430, 256 440 C232 430, 220 410, 220 390 Z' fill='%23ffffff'/><circle cx='256' cy='85' r='18' fill='%2300ffaa'/></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='120' fill='%230a0a0a'/><path d='M110 130 C200 110, 312 110, 402 130 L402 165 C320 145, 192 145, 110 165 Z' fill='%2300ffaa'/><path d='M220 180 L292 180 L292 390 C292 410, 280 430, 256 440 C232 430, 220 410, 220 390 Z' fill='%23ffffff'/><circle cx='256' cy='85' r='18' fill='%2300ffaa'/></svg>">
+    
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -41,6 +42,7 @@
 
         body { margin: 0; padding: 0; overflow: hidden; background-color: #000; font-family: system-ui, -apple-system, sans-serif; color: #fff; user-select: none; }
         
+        /* --- CAR DISPLAY UI (DESKTOP / TABLET > 768px) --- */
         #map { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; background: #111; }
         .leaflet-routing-container, .leaflet-control-zoom, .leaflet-control-attribution { display: none !important; }
 
@@ -75,11 +77,13 @@
         .dock-icon { width: 46px; height: 46px; border-radius: 50%; background: rgba(255,255,255,0.05); display: flex; justify-content: center; align-items: center; font-size: 20px; cursor: pointer; transition: 0.3s; }
         .dock-icon.active { border: 1px solid var(--ac); color: var(--ac); background: rgba(var(--ac-rgb), 0.1); }
 
+        /* App Windows General */
         .app-window { position: absolute; top: 24px; right: 90px; width: 440px; height: calc(100vh - 160px); background: rgba(15, 15, 15, 0.95); backdrop-filter: var(--glass-blur); border-radius: 30px; border: 1px solid var(--glass-border); z-index: 500; display: none; flex-direction: column; overflow: hidden; box-shadow: -15px 25px 60px rgba(0,0,0,0.8); }
         .app-header { display: flex; justify-content: space-between; align-items: center; padding: 18px 22px; background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--glass-border); }
         .app-title { font-size: 13px; color: #888; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; margin:0; }
         .app-content { padding: 20px; flex: 1; overflow-y: auto; }
 
+        /* YOUTUBE MUSIC 85% EXPANDED WINDOW */
         #app-music {
             width: 85vw !important; height: 85vh !important;
             top: 50% !important; left: 50% !important;
@@ -95,7 +99,7 @@
         .mini-player { position: absolute; bottom: 130px; left: 24px; width: 340px; background: var(--glass-bg); backdrop-filter: var(--glass-blur); border-radius: 24px; border: 1px solid var(--glass-border); display: none; flex-direction: column; padding: 12px 18px; gap: 10px; z-index: 900; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
         .mini-player.active-session { display: flex; }
 
-        /* --- MOBILE REMOTE UI --- */
+        /* --- MOBILE REMOTE UI (📱 ≤ 768px) --- */
         #mobile-app-view { display: none; width: 100vw; height: 100vh; background: #0a0a0a; overflow-y: auto; position: fixed; top: 0; left: 0; z-index: 999999; box-sizing: border-box; padding: 18px; }
         
         @media (max-width: 768px) {
@@ -131,7 +135,15 @@
 
     <div id="toast" class="toast">შეტყობინება...</div>
 
-    <div id="boot-screen"><div class="boot-logo">TESLA OS</div></div>
+    <!-- CAR DISPLAY UI -->
+    <div id="boot-screen">
+        <svg width="80" height="80" viewBox="0 0 512 512" style="margin-bottom:15px;">
+            <path d="M110 130 C200 110, 312 110, 402 130 L402 165 C320 145, 192 145, 110 165 Z" fill="#00ffaa"/>
+            <path d="M220 180 L292 180 L292 390 C292 410, 280 430, 256 440 C232 430, 220 410, 220 390 Z" fill="#ffffff"/>
+            <circle cx="256" cy="85" r="18" fill="#00ffaa"/>
+        </svg>
+        <div class="boot-logo">TESLA OS</div>
+    </div>
     
     <div id="map"></div>
 
@@ -174,7 +186,7 @@
         </div>
     </div>
 
-    <!-- YOUTUBE MUSIC EXPANDED -->
+    <!-- YOUTUBE MUSIC EXPANDED (85% FULL SCREEN WEB PLAYER) -->
     <div class="app-window" id="app-music">
         <div class="app-header">
             <div style="display:flex; align-items:center; gap:10px;">
@@ -231,6 +243,10 @@
     <div id="mobile-app-view">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
             <div style="display:flex; align-items:center; gap:10px;">
+                <svg width="28" height="28" viewBox="0 0 512 512">
+                    <path d="M110 130 C200 110, 312 110, 402 130 L402 165 C320 145, 192 145, 110 165 Z" fill="#00ffaa"/>
+                    <path d="M220 180 L292 180 L292 390 C292 410, 280 430, 256 440 C232 430, 220 410, 220 390 Z" fill="#ffffff"/>
+                </svg>
                 <h2 style="margin:0; font-size:18px; color:#fff; letter-spacing:1px;">TESLA REMOTE</h2>
             </div>
             <span id="firebase-status-badge" style="font-size:10px; padding:4px 8px; border-radius:10px; background:#ff4757; color:#fff; font-weight:bold;">OFFLINE</span>
@@ -329,6 +345,17 @@
                     <button class="m-btn danger" onclick="updateRemoteSetting('tripA', 0)">🚗 ტრიპის განულება (Reset Trip)</button>
                 </div>
             </div>
+
+            <div class="mobile-card">
+                <h3>🎵 YouTube პლეილისტის მართვა</h3>
+                <div id="m-playlist-container" style="max-height:180px; overflow-y:auto; margin-bottom:12px;"></div>
+                
+                <div style="background:rgba(0,0,0,0.3); padding:12px; border-radius:12px; border:1px solid rgba(255,255,255,0.05);">
+                    <input type="text" id="m-new-track-title" class="m-input" placeholder="სიმღერის / პლეილისტის სახელი">
+                    <input type="text" id="m-new-track-url" class="m-input" placeholder="YouTube URL ლინკი">
+                    <button class="m-btn" onclick="addRemoteStation()">➕ სიაში დამატება</button>
+                </div>
+            </div>
         </div>
 
         <!-- TAB 4: ADMIN PANEL -->
@@ -394,20 +421,7 @@
             if(t) { t.innerText = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000); }
         }
 
-        // PWA SERVICE WORKER INLINE REGISTRATION
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                const swCode = `
-                    self.addEventListener('install', e => self.skipWaiting());
-                    self.addEventListener('activate', e => {});
-                    self.addEventListener('fetch', e => {});
-                `;
-                const blob = new Blob([swCode], { type: 'text/javascript' });
-                const swUrl = URL.createObjectURL(blob);
-                navigator.serviceWorker.register(swUrl).catch(err => console.log('SW error', err));
-            });
-        }
-
+        // --- URL PARSER FOR INCOMING SHARED LINKS ---
         function handleIncomingShareURL() {
             const urlParams = new URLSearchParams(window.location.search);
             const sharedUrl = urlParams.get('m-yt-url') || urlParams.get('url') || urlParams.get('text');
@@ -423,6 +437,7 @@
             }
         }
 
+        // --- YOUTUBE MUSIC CONTROLS ---
         function switchMusicView(view) {
             const ytmIframe = document.getElementById('ytm-web-iframe');
             const embedContainer = document.getElementById('yt-player-container');
@@ -453,6 +468,7 @@
             }
         }
 
+        // --- FIREBASE INITIALIZATION & REALTIME SYNC ---
         function initFirebaseSystem() {
             const defaultFbConfig = {
                 apiKey: "AIzaSyAH3yVbBGrhvzbSx7J1GxNcVsl_ykX_OX0",
@@ -559,7 +575,45 @@
             const tripEl = document.getElementById('trip-text');
             if(tripEl) tripEl.innerText = `TRIP A: ${parseFloat(settingsState.tripA || 0).toFixed(1)} KM`;
 
+            renderMobileStations();
+
             if(map && lastPosition) updateCarMarker(lastPosition.lat, lastPosition.lng, currentHeading);
+        }
+
+        function renderMobileStations() {
+            const container = document.getElementById('m-playlist-container');
+            if(!container) return;
+            container.innerHTML = '';
+
+            const list = settingsState.stations || [];
+            list.forEach((st, i) => {
+                const item = document.createElement('div');
+                item.className = 'station-item-m';
+                item.innerHTML = `<span style="font-size:12px; font-weight:bold; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;">${st.title}</span>
+                <button class="m-btn danger" style="padding:4px 8px; font-size:11px; width:auto;" onclick="deleteRemoteStation(${i})">❌</button>`;
+                container.appendChild(item);
+            });
+        }
+
+        function addRemoteStation() {
+            const titleEl = document.getElementById('m-new-track-title');
+            const urlEl = document.getElementById('m-new-track-url');
+            if(!titleEl || !urlEl) return;
+            const title = titleEl.value.trim(); const url = urlEl.value.trim();
+            if(!title || !url) { showToast("⚠️ შეავსეთ სახელი და ლინკი!"); return; }
+            let ytId = extractYouTubeId(url);
+            if(!ytId) { showToast("⚠️ არასწორი YouTube URL"); return; }
+
+            let list = [...(settingsState.stations || [])];
+            list.push({ title: title, type: 'video', ytId: ytId });
+            updateRemoteSetting('stations', list);
+            titleEl.value = ''; urlEl.value = '';
+        }
+
+        function deleteRemoteStation(index) {
+            let list = [...(settingsState.stations || [])];
+            list.splice(index, 1);
+            updateRemoteSetting('stations', list);
         }
 
         function cycleCarTypeRemote() {
@@ -646,6 +700,7 @@
             el.classList.add('active');
         }
 
+        // --- CAR MAP CORE LOGIC ---
         let lastPosition = null; let currentHeading = 0; let mapFollowMode = true; let carMarker = null;
 
         window.addEventListener('load', () => {
@@ -720,14 +775,8 @@
                 playerVars: { 'autoplay': 1, 'controls': 1 },
                 events: {
                     'onStateChange': (e) => {
-                        if (e.data === YT.PlayerState.PLAYING) {
-                            isPlaying = true;
-                            document.querySelector('.mini-player .play-btn').innerText = '⏸';
-                        }
-                        else if (e.data === YT.PlayerState.PAUSED) {
-                            isPlaying = false;
-                            document.querySelector('.mini-player .play-btn').innerText = '▶';
-                        }
+                        if (e.data === YT.PlayerState.PLAYING) isPlaying = true;
+                        else if (e.data === YT.PlayerState.PAUSED) isPlaying = false;
                     }
                 }
             });
