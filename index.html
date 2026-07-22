@@ -64,7 +64,6 @@
         .status-dot { height: 8px; width: 8px; background: var(--ac); border-radius: 50%; display: inline-block; margin-right: 8px; box-shadow: 0 0 12px var(--ac); transition: 0.3s;}
         
         #driving-panel { display: flex; flex-direction: column; align-items: center; gap: 10px; transition: opacity 0.4s ease; }
-        #charging-panel { display: none; flex-direction: column; align-items: center; gap: 15px; transition: opacity 0.4s ease; padding: 10px 0; }
         
         .speed-block { display: flex; justify-content: center; align-items: flex-start; gap: 5px; position: relative; margin-top: 10px;}
         .speed-value { font-family: monospace; font-size: 90px; font-weight: 300; line-height: 1; letter-spacing: -3px; }
@@ -73,13 +72,8 @@
         .trip-text { text-align: center; color: var(--ac); font-size: 13px; font-weight: bold; letter-spacing: 1px; opacity: 0.8;}
         .prnd-text { display:flex; justify-content:center; gap:16px; font-weight:800; color:#555; font-size:18px; }
 
-        .charge-title { font-size: 22px; font-weight: bold; color: #00a8ff; letter-spacing: 2px; text-transform: uppercase; animation: pulseText 2s infinite; }
-        .charge-eta { font-size: 14px; color: #aaa; text-align: center; background: rgba(0, 168, 255, 0.1); padding: 8px 15px; border-radius: 12px; border: 1px solid rgba(0, 168, 255, 0.3); }
-        .charge-stats { display: flex; justify-content: center; gap: 20px; font-family: monospace; font-size: 18px; color: #fff; }
-
         .battery-icon { width: 100%; height: 16px; border: 1px solid #555; border-radius: 4px; padding: 2px; position: relative; margin-top: 10px; box-sizing: border-box;}
-        .battery-level { height: 100%; background: var(--ac); width: 0%; transition: width 0.5s, background-color 0.5s; border-radius: 2px;}
-        #charging-bolt { position: absolute; right: -30px; top: -5px; color: #00a8ff; display: none; font-size: 22px; animation: glowBolt 1s infinite alternate; }
+        .battery-level { height: 100%; background: var(--ac); width: 55%; transition: width 0.5s, background-color 0.5s; border-radius: 2px;}
         
         #battery-text { text-align: center; font-family:monospace; font-size:24px; font-weight: bold; transition: color 0.5s; }
         #range-text { text-align: center; font-size: 14px; font-weight: 600; color: #aaa; }
@@ -126,10 +120,6 @@
         .color-btn { width: 30px; height: 30px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: 0.2s; }
         .color-btn.active-color { border-color: #fff; transform: scale(1.1); box-shadow: 0 0 10px rgba(255,255,255,0.3); }
 
-        .browser-toolbar { display: flex; padding: 15px; background: rgba(0,0,0,0.3); gap: 10px; align-items: center; border-bottom: 1px solid #222;}
-        .browser-toolbar input { flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: #fff; padding: 12px 18px; outline: none; font-size: 14px;}
-        .browser-toolbar button { background: rgba(255,255,255,0.1); border: none; color: #fff; padding: 10px 18px; border-radius: 12px; cursor: pointer; font-size: 13px; font-weight: bold; }
-        
         .settings-section { margin-bottom: 25px; }
         .settings-title { color: #888; font-size: 12px; text-transform: uppercase; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px; letter-spacing: 1.5px; font-weight: bold;}
         .setting-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; font-size: 14px; color: #ddd; font-weight: 500;}
@@ -138,7 +128,6 @@
         input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 18px; height: 18px; border-radius: 50%; background: var(--ac); cursor: pointer; transition: 0.2s; box-shadow: 0 0 10px rgba(var(--ac-rgb), 0.5);}
 
         .progress-slider { width: 100% !important; }
-        .progress-slider::-webkit-slider-thumb { width: 14px !important; height: 14px !important; background: var(--ac) !important; box-shadow: none !important;}
         
         #yt-player-container { width: 100%; height: 220px; background: #000; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1);}
         
@@ -169,14 +158,12 @@
     <div id="map"></div>
 
     <div class="map-floating-controls">
-        <!-- ნავიგაციის / ხედვის ღილაკები -->
         <div class="map-btn active" id="btn-map-follow" onclick="toggleFollowMode()" title="რუკის მიყოლა">🎯</div>
         <div class="map-btn" id="btn-map-locate" onclick="locateMeFromBrowser()" title="ჩემი ლოკაცია">📍</div>
         <div class="map-btn" id="btn-map-compass" onclick="toggleMapRotation()" title="დატრიალება">🧭</div>
         
         <div class="map-divider"></div>
         
-        <!-- ახალი: ზუმის ღილაკები -->
         <div class="map-btn" onclick="map.zoomIn()" style="font-size: 24px; font-weight: bold;" title="მიახლოება">+</div>
         <div class="map-btn" onclick="map.zoomOut()" style="font-size: 24px; font-weight: bold;" title="დაშორება">−</div>
         
@@ -194,6 +181,7 @@
             <span id="clock" style="line-height: 1;">00:00</span>
             <span id="date-text" class="date-display">...</span>
         </div>
+        <!-- დინამიური ამინდის ვიჯეტი -->
         <div id="weather-widget" onclick="toggleApp('app-weather')"><span>--°C</span> ☁️</div>
     </div>
 
@@ -277,15 +265,12 @@
     <div class="app-window" id="app-settings">
         <div class="app-header"><h3 class="app-title">⚙️ პარამეტრები</h3><button class="win-btn close" onclick="toggleApp('app-settings')">×</button></div>
         <div class="app-content" style="padding:25px;">
-            
             <div class="settings-section">
                 <div class="settings-title">რუკა და ნავიგაცია</div>
-                
                 <div class="setting-item">
                     <span>ავტომატური ზუმი სიჩქარით</span>
                     <button class="settings-btn" id="auto-zoom-btn" onclick="toggleAutoZoom()">ჩართული</button>
                 </div>
-                
                 <div class="setting-item">
                     <span>მარკერის ტიპი</span>
                     <button class="settings-btn" id="car-type-btn" onclick="cycleCarType()" style="width:140px;">Model Y</button>
@@ -295,7 +280,7 @@
                     <input type="range" id="car-size-slider" min="30" max="100" value="50" oninput="changeCarSize(this.value)" style="width:120px;">
                 </div>
                 <div class="setting-item" style="flex-direction: column; align-items: flex-start; gap: 8px;">
-                    <span>Mapbox Access Token (ავტომატურად ჩასმულია თქვენი)</span>
+                    <span>Mapbox Access Token</span>
                     <div style="display:flex; gap:8px; width: 100%;">
                         <input type="password" id="mapbox-token-input" class="settings-input" style="flex:1;">
                         <button class="settings-btn" onclick="saveMapboxToken()">შენახვა</button>
@@ -315,22 +300,18 @@
                     </div>
                 </div>
             </div>
-
         </div>
         <div class="resizer"></div>
     </div>
 
-    <!-- ნავიგაცია, ამინდი, ბრაუზერი, AI... (შემოკლებული სივრცის დასაზოგად, სტრუქტურა შენარჩუნებულია) -->
+    <!-- აპლიკაციების ფანჯრები -->
     <div class="app-window" id="app-weather"><div class="app-header"><h3 class="app-title">⛅ ამინდი</h3><button class="win-btn close" onclick="toggleApp('app-weather')">×</button></div><div class="app-content"></div><div class="resizer"></div></div>
     <div class="app-window" id="app-ai"><div class="app-header"><h3 class="app-title">✨ AI Copilot</h3><button class="win-btn close" onclick="toggleApp('app-ai')">×</button></div><div class="app-content"></div><div class="resizer"></div></div>
     <div class="app-window" id="app-browser"><div class="app-header"><h3 class="app-title">🌐 ბრაუზერი</h3><button class="win-btn close" onclick="toggleApp('app-browser')">×</button></div><div class="app-content"></div><div class="resizer"></div></div>
     <div class="app-window" id="app-nav"><div class="app-header"><h3 class="app-title">📍 ნავიგაცია</h3><button class="win-btn close" onclick="toggleApp('app-nav')">×</button></div><div class="app-content"></div><div class="resizer"></div></div>
 
-
-    <!-- MAIN JAVASCRIPT LOGIC -->
+    <!-- JAVASCRIPT LOGIC -->
     <script>
-        // --- Variables ---
-        // მომხმარებლის მოწოდებული ტოკენი ჩასმულია პირდაპირ:
         const userMapboxToken = "pk.eyJ1Ijoic2Fya21tZyIsImEiOiJjbXBsMWFwdjIyMHJ0MnBxdnNteDk1ejdyIn0.D-DH-vZZEwNiIaFMO2SeGQ";
         let mapboxToken = localStorage.getItem('teslaMapboxToken') || userMapboxToken; 
         
@@ -343,33 +324,31 @@
         let mapAutoRotate = false;
         let lastPosition = null; 
         let currentHeading = 0; 
+        let lastWeatherFetch = 0;
 
-        // UI Helpers
         function showToast(msg) { 
             const t = document.getElementById('toast'); 
             t.innerText = msg; t.classList.add('show'); 
             setTimeout(() => t.classList.remove('show'), 3000); 
         }
 
-        // --- ფანჯრების მართვა (Click Outside ლოგიკის დამატება) ---
         function toggleApp(id) {
             const win = document.getElementById(id);
             if (!win) return;
             const isVisible = win.style.display === 'flex';
             
-            // დახურე სხვა ფანჯრები
             document.querySelectorAll('.app-window').forEach(w => w.style.display = 'none');
             document.querySelectorAll('.dock-icon').forEach(i => i.classList.remove('active'));
             
             if (!isVisible) {
                 win.style.display = 'flex';
-                document.getElementById('dock-' + id.split('-')[1]).classList.add('active');
+                document.getElementById('dock-' + id.split('-')[1])?.classList.add('active');
             }
         }
 
         function collapseToMini(id) { 
             document.getElementById(id).style.display = 'none'; 
-            document.getElementById('dock-music').classList.remove('active'); 
+            document.getElementById('dock-music')?.classList.remove('active'); 
             document.getElementById('mini-player').style.display = 'flex';
         }
         function restoreApp(id) { 
@@ -377,46 +356,26 @@
             toggleApp(id); 
         }
 
-        // Click Outside ლოგიკა
+        // --- MAP SETUP ---
+        const map = L.map('map', {zoomControl:false, rotate: true, touchRotate: true}).setView([41.71, 44.82], parseInt(savedZoom));
+        
+        map.on('zoomend', function() {
+            localStorage.setItem('teslaMapZoom', map.getZoom());
+        });
+
+        // Click Outside ლოგიკა რუკაზე
         map.on('click', function(e) {
             document.querySelectorAll('.app-window').forEach(win => {
                 if (win.style.display === 'flex') {
                     if (win.id === 'app-music') {
-                        collapseToMini('app-music'); // მუსიკა იკეცება
+                        collapseToMini('app-music');
                     } else {
-                        win.style.display = 'none'; // სხვა იხურება
+                        win.style.display = 'none';
                         let dockIcon = document.getElementById('dock-' + win.id.split('-')[1]);
                         if(dockIcon) dockIcon.classList.remove('active');
                     }
                 }
             });
-        });
-
-        // Window Dragging & Resizing...
-        let activeWin = null, offsetX, offsetY, isResizing = false, currentResizerWin = null, startW, startH, startX, startY;
-        const startDrag = (e, win) => { if(e.target.tagName === 'BUTTON') return; activeWin = win; offsetX = (e.touches ? e.touches[0].clientX : e.clientX) - win.offsetLeft; offsetY = (e.touches ? e.touches[0].clientY : e.clientY) - win.offsetTop; document.querySelectorAll('iframe').forEach(ifr => ifr.style.pointerEvents = 'none'); win.style.zIndex = 1000; };
-        const startResize = (e, win) => { e.stopPropagation(); isResizing = true; currentResizerWin = win; startW = win.offsetWidth; startH = win.offsetHeight; startX = e.touches ? e.touches[0].clientX : e.clientX; startY = e.touches ? e.touches[0].clientY : e.clientY; document.querySelectorAll('iframe').forEach(ifr => ifr.style.pointerEvents = 'none'); };
-        
-        document.querySelectorAll('.app-header').forEach(h => { h.addEventListener('mousedown', e => startDrag(e, h.parentElement)); h.addEventListener('touchstart', e => startDrag(e, h.parentElement), {passive: true}); });
-        document.querySelectorAll('.resizer').forEach(res => { res.addEventListener('mousedown', e => startResize(e, res.parentElement)); res.addEventListener('touchstart', e => startResize(e, res.parentElement), {passive: false}); });
-        
-        const onMove = (e) => {
-            const cx = e.touches ? e.touches[0].clientX : e.clientX; const cy = e.touches ? e.touches[0].clientY : e.clientY;
-            if(isResizing && currentResizerWin) { currentResizerWin.style.width = Math.max(320, startW + (cx - startX)) + 'px'; currentResizerWin.style.height = Math.max(250, startH + (cy - startY)) + 'px'; } 
-            else if(activeWin) { activeWin.style.left = (cx - offsetX) + 'px'; activeWin.style.top = (cy - offsetY) + 'px'; activeWin.style.right = 'auto'; }
-        };
-        window.addEventListener('mousemove', onMove); window.addEventListener('touchmove', onMove, {passive: false});
-        const onUp = () => { activeWin = null; isResizing = false; document.querySelectorAll('iframe').forEach(ifr => ifr.style.pointerEvents = 'auto'); };
-        window.addEventListener('mouseup', onUp); window.addEventListener('touchend', onUp);
-
-
-        // --- MAP SETUP ---
-        // დაყენებულია ამოღებული დამახსოვრებული ზუმით
-        const map = L.map('map', {zoomControl:false, rotate: true, touchRotate: true}).setView([41.71, 44.82], parseInt(savedZoom));
-        
-        // ზუმის დამახსოვრება
-        map.on('zoomend', function() {
-            localStorage.setItem('teslaMapZoom', map.getZoom());
         });
 
         function applyMapStyle() {
@@ -441,6 +400,7 @@
                 showToast("🖐️ თავისუფალი რუკის რეჟიმი");
             }
         }
+
         function toggleMapRotation() {
             mapAutoRotate = !mapAutoRotate; 
             const btn = document.getElementById('btn-map-compass');
@@ -448,9 +408,39 @@
             else { btn.classList.remove('active'); map.setBearing(0); }
         }
 
-        // Location & Auto-Zoom Logic
+        // --- DYNAMIC WEATHER LOGIC (Open-Meteo API) ---
+        function updateWeatherByCoords(lat, lng) {
+            const now = Date.now();
+            // განახლება ყოველ 10 წუთში ერთხელ, რომ სერვერი არ გადაიტვირთოს
+            if (now - lastWeatherFetch < 600000 && lastWeatherFetch !== 0) return;
+            lastWeatherFetch = now;
+
+            fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current_weather=true`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data && data.current_weather) {
+                        const temp = Math.round(data.current_weather.temperature);
+                        const code = data.current_weather.weathercode;
+                        let icon = '☀️';
+                        if (code >= 1 && code <= 3) icon = '⛅';
+                        else if (code >= 45 && code <= 48) icon = '🌫️';
+                        else if (code >= 51 && code <= 67) icon = '🌧️';
+                        else if (code >= 71 && code <= 86) icon = '❄️';
+                        else if (code >= 95) icon = '🌩️';
+
+                        const widget = document.getElementById('weather-widget');
+                        if (widget) {
+                            widget.innerHTML = `<span>${temp}°C</span> ${icon}`;
+                        }
+                    }
+                })
+                .catch(err => console.error("Weather update error:", err));
+        }
+
+        // Position & Smart Zoom
         function updateFromBrowser(pos) {
-            const lat = pos.coords.latitude; const lng = pos.coords.longitude;
+            const lat = pos.coords.latitude; 
+            const lng = pos.coords.longitude;
             if(pos.coords.heading !== null) currentHeading = pos.coords.heading;
             
             let spdKm = 0;
@@ -458,12 +448,11 @@
                 spdKm = Math.round(pos.coords.speed * 3.6);
                 document.getElementById('speed').innerText = spdKm;
                 
-                // Smart Zoom ლოგიკა სიჩქარის მიხედვით
                 if (autoZoomEnabled && mapFollowMode) {
                     let targetZoom = map.getZoom();
-                    if (spdKm > 90) targetZoom = 14;      // ტრასაზე - შორი ხედვა
-                    else if (spdKm > 50) targetZoom = 16; // საშუალო სიჩქარე
-                    else if (spdKm < 20) targetZoom = 18; // ნელი სიარული/გაჩერება - ახლო ხედვა
+                    if (spdKm > 90) targetZoom = 14;
+                    else if (spdKm > 50) targetZoom = 16;
+                    else if (spdKm < 20) targetZoom = 18;
                     
                     if (map.getZoom() !== targetZoom) {
                         map.setZoomAround(L.latLng(lat, lng), targetZoom, {animate: true});
@@ -473,15 +462,17 @@
 
             lastPosition = L.latLng(lat, lng);
             updateCarMarker(lat, lng, currentHeading);
+            
+            // ამინდის განახლება მიმდინარე ლოკაციის მიხედვით
+            updateWeatherByCoords(lat, lng);
         }
 
         function locateMeFromBrowser() {
             if (!navigator.geolocation) return;
             navigator.geolocation.getCurrentPosition(updateFromBrowser, null, { enableHighAccuracy: true });
-            navigator.geolocation.watchPosition(updateFromBrowser, null, {enableHighAccuracy: true});
+            navigator.geolocation.watchPosition(updateFromBrowser, null, { enableHighAccuracy: true });
         }
 
-        // Marker Update
         let carTypeSetting = localStorage.getItem('teslaCarType') || 'modelY';
         let carSizeSetting = localStorage.getItem('teslaCarSize') || 50;
 
@@ -500,7 +491,6 @@
             if (mapAutoRotate) map.setBearing(360 - heading);
         }
 
-        // Settings Toggles
         function toggleAutoZoom() {
             autoZoomEnabled = !autoZoomEnabled;
             localStorage.setItem('teslaAutoZoom', autoZoomEnabled);
@@ -519,16 +509,13 @@
         window.addEventListener('load', () => {
             document.getElementById('mapbox-token-input').value = mapboxToken;
             
-            // Auto Zoom Button state
             const azBtn = document.getElementById('auto-zoom-btn');
             if(autoZoomEnabled) { azBtn.innerText = "ჩართული"; azBtn.classList.add('active-toggle'); }
             else azBtn.innerText = "გამორთული";
             
-            // Mini player is visible by default (display:flex in CSS via active-session class)
             applyMapStyle();
             setTimeout(locateMeFromBrowser, 1000);
             
-            // Clock
             setInterval(() => {
                 const now = new Date(); 
                 document.getElementById('clock').innerText = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
