@@ -556,10 +556,14 @@
         let carTypeNames = ['Model Y (წითელი)', 'Model 3 (თეთრი)', 'ნავიგაციის ისარი', 'წერტილი'];
         let carTypeSetting = 'modelY';
         let carSizeSetting = 50;
-        let mapboxToken = "pk.eyJ1Ijoic2Fya21tZyIsImEiOiJjbXBsMWFwdjIyMHJ0MnBxdnNteDk1ejdyIn0.D-DH-vZZEwNiIaFMO2SeGQ"; // განახლებულია ტოკენი
-        let mapFollowMode = false;
+        let mapboxToken = "pk.eyJ1Ijoic2Fya21tZyIsImEiOiJjbXBsMWFwdjIyMHJ0MnBxdnNteDk1ejdyIn0.D-DH-vZZEwNiIaFMO2SeGQ";
+        let mapFollowMode = true; // თავიდანვე ჩართულია ფოლოვ რეჟიმი
         let browserWatchId = null;
 
+        // სტაბილიზაციის (Debounce) ცვლადები ზუმისთვის
+        let lastZoomChangeTime = 0;
+        let stableSpeedCount = 0;
+        let lastTargetZoom = 17;
 
         // YouTube მედია სისტემა
         const defaultYTTracks = [
@@ -1227,11 +1231,19 @@
                 
                 updateCarMarker(ll.lat, ll.lng, currentHeading);
 
-                // გლუვი ავტო-ზუმის ლოგიკა სიჩქარის მიხედვით
-                let targetZoom = 18; 
-                if (calcSpeedKmh > 90) targetZoom = 16; 
-                else if (calcSpeedKmh > 50) targetZoom = 17;
-                
+                // ზუმის სტაბილიზაციის (Debounce) და გლუვი გადასვლის ლოგიკა
+                let rawTargetZoom = 17;
+                if (calcSpeedKmh > 90) rawTargetZoom = 15;
+                else if (calcSpeedKmh > 40) rawTargetZoom = 16;
+                else if (calcSpeedKmh <= 5) rawTargetZoom = 17.5; // გაჩერებისას ოდნავ ახლოდან აჩვენოს
+
+                if (rawTargetZoom === lastTargetZoom) {
+                    stableSpeedCount++;
+                } else {
+                    stableSpeedCount = 0;
+                    lastTargetZoom = rawTargetZoom;
+                }
+
                 let currentZoom = map.getZoom();
                 
                 if (currentDestinationLatLng) {
@@ -1239,15 +1251,12 @@
                     if (distanceMeters <= 50) { 
                         showToast("🏁 თქვენ მიხვედით!"); cancelRoute(); 
                     } else {
-                        if (distanceMeters < 300) targetZoom = 20; 
-                        else if (distanceMeters < 1000) targetZoom = 19; 
-                        else if (distanceMeters < 3000) targetZoom = 18; 
-                        else if (distanceMeters < 10000) targetZoom = 17; 
-                        else targetZoom = 16;
-
-                        // ვიყენებთ გლუვ გადასვლებს ნახტომების თავიდან ასაცილებლად
-                        if (currentZoom !== targetZoom) {
-                            map.flyTo(ll, targetZoom, { animate: true, duration: 1.5 });
+                        let routeZoom = 17;
+                        if (distanceMeters < 300) routeZoom = 19; 
+                        else if (distanceMeters < 1000) routeZoom = 18; 
+                        
+                        if (Math.abs(currentZoom - routeZoom) > 0.3) {
+                            map.flyTo(ll, routeZoom, { animate: true, duration: 2.0 });
                         } else {
                             map.panTo(ll, { animate: true, duration: 1.0 });
                         }
@@ -1256,9 +1265,11 @@
                             routingControl.setWaypoints([ll, currentDestinationLatLng]); lastRouteUpdateLatLng = ll;
                         }
                     }
-                } else {
-                    if (currentZoom !== targetZoom) {
-                        map.flyTo(ll, targetZoom, { animate: true, duration: 1.5 });
+                } else if (mapFollowMode) {
+                    // ზუმი შეიცვლება მხოლოდ მაშინ, თუ სიჩქარე სტაბილურია მინიმუმ 3 ციკლი (დაყოვნება)
+                    if (stableSpeedCount >= 3 && Math.abs(currentZoom - lastTargetZoom) > 0.4) {
+                        map.flyTo(ll, lastTargetZoom, { animate: true, duration: 2.0 });
+                        stableSpeedCount = 0;
                     } else {
                         map.panTo(ll, { animate: true, duration: 1.0 });
                     }
@@ -1283,8 +1294,23 @@
         }, 1000);
 
         // --- რუკის ბაზა (თავიდანვე Mapbox) ---
-        const map = L.map('map', {zoomControl:false, rotate: true, touchRotate: true}).setView([41.71, 44.82], 13);
+        const initialTbilisi = [41.7151, 44.8271];
+        const map = L.map('map', {zoomControl:false, rotate: true, touchRotate: true}).setView(initialTbilisi, 16);
         baseLayer = L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/dark-v11/tiles/256/{z}/{x}/{y}@2x?access_token=' + mapboxToken, { maxZoom: 22, attribution: '© Mapbox' }).addTo(map);
+
+        // ავტომატური ლოკაციის ძებნა ჩატვირთვისთანავე
+        window.addEventListener('DOMContentLoaded', () => {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(pos => {
+                    const ll = [pos.coords.latitude, pos.coords.longitude];
+                    map.setView(ll, 17);
+                    lastPosition = L.latLng(ll[0], ll[1]);
+                    updateCarMarker(ll[0], ll[1], 0);
+                }, () => {
+                    console.log("Geolocation blocked or unavailable, using default Tbilisi.");
+                }, { timeout: 5000 });
+            }
+        });
 
         function toggleMapRotation() {
             mapAutoRotate = !mapAutoRotate; const btn = document.getElementById('btn-map-compass');
@@ -1517,15 +1543,12 @@
             updateCarMarker(lat, lng, currentHeading);
             
             if (mapFollowMode) {
-                let targetZoom = 19;
-                if (currentSpeedKmh > 90) targetZoom = 16;
-                else if (currentSpeedKmh > 50) targetZoom = 17;
-                else if (currentSpeedKmh > 10) targetZoom = 18;
+                let targetZoom = 17.5;
+                if (currentSpeedKmh > 90) targetZoom = 15;
+                else if (currentSpeedKmh > 40) targetZoom = 16;
                 
                 let currentZoom = map.getZoom();
-                
-                // გლუვი ანიმაცია უხეში გადასვლების (ჯამპების) თავიდან ასაცილებლად
-                if (currentZoom !== targetZoom) {
+                if (Math.abs(currentZoom - targetZoom) > 0.4) {
                     map.flyTo(lastPosition, targetZoom, { animate: true, duration: 1.5 });
                 } else {
                     map.panTo(lastPosition, { animate: true, duration: 1 });
