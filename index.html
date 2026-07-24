@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="ka">
 <head>
@@ -555,7 +556,7 @@
         let carTypeNames = ['Model Y (წითელი)', 'Model 3 (თეთრი)', 'ნავიგაციის ისარი', 'წერტილი'];
         let carTypeSetting = 'modelY';
         let carSizeSetting = 50;
-        let mapboxToken = "pk.eyJ1Ijoic2Fya21tZyIsImEiOiJjbXBsMWFwdjIyMHJ0MnBxdnNteDk1ejdyIn0";
+        let mapboxToken = "pk.eyJ1Ijoic2Fya21tZyIsImEiOiJjbXBsMWFwdjIyMHJ0MnBxdnNteDk1ejdyIn0.D-DH-vZZEwNiIaFMO2SeGQ"; // განახლებულია ტოკენი
         let mapFollowMode = false;
         let browserWatchId = null;
 
@@ -1225,19 +1226,43 @@
                 }
                 
                 updateCarMarker(ll.lat, ll.lng, currentHeading);
-                let targetZoom = 18; if (calcSpeedKmh > 100) targetZoom = 16; else if (calcSpeedKmh > 60) targetZoom = 17;
+
+                // გლუვი ავტო-ზუმის ლოგიკა სიჩქარის მიხედვით
+                let targetZoom = 18; 
+                if (calcSpeedKmh > 90) targetZoom = 16; 
+                else if (calcSpeedKmh > 50) targetZoom = 17;
+                
+                let currentZoom = map.getZoom();
                 
                 if (currentDestinationLatLng) {
                     const distanceMeters = ll.distanceTo(currentDestinationLatLng);
-                    if (distanceMeters <= 50) { showToast("🏁 თქვენ მიხვედით!"); cancelRoute(); } 
-                    else {
-                        if (distanceMeters < 300) targetZoom = 20; else if (distanceMeters < 1000) targetZoom = 19; else if (distanceMeters < 3000) targetZoom = 18; else if (distanceMeters < 10000) targetZoom = 17; else targetZoom = 16;
-                        map.setView(ll, targetZoom);
+                    if (distanceMeters <= 50) { 
+                        showToast("🏁 თქვენ მიხვედით!"); cancelRoute(); 
+                    } else {
+                        if (distanceMeters < 300) targetZoom = 20; 
+                        else if (distanceMeters < 1000) targetZoom = 19; 
+                        else if (distanceMeters < 3000) targetZoom = 18; 
+                        else if (distanceMeters < 10000) targetZoom = 17; 
+                        else targetZoom = 16;
+
+                        // ვიყენებთ გლუვ გადასვლებს ნახტომების თავიდან ასაცილებლად
+                        if (currentZoom !== targetZoom) {
+                            map.flyTo(ll, targetZoom, { animate: true, duration: 1.5 });
+                        } else {
+                            map.panTo(ll, { animate: true, duration: 1.0 });
+                        }
+
                         if (routingControl && (!lastRouteUpdateLatLng || ll.distanceTo(lastRouteUpdateLatLng) > 100)) {
                             routingControl.setWaypoints([ll, currentDestinationLatLng]); lastRouteUpdateLatLng = ll;
                         }
                     }
-                } else map.setView(ll, targetZoom);
+                } else {
+                    if (currentZoom !== targetZoom) {
+                        map.flyTo(ll, targetZoom, { animate: true, duration: 1.5 });
+                    } else {
+                        map.panTo(ll, { animate: true, duration: 1.0 });
+                    }
+                }
             }
         });
 
@@ -1257,9 +1282,9 @@
             }
         }, 1000);
 
-        // --- რუკის ბაზა ---
+        // --- რუკის ბაზა (თავიდანვე Mapbox) ---
         const map = L.map('map', {zoomControl:false, rotate: true, touchRotate: true}).setView([41.71, 44.82], 13);
-        baseLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+        baseLayer = L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/dark-v11/tiles/256/{z}/{x}/{y}@2x?access_token=' + mapboxToken, { maxZoom: 22, attribution: '© Mapbox' }).addTo(map);
 
         function toggleMapRotation() {
             mapAutoRotate = !mapAutoRotate; const btn = document.getElementById('btn-map-compass');
@@ -1352,9 +1377,9 @@
             if (styleToApply === 'auto') { const hour = new Date().getHours(); styleToApply = (hour >= 19 || hour <= 6) ? 'dark' : 'street'; }
             
             if (mapboxToken) {
-                if (styleToApply === 'dark') baseLayer = L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/dark-v11/tiles/256/{z}/{x}/{y}?access_token=' + mapboxToken, { maxZoom: 22, attribution: '© Mapbox' });
-                else if (styleToApply === 'satellite') baseLayer = L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/256/{z}/{x}/{y}?access_token=' + mapboxToken, { maxZoom: 22 });
-                else if (styleToApply === 'street') baseLayer = L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/256/{z}/{x}/{y}?access_token=' + mapboxToken, { maxZoom: 22 });
+                if (styleToApply === 'dark') baseLayer = L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/dark-v11/tiles/256/{z}/{x}/{y}@2x?access_token=' + mapboxToken, { maxZoom: 22, attribution: '© Mapbox' });
+                else if (styleToApply === 'satellite') baseLayer = L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/256/{z}/{x}/{y}@2x?access_token=' + mapboxToken, { maxZoom: 22 });
+                else if (styleToApply === 'street') baseLayer = L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/256/{z}/{x}/{y}@2x?access_token=' + mapboxToken, { maxZoom: 22 });
             } else {
                 if (styleToApply === 'dark') baseLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png');
                 else if (styleToApply === 'satellite') baseLayer = L.tileLayer('https://mt0.google.com/vt/lyrs=s&x={x}&y={y}&z={z}');
@@ -1493,10 +1518,18 @@
             
             if (mapFollowMode) {
                 let targetZoom = 19;
-                if (currentSpeedKmh > 80) targetZoom = 16;
-                else if (currentSpeedKmh > 40) targetZoom = 17;
+                if (currentSpeedKmh > 90) targetZoom = 16;
+                else if (currentSpeedKmh > 50) targetZoom = 17;
                 else if (currentSpeedKmh > 10) targetZoom = 18;
-                map.setView(lastPosition, targetZoom, { animate: true, duration: 0.5 });
+                
+                let currentZoom = map.getZoom();
+                
+                // გლუვი ანიმაცია უხეში გადასვლების (ჯამპების) თავიდან ასაცილებლად
+                if (currentZoom !== targetZoom) {
+                    map.flyTo(lastPosition, targetZoom, { animate: true, duration: 1.5 });
+                } else {
+                    map.panTo(lastPosition, { animate: true, duration: 1 });
+                }
             }
             updateWeather(lat, lng);
         }
@@ -1583,3 +1616,5 @@
     </script>
 </body>
 </html>
+
+```
