@@ -557,13 +557,12 @@
         let carTypeSetting = 'modelY';
         let carSizeSetting = 50;
         let mapboxToken = "pk.eyJ1Ijoic2Fya21tZyIsImEiOiJjbXBsMWFwdjIyMHJ0MnBxdnNteDk1ejdyIn0.D-DH-vZZEwNiIaFMO2SeGQ";
-        let mapFollowMode = true; // თავიდანვე ჩართულია ფოლოვ რეჟიმი
+        let mapFollowMode = true; 
         let browserWatchId = null;
 
-        // სტაბილიზაციის (Debounce) ცვლადები ზუმისთვის
-        let lastZoomChangeTime = 0;
-        let stableSpeedCount = 0;
-        let lastTargetZoom = 17;
+        // Yandex სტილის ადაპტური ზუმის სტაბილიზატორი (Hysteresis)
+        let stableSpeedBucket = 17; // საწყისი ზუმი
+        let speedBucketCounter = 0;
 
         // YouTube მედია სისტემა
         const defaultYTTracks = [
@@ -1231,17 +1230,16 @@
                 
                 updateCarMarker(ll.lat, ll.lng, currentHeading);
 
-                // ზუმის სტაბილიზაციის (Debounce) და გლუვი გადასვლის ლოგიკა
-                let rawTargetZoom = 17;
-                if (calcSpeedKmh > 90) rawTargetZoom = 15;
-                else if (calcSpeedKmh > 40) rawTargetZoom = 16;
-                else if (calcSpeedKmh <= 5) rawTargetZoom = 17.5; // გაჩერებისას ოდნავ ახლოდან აჩვენოს
+                // --- Yandex სტილის ადაპტური ზუმირება ჰისტერეზით ---
+                let currentTargetBucket = 17; // ქალაქი / ნელი მოძრაობა
+                if (calcSpeedKmh > 80) currentTargetBucket = 14.5; // ტრასა / მაღალი სიჩქარე
+                else if (calcSpeedKmh > 40) currentTargetBucket = 16; // შოსე / საშუალო სიჩქარე
 
-                if (rawTargetZoom === lastTargetZoom) {
-                    stableSpeedCount++;
+                if (currentTargetBucket === stableSpeedBucket) {
+                    speedBucketCounter++;
                 } else {
-                    stableSpeedCount = 0;
-                    lastTargetZoom = rawTargetZoom;
+                    speedBucketCounter = 0;
+                    stableSpeedBucket = currentTargetBucket;
                 }
 
                 let currentZoom = map.getZoom();
@@ -1266,12 +1264,12 @@
                         }
                     }
                 } else if (mapFollowMode) {
-                    // ზუმი შეიცვლება მხოლოდ მაშინ, თუ სიჩქარე სტაბილურია მინიმუმ 3 ციკლი (დაყოვნება)
-                    if (stableSpeedCount >= 3 && Math.abs(currentZoom - lastTargetZoom) > 0.4) {
-                        map.flyTo(ll, lastTargetZoom, { animate: true, duration: 2.0 });
-                        stableSpeedCount = 0;
+                    // ზუმი შეიცვლება მხოლოდ მაშინ, როცა ახალი სიჩქარის დერეფანი სტაბილურია მინიმუმ 5 ციკლის განმავლობაში
+                    if (speedBucketCounter >= 5 && Math.abs(currentZoom - stableSpeedBucket) > 0.4) {
+                        map.flyTo(ll, stableSpeedBucket, { animate: true, duration: 2.5 });
+                        speedBucketCounter = 0;
                     } else {
-                        map.panTo(ll, { animate: true, duration: 1.0 });
+                        map.panTo(ll, { animate: true, duration: 1.2 });
                     }
                 }
             }
@@ -1295,10 +1293,12 @@
 
         // --- რუკის ბაზა (თავიდანვე Mapbox) ---
         const initialTbilisi = [41.7151, 44.8271];
-        const map = L.map('map', {zoomControl:false, rotate: true, touchRotate: true}).setView(initialTbilisi, 16);
+        const map = L.map('map', {zoomControl:false, rotate: true, touchRotate: true}).setView(initialTbilisi, 17);
+        
+        // მკაცრად Mapbox-ის ბაზისური ტაილები თქვენი ტოკენით
         baseLayer = L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/dark-v11/tiles/256/{z}/{x}/{y}@2x?access_token=' + mapboxToken, { maxZoom: 22, attribution: '© Mapbox' }).addTo(map);
 
-        // ავტომატური ლოკაციის ძებნა ჩატვირთვისთანავე
+        // ავტომატური ლოკაციის ძებნა ჩატვირთვისთანავე (ცარიელ თბილისში რომ არ გაიჭედოს)
         window.addEventListener('DOMContentLoaded', () => {
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(pos => {
@@ -1306,9 +1306,10 @@
                     map.setView(ll, 17);
                     lastPosition = L.latLng(ll[0], ll[1]);
                     updateCarMarker(ll[0], ll[1], 0);
+                    showToast("📍 ლოკაცია დადგენილია");
                 }, () => {
-                    console.log("Geolocation blocked or unavailable, using default Tbilisi.");
-                }, { timeout: 5000 });
+                    console.log("Geolocation unavailable, using default Tbilisi center.");
+                }, { timeout: 6000, enableHighAccuracy: true });
             }
         });
 
@@ -1388,7 +1389,7 @@
             const btn = document.getElementById('btn-map-follow');
             if (mapFollowMode) {
                 if (btn) btn.classList.add('active');
-                if (lastPosition) map.setView(lastPosition, 18);
+                if (lastPosition) map.setView(lastPosition, 17);
                 showToast("🎯 რუკა მიჰყვება მანქანას");
             } else {
                 if (btn) btn.classList.remove('active');
@@ -1544,14 +1545,14 @@
             
             if (mapFollowMode) {
                 let targetZoom = 17.5;
-                if (currentSpeedKmh > 90) targetZoom = 15;
-                else if (currentSpeedKmh > 40) targetZoom = 16;
+                if (currentSpeedKmh > 80) targetZoom = 15;
+                else if (currentSpeedKmh > 30) targetZoom = 16.5;
                 
                 let currentZoom = map.getZoom();
                 if (Math.abs(currentZoom - targetZoom) > 0.4) {
-                    map.flyTo(lastPosition, targetZoom, { animate: true, duration: 1.5 });
+                    map.flyTo(lastPosition, targetZoom, { animate: true, duration: 2.0 });
                 } else {
-                    map.panTo(lastPosition, { animate: true, duration: 1 });
+                    map.panTo(lastPosition, { animate: true, duration: 1.2 });
                 }
             }
             updateWeather(lat, lng);
