@@ -1,0 +1,1452 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TeslaMedia — In-Car Entertainment Hub</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- HLS.js for Live TV (.m3u8) & adaptive streaming -->
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        tesla: {
+                            bg: '#121316',
+                            surface: '#181a1f',
+                            card: '#1c1e22',
+                            cardHover: '#25282e',
+                            border: '#2b2f36',
+                            accent: '#38bdf8',
+                            emerald: '#10b981'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #121316;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2b2f36;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #38bdf8;
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        * {
+            -webkit-tap-highlight-color: transparent;
+        }
+        .glass-dock {
+            background: rgba(24, 26, 31, 0.92);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border: 1px solid rgba(255, 255, 255, 0.09);
+        }
+    </style>
+</head>
+<body class="bg-tesla-bg text-slate-100 font-sans antialiased selection:bg-sky-500 selection:text-white overflow-x-hidden min-h-screen flex flex-col">
+
+    <!-- ==================== TOP HEADER BAR ==================== -->
+    <header class="sticky top-0 z-30 bg-tesla-bg/95 backdrop-blur-md border-b border-tesla-border/70 px-4 sm:px-6 py-3">
+        <div class="max-w-7xl mx-auto flex items-center justify-between gap-3 sm:gap-5">
+            
+            <!-- Brand Logo -->
+            <button onclick="navigateTo('home')" class="flex items-center gap-3 shrink-0 group focus:outline-none">
+                <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-sky-500 to-emerald-400 p-[1.5px] shadow-lg shadow-sky-500/20 group-active:scale-95 transition-transform">
+                    <div class="w-full h-full bg-tesla-surface rounded-2xl flex items-center justify-center">
+                        <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M8 5.14v14l11-7-11-7z"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="text-left hidden sm:block">
+                    <span class="text-lg font-extrabold tracking-tight text-white block leading-none">TeslaMedia</span>
+                    <span class="text-[11px] font-semibold text-sky-400 tracking-wider uppercase">In-Car Hub</span>
+                </div>
+            </button>
+
+            <!-- Prominent Real-Time YouTube & Stream Search Bar -->
+            <div class="flex-1 max-w-2xl relative">
+                <div class="relative flex items-center">
+                    <svg class="w-5 h-5 text-slate-400 absolute left-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                    <input 
+                        type="text" 
+                        id="globalSearchInput"
+                        placeholder="Search YouTube videos, channels, or paste stream URL..." 
+                        oninput="handleSearchInput(this.value)"
+                        onkeydown="if(event.key==='Enter') executeYouTubeSearch()"
+                        class="w-full bg-tesla-card hover:bg-tesla-cardHover focus:bg-tesla-cardHover text-white placeholder-slate-400 text-sm sm:text-base rounded-full pl-12 pr-28 py-3 border border-tesla-border focus:border-sky-500 focus:outline-none transition-all"
+                    >
+                    <div class="absolute right-2 flex items-center gap-1.5">
+                        <button id="clearSearchBtn" onclick="clearSearch()" class="hidden p-2 text-slate-400 hover:text-white rounded-full">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                        <button onclick="executeYouTubeSearch()" class="bg-sky-500 hover:bg-sky-400 active:scale-95 text-slate-950 text-xs sm:text-sm font-bold px-4 py-1.5 rounded-full transition-all">
+                            Search
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Actions: Pair Button & Prominent Settings Button (Matching Screenshot 2) -->
+            <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+                <!-- Pair Phone Button -->
+                <button onclick="openPairModal()" class="flex items-center gap-2 bg-tesla-card hover:bg-tesla-cardHover active:scale-95 border border-tesla-border px-3.5 sm:px-4 py-2.5 rounded-full text-sm font-semibold text-slate-200 transition-all">
+                    <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                    </svg>
+                    <span class="hidden md:inline">Pair</span>
+                </button>
+
+                <!-- Prominent Settings Gear Button -->
+                <button onclick="navigateTo('settings')" id="headerSettingsBtn" class="flex items-center gap-2 bg-tesla-card hover:bg-tesla-cardHover active:scale-95 border border-tesla-border px-3.5 sm:px-4 py-2.5 rounded-full text-sm font-bold text-white transition-all">
+                    <svg class="w-5 h-5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                    <span>Settings</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- ==================== TOAST NOTIFICATION ==================== -->
+    <div id="toastBanner" class="fixed top-20 right-6 z-50 hidden transform transition-all duration-300">
+        <div class="glass-dock px-5 py-3.5 rounded-2xl shadow-2xl border-l-4 border-sky-400 flex items-center gap-3 max-w-md">
+            <span id="toastIcon" class="text-sky-400 text-lg shrink-0">ℹ️</span>
+            <p id="toastMessage" class="text-sm font-medium text-white">Notification</p>
+        </div>
+    </div>
+
+    <!-- ==================== MAIN CONTENT CONTAINER ==================== -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 pt-5 pb-28">
+
+        <!-- ==================== 1. HOME VIEW ==================== -->
+        <section id="view-home" class="space-y-8">
+            <!-- Status & Quick Stream Strip -->
+            <div class="bg-tesla-surface border border-tesla-border rounded-3xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div class="flex items-center gap-3.5">
+                    <div class="w-11 h-11 rounded-2xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0">
+                        <span class="w-3 h-3 rounded-full bg-emerald-400 animate-pulse"></span>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h2 class="text-sm sm:text-base font-bold text-white">Direct Stream & YouTube Browser Ready</h2>
+                            <span id="homeApiBadge" class="text-[11px] font-bold bg-sky-500/15 text-sky-400 px-2.5 py-0.5 rounded-full">API Connected</span>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-0.5">Tap any video card to play directly in HTML5/HLS mode. Passenger use only while driving.</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 w-full sm:w-auto">
+                    <button onclick="navigateTo('youtube')" class="flex-1 sm:flex-initial bg-red-600 hover:bg-red-500 active:scale-95 text-white font-bold text-xs sm:text-sm px-4 py-2.5 rounded-2xl transition-all">
+                        Browse YouTube
+                    </button>
+                    <button onclick="navigateTo('settings')" class="flex-1 sm:flex-initial bg-tesla-card hover:bg-tesla-cardHover border border-tesla-border text-slate-200 font-semibold text-xs sm:text-sm px-4 py-2.5 rounded-2xl transition-all">
+                        Configure API
+                    </button>
+                </div>
+            </div>
+
+            <!-- Jump Back In Section (Matching Screenshot 1) -->
+            <div>
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg sm:text-xl font-bold text-white tracking-tight">Jump back in</h3>
+                    <span class="text-xs text-slate-400 font-medium">Recently watched & mixes</span>
+                </div>
+                <div id="jumpBackInGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                    <!-- Populated via JS -->
+                </div>
+            </div>
+
+            <!-- For You Section (Matching Screenshot 1) -->
+            <div>
+                <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                    <h3 class="text-lg sm:text-xl font-bold text-white tracking-tight">For you</h3>
+                    <div class="flex gap-2 overflow-x-auto no-scrollbar">
+                        <button onclick="loadYouTubeCategory('trending', this)" class="home-pill bg-white text-slate-950 text-xs font-bold px-4 py-2 rounded-full">Trending</button>
+                        <button onclick="loadYouTubeCategory('music', this)" class="home-pill bg-tesla-card text-slate-300 hover:text-white text-xs font-semibold px-4 py-2 rounded-full">Music & Mixes</button>
+                        <button onclick="loadYouTubeCategory('cars', this)" class="home-pill bg-tesla-card text-slate-300 hover:text-white text-xs font-semibold px-4 py-2 rounded-full">Tesla & Auto</button>
+                        <button onclick="loadYouTubeCategory('movies', this)" class="home-pill bg-tesla-card text-slate-300 hover:text-white text-xs font-semibold px-4 py-2 rounded-full">4K & Cinema</button>
+                    </div>
+                </div>
+                <div id="forYouGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                    <!-- Populated via JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== 2. YOUTUBE VIEW (Matching Screenshot 3) ==================== -->
+        <section id="view-youtube" class="hidden space-y-6">
+            <!-- Sub-navigation pills + Quick Search Refresh -->
+            <div class="flex flex-wrap items-center justify-between gap-4">
+                <div class="flex items-center gap-2 bg-tesla-surface p-1.5 rounded-full border border-tesla-border overflow-x-auto no-scrollbar">
+                    <button onclick="switchYtSubtab('trending')" id="yt-tab-trending" class="yt-subtab bg-white text-slate-950 font-bold text-xs sm:text-sm px-4 sm:px-5 py-2 rounded-full transition-all">Trending / For You</button>
+                    <button onclick="switchYtSubtab('music')" id="yt-tab-music" class="yt-subtab text-slate-300 hover:text-white font-semibold text-xs sm:text-sm px-4 sm:px-5 py-2 rounded-full transition-all">Music & Mixes</button>
+                    <button onclick="switchYtSubtab('tech')" id="yt-tab-tech" class="yt-subtab text-slate-300 hover:text-white font-semibold text-xs sm:text-sm px-4 sm:px-5 py-2 rounded-full transition-all">Tech & Cars</button>
+                    <button onclick="switchYtSubtab('saved')" id="yt-tab-saved" class="yt-subtab text-slate-300 hover:text-white font-semibold text-xs sm:text-sm px-4 sm:px-5 py-2 rounded-full transition-all">Subscriptions / Saved</button>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <span id="ytSearchStatus" class="text-xs text-slate-400">Showing YouTube feed</span>
+                    <button onclick="executeYouTubeSearch()" class="bg-tesla-card hover:bg-tesla-cardHover border border-tesla-border text-xs font-bold text-sky-400 px-3.5 py-2 rounded-full">
+                        ↻ Refresh
+                    </button>
+                </div>
+            </div>
+
+            <!-- Loading Skeleton / Spinner -->
+            <div id="ytLoadingIndicator" class="hidden py-12 flex flex-col items-center justify-center text-center space-y-3">
+                <div class="w-10 h-10 border-4 border-sky-500/30 border-t-sky-500 rounded-full animate-spin"></div>
+                <p class="text-sm font-semibold text-slate-300">Fetching YouTube feed via Stream API...</p>
+            </div>
+
+            <!-- YouTube Video Cards Grid -->
+            <div id="youtubeGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                <!-- Populated via JS -->
+            </div>
+        </section>
+
+        <!-- ==================== 3. LIVE TV VIEW (Matching Screenshot 4) ==================== -->
+        <section id="view-tv" class="hidden">
+            <div class="flex flex-col lg:flex-row gap-6">
+                <!-- Left Sidebar Categories -->
+                <aside class="w-full lg:w-64 shrink-0 space-y-3">
+                    <div class="bg-tesla-surface border border-tesla-border rounded-3xl p-3 space-y-1">
+                        <div class="px-3 py-2 text-xs font-bold uppercase tracking-wider text-slate-400">Live Categories</div>
+                        <div id="tvCategoryList" class="flex lg:flex-col gap-1.5 overflow-x-auto no-scrollbar">
+                            <!-- Populated via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Quick Custom M3U8 Stream Box -->
+                    <div class="bg-tesla-surface border border-tesla-border rounded-3xl p-4 space-y-3">
+                        <h4 class="text-sm font-bold text-white">Quick .m3u8 Stream</h4>
+                        <input 
+                            type="text" 
+                            id="customM3u8Input" 
+                            placeholder="https://.../live.m3u8"
+                            class="w-full bg-tesla-card border border-tesla-border rounded-xl px-3 py-2.5 text-xs text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none"
+                        >
+                        <button onclick="playCustomM3u8()" class="w-full bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-slate-950 font-bold text-xs py-2.5 rounded-xl transition-all">
+                            Launch Channel
+                        </button>
+                    </div>
+                </aside>
+
+                <!-- Right Channels Grid -->
+                <div class="flex-1 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h2 id="tvCurrentCategoryTitle" class="text-xl font-bold text-white">All Live Channels</h2>
+                        <span id="tvChannelCount" class="text-xs font-semibold bg-tesla-card px-3 py-1 rounded-full text-slate-300">0 channels</span>
+                    </div>
+                    <div id="tvChannelsGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                        <!-- Populated via JS -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== 4. FULL SETTINGS VIEW (Matching Screenshot 2) ==================== -->
+        <section id="view-settings" class="hidden max-w-4xl mx-auto space-y-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <button onclick="navigateTo('home')" class="p-3 rounded-full bg-tesla-card hover:bg-tesla-cardHover text-white active:scale-95 transition-all">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+                    </button>
+                    <h2 class="text-2xl font-extrabold text-white">Settings</h2>
+                </div>
+                <button onclick="saveAllSettings()" class="bg-sky-500 hover:bg-sky-400 active:scale-95 text-slate-950 font-bold text-sm px-6 py-2.5 rounded-full shadow-lg shadow-sky-500/20 transition-all">
+                    Save All Changes
+                </button>
+            </div>
+
+            <!-- Top Profile & QR Pairing Card (Matching Screenshot 2 Top Card) -->
+            <div class="bg-tesla-surface border border-tesla-border rounded-3xl p-5 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-6">
+                <div class="flex items-center gap-4">
+                    <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-sky-500 to-emerald-400 flex items-center justify-center text-2xl font-extrabold text-slate-950 shrink-0">
+                        <span id="profileAvatarLetter">T</span>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h3 id="profileDisplayName" class="text-lg font-bold text-white">Tesla Driver</h3>
+                            <span class="text-xs font-bold bg-emerald-500/15 text-emerald-400 px-2.5 py-0.5 rounded-full">Linked</span>
+                        </div>
+                        <p class="text-xs sm:text-sm text-slate-400 mt-1">Scan QR code with your phone to send YouTube links or control playback remotely.</p>
+                        <div class="mt-2 inline-flex items-center gap-2 bg-tesla-card border border-tesla-border px-3 py-1 rounded-xl">
+                            <span class="text-xs text-slate-400">Pair Code:</span>
+                            <span id="settingsPairCode" class="font-mono text-sm font-bold text-sky-400">482-910</span>
+                        </div>
+                    </div>
+                </div>
+                <button onclick="openPairModal()" class="bg-white hover:bg-slate-200 text-slate-950 font-bold text-xs px-5 py-3 rounded-2xl shrink-0 transition-all">
+                    Show Full QR Code
+                </button>
+            </div>
+
+            <!-- Grouped Settings List (Matching Screenshot 2 Accordion/List Style) -->
+            <div class="bg-tesla-surface border border-tesla-border rounded-3xl divide-y divide-tesla-border overflow-hidden">
+                
+                <!-- 1. Account & YouTube API Key -->
+                <div class="p-5 sm:p-6 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-2xl bg-sky-500/15 text-sky-400 flex items-center justify-center">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                            </div>
+                            <div>
+                                <h4 class="text-base font-bold text-white">Account & YouTube API</h4>
+                                <p class="text-xs text-slate-400">Profile name & optional YouTube Data API v3 Key</p>
+                            </div>
+                        </div>
+                        <span id="settingsAccountSummary" class="text-xs font-semibold text-slate-400">Tesla Driver</span>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 mb-1.5">Display Name</label>
+                            <input type="text" id="settingProfileName" placeholder="Your Name" class="w-full bg-tesla-card border border-tesla-border rounded-xl px-4 py-2.5 text-sm text-white focus:border-sky-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 mb-1.5">YouTube Data API v3 Key (Optional)</label>
+                            <input type="password" id="settingYtApiKey" placeholder="AIzaSy..." class="w-full bg-tesla-card border border-tesla-border rounded-xl px-4 py-2.5 text-sm text-white focus:border-sky-500 focus:outline-none">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. YouTube & Stream Backend (Piped / Invidious / yt-dlp Proxy) -->
+                <div class="p-5 sm:p-6 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-2xl bg-red-500/15 text-red-400 flex items-center justify-center">
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                            </div>
+                            <div>
+                                <h4 class="text-base font-bold text-white">YouTube & Stream Backend</h4>
+                                <p class="text-xs text-slate-400">Piped / Invidious API or custom yt-dlp stream extractor endpoint</p>
+                            </div>
+                        </div>
+                        <span id="backendConnectionBadge" class="text-xs font-bold text-emerald-400">Auto Fallback</span>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div class="flex flex-col sm:flex-row gap-2">
+                            <select id="presetBackendSelect" onchange="applyPresetBackend(this.value)" class="bg-tesla-card border border-tesla-border rounded-xl px-3.5 py-2.5 text-sm text-white focus:border-sky-500 focus:outline-none">
+                                <option value="auto">Auto-Rotate Public Piped/Invidious APIs</option>
+                                <option value="https://pipedapi.kavin.rocks">Piped Official (pipedapi.kavin.rocks)</option>
+                                <option value="https://inv.nadeko.net">Invidious (inv.nadeko.net)</option>
+                                <option value="https://invidious.nerdvpn.de">Invidious EU (invidious.nerdvpn.de)</option>
+                                <option value="custom">Custom Backend URL...</option>
+                            </select>
+                            <input 
+                                type="text" 
+                                id="settingCustomBackendUrl" 
+                                placeholder="https://your-stream-proxy.example.com" 
+                                class="flex-1 bg-tesla-card border border-tesla-border rounded-xl px-4 py-2.5 text-sm text-white focus:border-sky-500 focus:outline-none"
+                            >
+                            <button onclick="testBackendConnection()" class="bg-tesla-card hover:bg-tesla-cardHover border border-tesla-border text-sky-400 font-bold text-xs px-4 py-2.5 rounded-xl shrink-0">
+                                Test API
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Your Media (IPTV / M3U Playlists & Channels) -->
+                <div class="p-5 sm:p-6 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-2xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                            </div>
+                            <div>
+                                <h4 class="text-base font-bold text-white">Your Media (IPTV / M3U)</h4>
+                                <p class="text-xs text-slate-400">Add custom .m3u8 live channels or M3U playlist links</p>
+                            </div>
+                        </div>
+                        <span class="text-xs font-semibold text-slate-400">Saved locally</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <input type="text" id="settingChannelName" placeholder="Channel Name (e.g. 1TV)" class="bg-tesla-card border border-tesla-border rounded-xl px-3.5 py-2.5 text-sm text-white">
+                        <input type="text" id="settingChannelUrl" placeholder="https://.../playlist.m3u8" class="sm:col-span-2 bg-tesla-card border border-tesla-border rounded-xl px-3.5 py-2.5 text-sm text-white">
+                    </div>
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <button onclick="addCustomIptvChannel()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs px-4 py-2.5 rounded-xl">
+                            + Add Channel to Live TV
+                        </button>
+                        <div id="customChannelsChips" class="flex flex-wrap gap-2">
+                            <!-- Custom saved channels appear here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. Playback Preferences (Matching Screenshot 2) -->
+                <div class="p-5 sm:p-6 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-2xl bg-purple-500/15 text-purple-400 flex items-center justify-center">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            </div>
+                            <div>
+                                <h4 class="text-base font-bold text-white">Playback</h4>
+                                <p class="text-xs text-slate-400">Stream engine mode, video resolution & autoplay</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
+                        <!-- Stream Engine Mode -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 mb-1.5">Default Player Engine</label>
+                            <select id="settingEngineMode" class="w-full bg-tesla-card border border-tesla-border rounded-xl px-3.5 py-2.5 text-sm text-white focus:border-sky-500 focus:outline-none">
+                                <option value="direct">Native HTML5 Stream (Drive-Compatible)</option>
+                                <option value="embed">Standard YouTube Embed</option>
+                            </select>
+                        </div>
+
+                        <!-- Resolution -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 mb-1.5">Preferred Quality</label>
+                            <select id="settingQuality" class="w-full bg-tesla-card border border-tesla-border rounded-xl px-3.5 py-2.5 text-sm text-white focus:border-sky-500 focus:outline-none">
+                                <option value="Auto">Auto</option>
+                                <option value="1080p">1080p HD</option>
+                                <option value="720p">720p</option>
+                                <option value="480p">480p Data Saver</option>
+                            </select>
+                        </div>
+
+                        <!-- Autoplay -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 mb-1.5">Autoplay Videos</label>
+                            <select id="settingAutoplay" class="w-full bg-tesla-card border border-tesla-border rounded-xl px-3.5 py-2.5 text-sm text-white focus:border-sky-500 focus:outline-none">
+                                <option value="true">Enabled</option>
+                                <option value="false">Disabled</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ==================== FLOATING BOTTOM PILL DOCK ==================== -->
+    <nav class="fixed bottom-4 left-1/2 -translate-x-1/2 z-30">
+        <div class="glass-dock px-2.5 py-2 rounded-full shadow-2xl flex items-center gap-1 sm:gap-2">
+            <button onclick="navigateTo('home')" id="nav-home" class="nav-pill-btn bg-white text-slate-950 font-bold text-xs sm:text-sm px-4 sm:px-5 py-2.5 rounded-full flex items-center gap-2 transition-all">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"/></svg>
+                <span>Home</span>
+            </button>
+
+            <button onclick="navigateTo('youtube')" id="nav-youtube" class="nav-pill-btn text-slate-300 hover:text-white font-semibold text-xs sm:text-sm px-4 sm:px-5 py-2.5 rounded-full flex items-center gap-2 transition-all">
+                <svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                <span>YouTube</span>
+            </button>
+
+            <button onclick="navigateTo('tv')" id="nav-tv" class="nav-pill-btn text-slate-300 hover:text-white font-semibold text-xs sm:text-sm px-4 sm:px-5 py-2.5 rounded-full flex items-center gap-2 transition-all">
+                <svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                <span>TV</span>
+            </button>
+
+            <button onclick="navigateTo('settings')" id="nav-settings" class="nav-pill-btn text-slate-300 hover:text-white font-semibold text-xs sm:text-sm px-4 sm:px-5 py-2.5 rounded-full flex items-center gap-2 transition-all">
+                <svg class="w-4 h-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                <span>Settings</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- ==================== FULL-WIDTH INTEGRATED PLAYER OVERLAY ==================== -->
+    <div id="videoPlayerModal" class="fixed inset-0 z-50 bg-black hidden flex-col">
+        <!-- Player Top Bar -->
+        <div class="flex flex-wrap items-center justify-between gap-3 px-4 sm:px-6 py-3 bg-gradient-to-b from-black/95 to-black/60 border-b border-white/10 z-10">
+            <button onclick="closePlayer()" class="flex items-center gap-2 bg-white/15 hover:bg-white/25 active:scale-95 text-white font-bold text-sm px-4 py-2.5 rounded-full transition-all">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+                <span>Back</span>
+            </button>
+
+            <div class="flex-1 min-w-[180px] text-center truncate px-2">
+                <h3 id="playerTitle" class="text-white font-bold text-sm sm:text-base truncate">Video Title</h3>
+                <p id="playerSubtitle" class="text-xs text-sky-400 truncate">Channel Name</p>
+            </div>
+
+            <!-- Direct Stream vs Embed Mode Switcher (Crucial for testing in Tesla Browser) -->
+            <div class="flex items-center gap-2">
+                <div class="bg-tesla-card border border-tesla-border p-1 rounded-full flex items-center text-xs">
+                    <button id="modeDirectBtn" onclick="switchPlayerMode('direct')" class="px-3 py-1.5 rounded-full font-bold bg-sky-500 text-slate-950 transition-all">
+                        Direct Stream
+                    </button>
+                    <button id="modeEmbedBtn" onclick="switchPlayerMode('embed')" class="px-3 py-1.5 rounded-full font-semibold text-slate-300 hover:text-white transition-all">
+                        Embed Mode
+                    </button>
+                </div>
+
+                <button id="saveVideoBtn" onclick="toggleSaveCurrentVideo()" class="p-2.5 bg-white/10 hover:bg-white/20 rounded-full text-white" title="Save to Subscriptions / Saved">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Video Area -->
+        <div class="flex-1 relative flex items-center justify-center bg-black overflow-hidden">
+            <!-- Loading State while extracting YouTube MP4/HLS stream -->
+            <div id="playerExtractingOverlay" class="hidden absolute inset-0 z-20 bg-black/85 flex-col items-center justify-center text-center p-6 space-y-3">
+                <div class="w-12 h-12 border-4 border-sky-500/30 border-t-sky-500 rounded-full animate-spin"></div>
+                <p class="text-white font-bold text-base">Extracting Direct HTML5 Video Stream...</p>
+                <p class="text-xs text-slate-400 max-w-md">Fetching direct MP4/HLS stream URL so Tesla's browser can play natively without iframe blocks.</p>
+            </div>
+
+            <!-- Native HTML5 Video Player -->
+            <video 
+                id="mainVideoElement" 
+                class="w-full h-full max-h-[82vh] object-contain" 
+                controls 
+                autoplay 
+                playsinline
+            ></video>
+
+            <!-- Fallback YouTube Iframe Embed Container -->
+            <iframe 
+                id="mainIframeElement" 
+                class="hidden w-full h-full max-h-[82vh] border-0" 
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen" 
+                allowfullscreen
+            ></iframe>
+        </div>
+
+        <!-- Bottom Player Info & Quick Switch -->
+        <div class="bg-tesla-surface border-t border-tesla-border px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
+            <div class="flex items-center gap-2 text-xs">
+                <span id="playerEngineStatus" class="font-bold text-emerald-400">● Native HTML5 Stream Active</span>
+            </div>
+            <button onclick="toggleFullScreenPlayer()" class="bg-tesla-card hover:bg-tesla-cardHover border border-tesla-border text-xs font-bold text-white px-4 py-2 rounded-xl">
+                Fullscreen
+            </button>
+        </div>
+    </div>
+
+    <!-- ==================== PHONE PAIRING MODAL ==================== -->
+    <div id="pairModal" class="fixed inset-0 z-40 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="bg-tesla-surface border border-tesla-border rounded-3xl max-w-md w-full p-6 text-center space-y-5 shadow-2xl">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-bold text-white">Pair Smartphone Remote</h3>
+                <button onclick="closePairModal()" class="text-slate-400 hover:text-white p-1.5 rounded-full bg-tesla-card">✕</button>
+            </div>
+
+            <!-- Crisp Inline SVG QR Code -->
+            <div class="bg-white p-4 rounded-2xl inline-block mx-auto shadow-lg">
+                <svg class="w-44 h-44 text-slate-950" viewBox="0 0 100 100" fill="currentColor">
+                    <rect x="10" y="10" width="25" height="25" rx="3"/>
+                    <rect x="15" y="15" width="15" height="15" fill="white"/>
+                    <rect x="18" y="18" width="9" height="9"/>
+                    <rect x="65" y="10" width="25" height="25" rx="3"/>
+                    <rect x="70" y="15" width="15" height="15" fill="white"/>
+                    <rect x="73" y="18" width="9" height="9"/>
+                    <rect x="10" y="65" width="25" height="25" rx="3"/>
+                    <rect x="15" y="70" width="15" height="15" fill="white"/>
+                    <rect x="18" y="73" width="9" height="9"/>
+                    <rect x="42" y="12" width="6" height="6"/>
+                    <rect x="52" y="18" width="6" height="12"/>
+                    <rect x="42" y="30" width="12" height="6"/>
+                    <rect x="12" y="44" width="14" height="6"/>
+                    <rect x="32" y="42" width="8" height="14"/>
+                    <rect x="46" y="46" width="10" height="10" rx="2"/>
+                    <rect x="64" y="42" width="12" height="6"/>
+                    <rect x="82" y="46" width="8" height="14"/>
+                    <rect x="44" y="64" width="6" height="12"/>
+                    <rect x="56" y="68" width="14" height="6"/>
+                    <rect x="76" y="66" width="12" height="12"/>
+                    <rect x="44" y="82" width="18" height="8"/>
+                    <rect x="68" y="84" width="20" height="6"/>
+                </svg>
+            </div>
+
+            <div class="space-y-1">
+                <p class="text-xs text-slate-400">6-Digit Car Pairing Code</p>
+                <div id="modalPairCode" class="font-mono text-3xl font-extrabold tracking-widest text-sky-400">482-910</div>
+            </div>
+
+            <p class="text-xs text-slate-400">Scan with your phone camera to search & push videos directly to this screen.</p>
+
+            <div class="flex gap-2">
+                <button onclick="generateNewPairCode()" class="flex-1 bg-tesla-card hover:bg-tesla-cardHover border border-tesla-border text-white font-semibold text-xs py-3 rounded-xl">
+                    New Code
+                </button>
+                <button onclick="closePairModal()" class="flex-1 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs py-3 rounded-xl">
+                    Done
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== APPLICATION LOGIC ==================== -->
+    <script>
+        // --- 1. PUBLIC PIPED & INVIDIOUS INSTANCES (WITH AUTOMATIC FALLBACK) ---
+        const PUBLIC_PIPED_INSTANCES = [
+            'https://pipedapi.kavin.rocks',
+            'https://pipedapi.tokhmi.xyz',
+            'https://pipedapi.moomoo.me'
+        ];
+
+        const PUBLIC_INVIDIOUS_INSTANCES = [
+            'https://inv.nadeko.net',
+            'https://invidious.nerdvpn.de',
+            'https://iv.ggtyler.dev'
+        ];
+
+        // Reliable Curated Fallback Catalog (Includes real YouTube Video IDs + Direct HTML5/HLS Stream URLs)
+        const CURATED_VIDEOS = [
+            {
+                id: 'aqz-KE-bpKQ',
+                title: 'Big Buck Bunny 60fps 4K — Official Blender Foundation Short Film',
+                channel: 'Blender',
+                views: '18M views',
+                uploaded: '2 weeks ago',
+                duration: '10:34',
+                category: 'movies',
+                thumbnail: 'https://i.ytimg.com/vi/aqz-KE-bpKQ/hqdefault.jpg',
+                fallbackStream: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8'
+            },
+            {
+                id: 'eRsGyueVLvQ',
+                title: 'Sintel — Open Movie Fantasy Sci-Fi Cinema (HD)',
+                channel: 'Blender Studio',
+                views: '9.4M views',
+                uploaded: '5 days ago',
+                duration: '14:48',
+                category: 'movies',
+                thumbnail: 'https://i.ytimg.com/vi/eRsGyueVLvQ/hqdefault.jpg',
+                fallbackStream: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4'
+            },
+            {
+                id: 'R6MlUcmOul8',
+                title: 'Tears of Steel — VFX Sci-Fi Action Short Film',
+                channel: 'Blender Foundation',
+                views: '6.8M views',
+                uploaded: '1 month ago',
+                duration: '12:14',
+                category: 'movies',
+                thumbnail: 'https://i.ytimg.com/vi/R6MlUcmOul8/hqdefault.jpg',
+                fallbackStream: 'https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8'
+            },
+            {
+                id: 'jfKfPfyJRdk',
+                title: 'lofi hip hop radio 📚 beats to relax/study to (Chill Drive Mix)',
+                channel: 'Lofi Girl',
+                views: '42K watching',
+                uploaded: 'LIVE',
+                duration: 'LIVE',
+                category: 'music',
+                thumbnail: 'https://i.ytimg.com/vi/jfKfPfyJRdk/hqdefault.jpg',
+                fallbackStream: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoy.mp4'
+            },
+            {
+                id: '5qap5aO4i9A',
+                title: 'Deep House & Afro House Sunset Drive Mix 2026 | 4K Scenic',
+                channel: 'Electronic Groove',
+                views: '1.2M views',
+                uploaded: '3 days ago',
+                duration: '1:18:20',
+                category: 'music',
+                thumbnail: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=800&q=80',
+                fallbackStream: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4'
+            },
+            {
+                id: 'XB2g7-HgE_g',
+                title: 'Tesla FSD & Autonomous Highway Test — Real World Review',
+                channel: 'EV Insider',
+                views: '310K views',
+                uploaded: '18 hours ago',
+                duration: '24:15',
+                category: 'cars',
+                thumbnail: 'https://images.unsplash.com/photo-1560958089-b8a1929cea89?auto=format&fit=crop&w=800&q=80',
+                fallbackStream: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4'
+            }
+        ];
+
+        let LIVE_CHANNELS = [
+            {
+                id: 'tv-news-1',
+                name: 'Mux 24/7 Adaptive Live Stream',
+                category: 'News',
+                viewers: '5.1K watching',
+                thumbnail: 'https://images.unsplash.com/photo-1495020689067-958852a7765e?auto=format&fit=crop&w=800&q=80',
+                streamUrl: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8'
+            },
+            {
+                id: 'tv-space-1',
+                name: 'Tears of Steel 24/7 Sci-Fi Channel',
+                category: 'Space & Science',
+                viewers: '2.4K watching',
+                thumbnail: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=800&q=80',
+                streamUrl: 'https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8'
+            },
+            {
+                id: 'tv-nature-1',
+                name: 'Red Bull TV (Global Live Events)',
+                category: 'Kids',
+                viewers: '11.2K watching',
+                thumbnail: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=800&q=80',
+                streamUrl: 'https://rbmn-live.akamaized.net/hls/live/590964/BoRB-AT/master.m3u8'
+            },
+            {
+                id: 'tv-music-1',
+                name: 'Chillout Visual Radio HD',
+                category: 'Music',
+                viewers: '6.8K watching',
+                thumbnail: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=800&q=80',
+                streamUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoy.mp4'
+            }
+        ];
+
+        // --- 2. APPLICATION STATE ---
+        let state = {
+            currentView: 'home',
+            currentTvCategory: 'All',
+            ytVideos: [...CURATED_VIDEOS],
+            savedVideos: [],
+            customChannels: [],
+            activeVideo: null,
+            playerMode: 'direct', // 'direct' or 'embed'
+            settings: {
+                profileName: 'Tesla Driver',
+                ytApiKey: '',
+                backendPreset: 'auto',
+                customBackendUrl: '',
+                engineMode: 'direct',
+                quality: 'Auto',
+                autoplay: 'true'
+            }
+        };
+
+        let hlsInstance = null;
+
+        // --- 3. INITIALIZATION ---
+        window.addEventListener('DOMContentLoaded', () => {
+            loadFromLocalStorage();
+            renderJumpBackIn();
+            renderForYouGrid(CURATED_VIDEOS);
+            renderYouTubeGrid(CURATED_VIDEOS);
+            renderTvView();
+            renderCustomChannelChips();
+            generateNewPairCode(false);
+
+            // Fetch real trending YouTube videos in the background via Piped/Invidious API
+            fetchYouTubeFeed('trending');
+        });
+
+        function loadFromLocalStorage() {
+            try {
+                const savedSettings = JSON.parse(localStorage.getItem('tm_settings'));
+                if (savedSettings) state.settings = { ...state.settings, ...savedSettings };
+
+                const savedVids = JSON.parse(localStorage.getItem('tm_saved_videos'));
+                if (Array.isArray(savedVids)) state.savedVideos = savedVids;
+
+                const customCh = JSON.parse(localStorage.getItem('tm_custom_channels'));
+                if (Array.isArray(customCh)) {
+                    state.customChannels = customCh;
+                    LIVE_CHANNELS = [...customCh, ...LIVE_CHANNELS];
+                }
+            } catch (e) {}
+
+            // Apply loaded settings to UI inputs
+            document.getElementById('settingProfileName').value = state.settings.profileName;
+            document.getElementById('settingYtApiKey').value = state.settings.ytApiKey;
+            document.getElementById('presetBackendSelect').value = state.settings.backendPreset;
+            document.getElementById('settingCustomBackendUrl').value = state.settings.customBackendUrl;
+            document.getElementById('settingEngineMode').value = state.settings.engineMode;
+            document.getElementById('settingQuality').value = state.settings.quality;
+            document.getElementById('settingAutoplay').value = state.settings.autoplay;
+
+            document.getElementById('profileDisplayName').textContent = state.settings.profileName || 'Tesla Driver';
+            document.getElementById('settingsAccountSummary').textContent = state.settings.profileName || 'Tesla Driver';
+            document.getElementById('profileAvatarLetter').textContent = (state.settings.profileName || 'T')[0].toUpperCase();
+            state.playerMode = state.settings.engineMode || 'direct';
+        }
+
+        // --- 4. SPA NAVIGATION ---
+        function navigateTo(view) {
+            state.currentView = view;
+            ['home', 'youtube', 'tv', 'settings'].forEach(v => {
+                const section = document.getElementById(`view-${v}`);
+                if (section) section.classList.toggle('hidden', v !== view);
+            });
+
+            document.querySelectorAll('.nav-pill-btn').forEach(btn => {
+                btn.classList.remove('bg-white', 'text-slate-950', 'font-bold');
+                btn.classList.add('text-slate-300', 'font-semibold');
+            });
+
+            const activeNav = document.getElementById(`nav-${view}`);
+            if (activeNav) {
+                activeNav.classList.remove('text-slate-300', 'font-semibold');
+                activeNav.classList.add('bg-white', 'text-slate-950', 'font-bold');
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // --- 5. REAL-TIME YOUTUBE SEARCH & FEED (PIPED + INVIDIOUS + FALLBACK) ---
+        function getApiBaseCandidates() {
+            const preset = state.settings.backendPreset;
+            const custom = state.settings.customBackendUrl.trim().replace(/\/$/, '');
+            if (preset === 'custom' && custom) return [custom];
+            if (preset !== 'auto' && preset !== 'custom') return [preset, ...PUBLIC_PIPED_INSTANCES, ...PUBLIC_INVIDIOUS_INSTANCES];
+            return [...PUBLIC_PIPED_INSTANCES, ...PUBLIC_INVIDIOUS_INSTANCES];
+        }
+
+        async function fetchWithTimeout(url, timeoutMs = 5500) {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), timeoutMs);
+            try {
+                const res = await fetch(url, { signal: controller.signal });
+                clearTimeout(timer);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                return await res.json();
+            } catch (err) {
+                clearTimeout(timer);
+                throw err;
+            }
+        }
+
+        function formatDuration(sec) {
+            if (!sec || sec <= 0) return 'LIVE';
+            const h = Math.floor(sec / 3600);
+            const m = Math.floor((sec % 3600) / 60);
+            const s = sec % 60;
+            if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+            return `${m}:${String(s).padStart(2, '0')}`;
+        }
+
+        function formatViews(views) {
+            if (!views) return 'Popular';
+            if (views >= 1000000) return `${(views / 1000000).toFixed(1)}M views`;
+            if (views >= 1000) return `${Math.floor(views / 1000)}K views`;
+            return `${views} views`;
+        }
+
+        async function fetchYouTubeFeed(queryOrMode = 'trending') {
+            const loader = document.getElementById('ytLoadingIndicator');
+            if (loader) loader.classList.remove('hidden');
+
+            const candidates = getApiBaseCandidates();
+            let fetchedVideos = null;
+
+            for (const baseUrl of candidates) {
+                try {
+                    const isInvidious = baseUrl.includes('inv') || baseUrl.includes('ggtyler');
+                    let endpoint = '';
+
+                    if (queryOrMode === 'trending') {
+                        endpoint = isInvidious ? `${baseUrl}/api/v1/trending?region=US` : `${baseUrl}/trending?region=US`;
+                    } else {
+                        endpoint = isInvidious 
+                            ? `${baseUrl}/api/v1/search?q=${encodeURIComponent(queryOrMode)}&type=video`
+                            : `${baseUrl}/search?q=${encodeURIComponent(queryOrMode)}&filter=videos`;
+                    }
+
+                    const data = await fetchWithTimeout(endpoint, 5000);
+                    const rawItems = Array.isArray(data) ? data : (data.items || []);
+
+                    const normalized = rawItems
+                        .filter(item => (item.url && item.url.includes('/watch?v=')) || item.videoId)
+                        .slice(0, 12)
+                        .map(item => {
+                            const vidId = item.videoId || (item.url ? item.url.split('v=')[1]?.split('&')[0] : '');
+                            return {
+                                id: vidId,
+                                title: item.title || 'YouTube Video',
+                                channel: item.uploaderName || item.author || 'YouTube Channel',
+                                views: formatViews(item.views || item.viewCount),
+                                uploaded: item.uploadedDate || item.publishedText || 'Recent',
+                                duration: formatDuration(item.duration || item.lengthSeconds),
+                                thumbnail: item.thumbnail || (item.videoThumbnails && item.videoThumbnails[0]?.url) || `https://i.ytimg.com/vi/${vidId}/hqdefault.jpg`,
+                                fallbackStream: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8'
+                            };
+                        });
+
+                    if (normalized.length > 0) {
+                        fetchedVideos = normalized;
+                        document.getElementById('homeApiBadge').textContent = 'Live YouTube API';
+                        document.getElementById('ytSearchStatus').textContent = queryOrMode === 'trending' 
+                            ? 'Live Trending YouTube Feed' 
+                            : `Results for "${queryOrMode}"`;
+                        break;
+                    }
+                } catch (err) {
+                    // Try next API instance automatically
+                }
+            }
+
+            if (loader) loader.classList.add('hidden');
+
+            if (fetchedVideos && fetchedVideos.length > 0) {
+                state.ytVideos = fetchedVideos;
+                renderForYouGrid(fetchedVideos.slice(0, 6));
+                renderYouTubeGrid(fetchedVideos);
+            } else {
+                // Fallback to curated catalog if all public APIs are rate-limited
+                document.getElementById('homeApiBadge').textContent = 'Curated Stream Mode';
+                const filteredFallback = queryOrMode === 'trending' 
+                    ? CURATED_VIDEOS 
+                    : CURATED_VIDEOS.filter(v => v.title.toLowerCase().includes(queryOrMode.toLowerCase()) || v.channel.toLowerCase().includes(queryOrMode.toLowerCase()));
+                const listToRender = filteredFallback.length ? filteredFallback : CURATED_VIDEOS;
+                state.ytVideos = listToRender;
+                renderForYouGrid(listToRender);
+                renderYouTubeGrid(listToRender);
+            }
+        }
+
+        function handleSearchInput(val) {
+            document.getElementById('clearSearchBtn').classList.toggle('hidden', val.length === 0);
+        }
+
+        function clearSearch() {
+            document.getElementById('globalSearchInput').value = '';
+            document.getElementById('clearSearchBtn').classList.add('hidden');
+            fetchYouTubeFeed('trending');
+        }
+
+        function executeYouTubeSearch() {
+            const query = document.getElementById('globalSearchInput').value.trim();
+            if (!query) return;
+
+            // If user pasted a direct .m3u8 or .mp4 URL into the search bar, play immediately!
+            if (query.startsWith('http://') || query.startsWith('https://')) {
+                if (query.includes('.m3u8') || query.includes('.mp4') || query.includes('.webm')) {
+                    openVideoPlayer({
+                        id: 'direct-' + Date.now(),
+                        title: 'Direct Stream URL',
+                        channel: 'Custom Stream',
+                        directUrl: query
+                    });
+                    return;
+                }
+                // If user pasted a youtube.com or youtu.be link, extract video ID & play!
+                const ytMatch = query.match(/(?:v=|youtu\.be\/|shorts\/)([a-zA-Z0-9_-]{11})/);
+                if (ytMatch && ytMatch[1]) {
+                    openVideoPlayer({
+                        id: ytMatch[1],
+                        title: 'YouTube Video',
+                        channel: 'YouTube',
+                        thumbnail: `https://i.ytimg.com/vi/${ytMatch[1]}/hqdefault.jpg`
+                    });
+                    return;
+                }
+            }
+
+            navigateTo('youtube');
+            fetchYouTubeFeed(query);
+        }
+
+        // --- 6. RENDERING VIDEO GRIDS ---
+        function createVideoCardHTML(video) {
+            return `
+                <div onclick='openVideoPlayer(${JSON.stringify(video).replace(/'/g, "&#39;")})' class="group bg-tesla-card hover:bg-tesla-cardHover border border-tesla-border hover:border-sky-500/50 rounded-3xl overflow-hidden cursor-pointer transition-all duration-200 active:scale-[0.98] flex flex-col">
+                    <div class="relative aspect-video bg-slate-900 overflow-hidden">
+                        <img 
+                            src="${video.thumbnail}" 
+                            alt="${video.title}" 
+                            onerror="this.src='https://placehold.co/640x360/1c1e22/38bdf8?text=YouTube+Video'"
+                            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        >
+                        <span class="absolute bottom-2.5 right-2.5 bg-black/85 text-white text-xs font-bold px-2.5 py-1 rounded-lg backdrop-blur-sm">
+                            ${video.duration || 'HD'}
+                        </span>
+                        <div class="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <div class="w-14 h-14 rounded-full bg-sky-500 text-slate-950 flex items-center justify-center shadow-xl">
+                                <svg class="w-7 h-7 ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-4 flex-1 flex flex-col justify-between space-y-2">
+                        <h4 class="text-sm sm:text-base font-bold text-white line-clamp-2 leading-snug group-hover:text-sky-400 transition-colors">
+                            ${video.title}
+                        </h4>
+                        <div class="flex items-center justify-between text-xs text-slate-400 pt-1">
+                            <span class="font-semibold text-slate-300 truncate max-w-[55%]">${video.channel}</span>
+                            <span class="truncate">${video.views} • ${video.uploaded}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderJumpBackIn() {
+            const grid = document.getElementById('jumpBackInGrid');
+            grid.innerHTML = CURATED_VIDEOS.slice(0, 3).map(createVideoCardHTML).join('');
+        }
+
+        function renderForYouGrid(list) {
+            const grid = document.getElementById('forYouGrid');
+            grid.innerHTML = list.map(createVideoCardHTML).join('');
+        }
+
+        function renderYouTubeGrid(list) {
+            const grid = document.getElementById('youtubeGrid');
+            if (!list || list.length === 0) {
+                grid.innerHTML = '<div class="col-span-full text-center py-12 text-slate-400">No videos found in this section yet.</div>';
+                return;
+            }
+            grid.innerHTML = list.map(createVideoCardHTML).join('');
+        }
+
+        function loadYouTubeCategory(cat, btnEl) {
+            document.querySelectorAll('.home-pill').forEach(b => {
+                b.classList.remove('bg-white', 'text-slate-950', 'font-bold');
+                b.classList.add('bg-tesla-card', 'text-slate-300', 'font-semibold');
+            });
+            if (btnEl) {
+                btnEl.classList.remove('bg-tesla-card', 'text-slate-300');
+                btnEl.classList.add('bg-white', 'text-slate-950', 'font-bold');
+            }
+            const queryMap = {
+                trending: 'trending',
+                music: 'deep house mix 2026',
+                cars: 'Tesla FSD review',
+                movies: '4K scenic drive'
+            };
+            fetchYouTubeFeed(queryMap[cat] || 'trending');
+        }
+
+        function switchYtSubtab(tab) {
+            document.querySelectorAll('.yt-subtab').forEach(btn => {
+                btn.classList.remove('bg-white', 'text-slate-950', 'font-bold');
+                btn.classList.add('text-slate-300', 'font-semibold');
+            });
+            const active = document.getElementById(`yt-tab-${tab}`);
+            if (active) {
+                active.classList.remove('text-slate-300', 'font-semibold');
+                active.classList.add('bg-white', 'text-slate-950', 'font-bold');
+            }
+
+            if (tab === 'saved') {
+                document.getElementById('ytSearchStatus').textContent = `Saved Videos (${state.savedVideos.length})`;
+                renderYouTubeGrid(state.savedVideos);
+            } else if (tab === 'music') {
+                fetchYouTubeFeed('afro house club mix 2026');
+            } else if (tab === 'tech') {
+                fetchYouTubeFeed('Tesla Cybertruck Model Y review');
+            } else {
+                fetchYouTubeFeed('trending');
+            }
+        }
+
+        // --- 7. PLAYER ENGINE: DIRECT HTML5/HLS STREAM EXTRACTION + EMBED TOGGLE ---
+        async function resolveDirectYouTubeStream(videoId) {
+            const candidates = getApiBaseCandidates();
+            for (const baseUrl of candidates) {
+                try {
+                    const isInvidious = baseUrl.includes('inv') || baseUrl.includes('ggtyler');
+                    const url = isInvidious 
+                        ? `${baseUrl}/api/v1/videos/${videoId}`
+                        : `${baseUrl}/streams/${videoId}`;
+
+                    const data = await fetchWithTimeout(url, 5000);
+
+                    if (isInvidious && Array.isArray(data.formatStreams) && data.formatStreams.length > 0) {
+                        // Prefer 720p or highest combined mp4 stream
+                        const best = data.formatStreams.find(s => s.qualityLabel === '720p') || data.formatStreams[data.formatStreams.length - 1];
+                        if (best && best.url) return { streamUrl: best.url, isHls: false };
+                    } else if (!isInvidious) {
+                        if (data.hls) return { streamUrl: data.hls, isHls: true };
+                        if (Array.isArray(data.videoStreams)) {
+                            // Combined video+audio mp4 stream (videoOnly === false)
+                            const combined = data.videoStreams.find(s => !s.videoOnly && s.format === 'MPEG_4') || data.videoStreams.find(s => !s.videoOnly);
+                            if (combined && combined.url) return { streamUrl: combined.url, isHls: false };
+                        }
+                    }
+                } catch (e) {
+                    // Continue to next instance
+                }
+            }
+            return null;
+        }
+
+        async function openVideoPlayer(video) {
+            state.activeVideo = video;
+            const modal = document.getElementById('videoPlayerModal');
+            document.getElementById('playerTitle').textContent = video.title || 'Playing Video';
+            document.getElementById('playerSubtitle').textContent = video.channel || 'Stream';
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+
+            updateSaveIconState();
+            await startPlaybackInCurrentMode();
+        }
+
+        async function switchPlayerMode(mode) {
+            state.playerMode = mode;
+            await startPlaybackInCurrentMode();
+        }
+
+        async function startPlaybackInCurrentMode() {
+            const video = state.activeVideo;
+            if (!video) return;
+
+            const directBtn = document.getElementById('modeDirectBtn');
+            const embedBtn = document.getElementById('modeEmbedBtn');
+            const html5Video = document.getElementById('mainVideoElement');
+            const iframeEl = document.getElementById('mainIframeElement');
+            const extractingOverlay = document.getElementById('playerExtractingOverlay');
+            const statusText = document.getElementById('playerEngineStatus');
+
+            // Stop existing media
+            if (hlsInstance) {
+                hlsInstance.destroy();
+                hlsInstance = null;
+            }
+            html5Video.pause();
+            html5Video.removeAttribute('src');
+            iframeEl.src = '';
+
+            if (state.playerMode === 'embed') {
+                directBtn.classList.remove('bg-sky-500', 'text-slate-950', 'font-bold');
+                directBtn.classList.add('text-slate-300', 'font-semibold');
+                embedBtn.classList.add('bg-sky-500', 'text-slate-950', 'font-bold');
+                embedBtn.classList.remove('text-slate-300', 'font-semibold');
+
+                extractingOverlay.classList.add('hidden');
+                html5Video.classList.add('hidden');
+                iframeEl.classList.remove('hidden');
+                iframeEl.src = `https://www.youtube-nocookie.com/embed/${video.id}?autoplay=1&rel=0`;
+                statusText.textContent = '● Standard YouTube Embed Mode';
+                statusText.className = 'font-bold text-amber-400';
+                return;
+            }
+
+            // Direct HTML5 / HLS Stream Mode (Drive-Compatible)
+            embedBtn.classList.remove('bg-sky-500', 'text-slate-950', 'font-bold');
+            embedBtn.classList.add('text-slate-300', 'font-semibold');
+            directBtn.classList.add('bg-sky-500', 'text-slate-950', 'font-bold');
+            directBtn.classList.remove('text-slate-300', 'font-semibold');
+
+            iframeEl.classList.add('hidden');
+            html5Video.classList.remove('hidden');
+
+            // If it's already a direct .mp4 / .m3u8 URL (e.g. Live TV or pasted link)
+            if (video.directUrl) {
+                playStreamInHtml5(video.directUrl, video.directUrl.includes('.m3u8'));
+                statusText.textContent = '● Direct HTML5 / HLS Stream Active';
+                statusText.className = 'font-bold text-emerald-400';
+                return;
+            }
+
+            // Extract direct MP4/HLS stream for YouTube video ID
+            extractingOverlay.classList.remove('hidden');
+            extractingOverlay.classList.add('flex');
+
+            const extracted = await resolveDirectYouTubeStream(video.id);
+            extractingOverlay.classList.add('hidden');
+            extractingOverlay.classList.remove('flex');
+
+            if (extracted && extracted.streamUrl) {
+                playStreamInHtml5(extracted.streamUrl, extracted.isHls);
+                statusText.textContent = '● Extracted Direct MP4/HLS Stream (Drive-Compatible)';
+                statusText.className = 'font-bold text-emerald-400';
+            } else if (video.fallbackStream) {
+                playStreamInHtml5(video.fallbackStream, video.fallbackStream.includes('.m3u8'));
+                statusText.textContent = '● Fallback Direct HTML5 Stream (Configure custom API in Settings for all YT videos)';
+                statusText.className = 'font-bold text-sky-400';
+                showToast('Public YouTube stream API busy — playing direct HTML5 stream fallback (or switch to Embed Mode).', 'ℹ️');
+            } else {
+                // Auto-switch to Embed Mode if no direct stream available
+                showToast('Switching to Embed Mode for this video...', '🎬');
+                switchPlayerMode('embed');
+            }
+        }
+
+        function playStreamInHtml5(url, isHls) {
+            const videoEl = document.getElementById('mainVideoElement');
+            if (isHls && Hls.isSupported()) {
+                hlsInstance = new Hls({ enableWorker: true, lowLatencyMode: true });
+                hlsInstance.loadSource(url);
+                hlsInstance.attachMedia(videoEl);
+                hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
+                    if (state.settings.autoplay === 'true') videoEl.play().catch(() => {});
+                });
+            } else {
+                videoEl.src = url;
+                if (state.settings.autoplay === 'true') videoEl.play().catch(() => {});
+            }
+        }
+
+        function closePlayer() {
+            const modal = document.getElementById('videoPlayerModal');
+            const videoEl = document.getElementById('mainVideoElement');
+            const iframeEl = document.getElementById('mainIframeElement');
+
+            videoEl.pause();
+            videoEl.removeAttribute('src');
+            videoEl.load();
+            iframeEl.src = '';
+
+            if (hlsInstance) {
+                hlsInstance.destroy();
+                hlsInstance = null;
+            }
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function toggleFullScreenPlayer() {
+            const container = document.getElementById('videoPlayerModal');
+            if (!document.fullscreenElement) {
+                container.requestFullscreen?.().catch(() => {});
+            } else {
+                document.exitFullscreen?.().catch(() => {});
+            }
+        }
+
+        function toggleSaveCurrentVideo() {
+            if (!state.activeVideo) return;
+            const existsIdx = state.savedVideos.findIndex(v => v.id === state.activeVideo.id);
+            if (existsIdx > -1) {
+                state.savedVideos.splice(existsIdx, 1);
+                showToast('Removed from Saved Videos', '🗑️');
+            } else {
+                state.savedVideos.unshift(state.activeVideo);
+                showToast('Saved to Subscriptions / Saved!', '⭐');
+            }
+            localStorage.setItem('tm_saved_videos', JSON.stringify(state.savedVideos));
+            updateSaveIconState();
+        }
+
+        function updateSaveIconState() {
+            const btn = document.getElementById('saveVideoBtn');
+            if (!state.activeVideo) return;
+            const isSaved = state.savedVideos.some(v => v.id === state.activeVideo.id);
+            btn.classList.toggle('text-sky-400', isSaved);
+            btn.classList.toggle('bg-sky-500/20', isSaved);
+        }
+
+        // --- 8. LIVE TV TAB LOGIC ---
+        function renderTvView() {
+            const categories = ['All', 'News', 'Music', 'Space & Science', 'Kids', 'Custom IPTV'];
+            const catList = document.getElementById('tvCategoryList');
+            catList.innerHTML = categories.map(cat => {
+                const count = cat === 'All' ? LIVE_CHANNELS.length : LIVE_CHANNELS.filter(c => c.category === cat).length;
+                const isActive = state.currentTvCategory === cat;
+                return `
+                    <button onclick="selectTvCategory('${cat}')" class="flex items-center justify-between px-4 py-3 rounded-2xl text-sm font-semibold transition-all shrink-0 ${isActive ? 'bg-tesla-cardHover text-white border border-sky-500/40' : 'text-slate-400 hover:text-white hover:bg-tesla-card/50'}">
+                        <span>${cat}</span>
+                        <span class="text-xs bg-tesla-bg px-2 py-0.5 rounded-full text-slate-400 ml-3">${count}</span>
+                    </button>
+                `;
+            }).join('');
+
+            const filtered = state.currentTvCategory === 'All'
+                ? LIVE_CHANNELS
+                : LIVE_CHANNELS.filter(c => c.category === state.currentTvCategory);
+
+            document.getElementById('tvCurrentCategoryTitle').textContent = state.currentTvCategory === 'All' ? 'All Live Channels' : state.currentTvCategory;
+            document.getElementById('tvChannelCount').textContent = `${filtered.length} channels`;
+
+            const grid = document.getElementById('tvChannelsGrid');
+            grid.innerHTML = filtered.map(ch => `
+                <div onclick="playTvChannel('${ch.id}')" class="group bg-tesla-card hover:bg-tesla-cardHover border border-tesla-border hover:border-emerald-500/50 rounded-3xl overflow-hidden cursor-pointer transition-all active:scale-[0.98]">
+                    <div class="relative aspect-video bg-slate-900 overflow-hidden">
+                        <img 
+                            src="${ch.thumbnail}" 
+                            alt="${ch.name}" 
+                            onerror="this.src='https://placehold.co/640x360/1c1e22/10b981?text=LIVE+TV'"
+                            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        >
+                        <span class="absolute top-3 left-3 bg-red-600 text-white text-[11px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-lg flex items-center gap-1.5 shadow">
+                            <span class="w-2 h-2 rounded-full bg-white animate-pulse"></span> LIVE
+                        </span>
+                    </div>
+                    <div class="p-4 flex items-center justify-between">
+                        <div>
+                            <h4 class="font-bold text-white text-base group-hover:text-emerald-400 transition-colors">${ch.name}</h4>
+                            <p class="text-xs text-slate-400 mt-0.5">${ch.category} • ${ch.viewers}</p>
+                        </div>
+                        <div class="w-11 h-11 rounded-full bg-emerald-500/15 text-emerald-400 flex items-center justify-center">
+                            <svg class="w-5 h-5 ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function selectTvCategory(cat) {
+            state.currentTvCategory = cat;
+            renderTvView();
+        }
+
+        function playTvChannel(id) {
+            const ch = LIVE_CHANNELS.find(c => c.id === id);
+            if (!ch) return;
+            openVideoPlayer({
+                id: ch.id,
+                title: ch.name,
+                channel: `LIVE • ${ch.category}`,
+                directUrl: ch.streamUrl
+            });
+        }
+
+        function playCustomM3u8() {
+            const url = document.getElementById('customM3u8Input').value.trim();
+            if (!url) {
+                showToast('Paste a valid .m3u8 live stream link first.', '⚠️');
+                return;
+            }
+            openVideoPlayer({
+                id: 'custom-m3u8-' + Date.now(),
+                title: 'Custom Live IPTV Stream',
+                channel: 'HLS Live',
+                directUrl: url
+            });
+        }
+
+        // --- 9. SETTINGS & PAIRING LOGIC ---
+        function applyPresetBackend(val) {
+            const input = document.getElementById('settingCustomBackendUrl');
+            if (val === 'auto') {
+                input.value = '';
+            } else if (val !== 'custom') {
+                input.value = val;
+            }
+        }
+
+        async function testBackendConnection() {
+            const customUrl = document.getElementById('settingCustomBackendUrl').value.trim().replace(/\/$/, '');
+            const testBase = customUrl || PUBLIC_PIPED_INSTANCES[0];
+            showToast(`Testing connection to ${testBase}...`, '🔄');
+            try {
+                const isInv = testBase.includes('inv');
+                await fetchWithTimeout(isInv ? `${testBase}/api/v1/trending?region=US` : `${testBase}/trending?region=US`, 5000);
+                document.getElementById('backendConnectionBadge').textContent = 'Connected ✓';
+                document.getElementById('backendConnectionBadge').className = 'text-xs font-bold text-emerald-400';
+                showToast('API Endpoint is online and responding!', '✅');
+            } catch (err) {
+                document.getElementById('backendConnectionBadge').textContent = 'Fallback Active';
+                document.getElementById('backendConnectionBadge').className = 'text-xs font-bold text-amber-400';
+                showToast('Endpoint unreachable from browser (CORS/timeout). Auto-fallback will handle playback.', '⚠️');
+            }
+        }
+
+        function addCustomIptvChannel() {
+            const name = document.getElementById('settingChannelName').value.trim();
+            const url = document.getElementById('settingChannelUrl').value.trim();
+            if (!name || !url) {
+                showToast('Please enter both channel name and .m3u8 URL.', '⚠️');
+                return;
+            }
+            const newCh = {
+                id: 'custom-ch-' + Date.now(),
+                name,
+                category: 'Custom IPTV',
+                viewers: 'Saved Channel',
+                thumbnail: 'https://images.unsplash.com/photo-1522869635100-9f4c5e86aa37?auto=format&fit=crop&w=800&q=80',
+                streamUrl: url
+            };
+            state.customChannels.unshift(newCh);
+            LIVE_CHANNELS.unshift(newCh);
+            localStorage.setItem('tm_custom_channels', JSON.stringify(state.customChannels));
+
+            document.getElementById('settingChannelName').value = '';
+            document.getElementById('settingChannelUrl').value = '';
+            renderTvView();
+            renderCustomChannelChips();
+            showToast(`Added "${name}" to Live TV!`, '📺');
+        }
+
+        function removeCustomChannel(id) {
+            state.customChannels = state.customChannels.filter(c => c.id !== id);
+            LIVE_CHANNELS = LIVE_CHANNELS.filter(c => c.id !== id);
+            localStorage.setItem('tm_custom_channels', JSON.stringify(state.customChannels));
+            renderTvView();
+            renderCustomChannelChips();
+            showToast('Channel removed', '🗑️');
+        }
+
+        function renderCustomChannelChips() {
+            const container = document.getElementById('customChannelsChips');
+            if (!container) return;
+            container.innerHTML = state.customChannels.map(ch => `
+                <span class="inline-flex items-center gap-2 bg-tesla-card border border-tesla-border text-xs font-semibold text-slate-200 px-3 py-1.5 rounded-xl">
+                    ${ch.name}
+                    <button onclick="removeCustomChannel('${ch.id}')" class="text-slate-400 hover:text-red-400">✕</button>
+                </span>
+            `).join('');
+        }
+
+        function saveAllSettings() {
+            state.settings.profileName = document.getElementById('settingProfileName').value.trim() || 'Tesla Driver';
+            state.settings.ytApiKey = document.getElementById('settingYtApiKey').value.trim();
+            state.settings.backendPreset = document.getElementById('presetBackendSelect').value;
+            state.settings.customBackendUrl = document.getElementById('settingCustomBackendUrl').value.trim();
+            state.settings.engineMode = document.getElementById('settingEngineMode').value;
+            state.settings.quality = document.getElementById('settingQuality').value;
+            state.settings.autoplay = document.getElementById('settingAutoplay').value;
+
+            state.playerMode = state.settings.engineMode;
+            localStorage.setItem('tm_settings', JSON.stringify(state.settings));
+
+            document.getElementById('profileDisplayName').textContent = state.settings.profileName;
+            document.getElementById('settingsAccountSummary').textContent = state.settings.profileName;
+            document.getElementById('profileAvatarLetter').textContent = state.settings.profileName[0].toUpperCase();
+
+            showToast('All settings saved to car browser!', '✅');
+        }
+
+        // Pairing Modal
+        function openPairModal() {
+            const modal = document.getElementById('pairModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closePairModal() {
+            const modal = document.getElementById('pairModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function generateNewPairCode(notify = true) {
+            const part1 = Math.floor(100 + Math.random() * 900);
+            const part2 = Math.floor(100 + Math.random() * 900);
+            const code = `${part1}-${part2}`;
+            document.getElementById('modalPairCode').textContent = code;
+            document.getElementById('settingsPairCode').textContent = code;
+            if (notify) showToast(`New pairing code: ${code}`, '📱');
+        }
+
+        // Toast Helper
+        let toastTimeout = null;
+        function showToast(msg, icon = 'ℹ️') {
+            const banner = document.getElementById('toastBanner');
+            document.getElementById('toastMessage').textContent = msg;
+            document.getElementById('toastIcon').textContent = icon;
+            banner.classList.remove('hidden');
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => banner.classList.add('hidden'), 3800);
+        }
+    </script>
+</body>
+</html>
